@@ -36,7 +36,7 @@ class Breadcrumbs extends StatelessWidget {
       segments.add(pathAccumulator);
     }
 
-    // Include root always
+    //root
     final allPaths = ['/', ...segments];
 
     // Convert valid routes into breadcrumb items

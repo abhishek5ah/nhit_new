@@ -51,7 +51,7 @@ class Header extends StatelessWidget implements PreferredSizeWidget {
               style: TextStyle(
                 fontWeight: FontWeight.w400,
                 fontSize: 15,
-                color: txtColor.withOpacity(0.73),
+                color: txtColor.withValues(alpha:0.73),
                 height: 1.1,
               ),
             ),

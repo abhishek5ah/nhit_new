@@ -7,12 +7,13 @@ import 'package:ppv_components/features/finance/screens/invoices/widgets/invoice
 
 class InvoiceDetailPageLayout extends StatelessWidget {
   final String invoiceId;
+
   const InvoiceDetailPageLayout({super.key, required this.invoiceId});
 
   @override
   Widget build(BuildContext context) {
     final invoice = mockInvoices.firstWhere(
-          (inv) => inv.number == invoiceId,
+      (inv) => inv.number == invoiceId,
       orElse: () => mockInvoices.first,
     );
 
@@ -20,41 +21,45 @@ class InvoiceDetailPageLayout extends StatelessWidget {
       body: LayoutBuilder(
         builder: (context, constraints) {
           if (constraints.maxWidth > 900) {
-            return Column(
-              children: [
-                SizedBox(
-                  height: 80,
-                  child: InvoiceHeaderWidget(invoiceNumber: invoice.number),
-                ),
-                const SizedBox(height: 12),
-                Expanded(
-                  child: Row(
-                    children: [
-                      Expanded(
-                        flex: 3,
-                        child: Column(
-                          children: [
-                            Expanded(
-                              flex: 2,
-                              child: InvoiceDetailsCard(invoice: invoice),
-                            ),
-                          ],
-                        ),
-                      ),
-                      Expanded(
-                        flex: 2,
-                        child: Column(
-                          children: const [
-                            Expanded(flex: 2, child: PaymentStatusWidget()),
-                            SizedBox(height: 12),
-                            Expanded(flex: 2, child: ActivityWidget()),
-                          ],
-                        ),
-                      ),
-                    ],
+            return Padding(
+              // padding: const EdgeInsets.only(top: 12.0),
+              padding: const EdgeInsets.fromLTRB(12, 16, 12, 16),
+              child: Column(
+                children: [
+                  SizedBox(
+                    height: 80,
+                    child: InvoiceHeaderWidget(invoiceNumber: invoice.number),
                   ),
-                ),
-              ],
+                  const SizedBox(height: 12),
+                  Expanded(
+                    child: Row(
+                      children: [
+                        Expanded(
+                          flex: 3,
+                          child: Column(
+                            children: [
+                              Expanded(
+                                flex: 2,
+                                child: InvoiceDetailsCard(invoice: invoice),
+                              ),
+                            ],
+                          ),
+                        ),
+                        Expanded(
+                          flex: 2,
+                          child: Column(
+                            children: const [
+                              Expanded(flex: 2, child: PaymentStatusWidget()),
+                              SizedBox(height: 12),
+                              Expanded(flex: 2, child: ActivityWidget()),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
             );
           } else {
             return SingleChildScrollView(
@@ -62,7 +67,7 @@ class InvoiceDetailPageLayout extends StatelessWidget {
                 children: [
                   SizedBox(
                     height: 80,
-                    child: InvoiceHeaderWidget(invoiceNumber: invoice.number), // ✅ fixed
+                    child: InvoiceHeaderWidget(invoiceNumber: invoice.number),
                   ),
                   InvoiceDetailsCard(invoice: invoice),
                   const PaymentStatusWidget(),

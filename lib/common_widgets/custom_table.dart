@@ -25,7 +25,7 @@ class CustomTable extends StatelessWidget {
           child: SingleChildScrollView(
             scrollDirection: Axis.vertical,
             child: DataTable(
-              headingRowColor: MaterialStateColor.resolveWith(
+              headingRowColor: WidgetStateColor.resolveWith(
                     (states) => Theme.of(context).colorScheme.surfaceContainer,
               ),
               headingTextStyle: const TextStyle(

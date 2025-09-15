@@ -263,6 +263,7 @@ class ItemRowData {
   String name = '';
   int quantity = 1;
   double price = 0;
+  
 
   double get total => quantity * price;
 }
