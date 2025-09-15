@@ -30,7 +30,7 @@ class ExpenseInformationCard extends StatelessWidget {
           color: Theme.of(context).colorScheme.surfaceContainer,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: Theme.of(context).dividerColor,
+            color: Theme.of(context).colorScheme.outline,
             width: 0.25,
           ),
         ),

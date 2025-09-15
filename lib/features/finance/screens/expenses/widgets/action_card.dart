@@ -9,12 +9,13 @@ class ActionCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+
     return Card(
       child: Container(
         decoration: BoxDecoration(
           color: Theme.of(context).colorScheme.surfaceContainer,
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Theme.of(context).dividerColor, width: 1),
+          border: Border.all(color: Theme.of(context).colorScheme.outline, width: 0.25),
         ),
         padding: const EdgeInsets.all(20),
         width: double.infinity,

@@ -8,6 +8,7 @@ class VendorInformationCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     final vendor = mockVendors.firstWhere(
       (v) => v.name == vendorName,
       orElse: () => throw Exception('Vendor not found'),
@@ -20,6 +21,10 @@ class VendorInformationCard extends StatelessWidget {
         width: double.infinity,
         decoration: BoxDecoration(
           color: Theme.of(context).colorScheme.surfaceContainer,
+          border: Border.all(
+            color: colorScheme.outline, // use theme outline for border
+            width: 0.25,
+          ),
           borderRadius: BorderRadius.circular(12),
         ),
         padding: const EdgeInsets.all(16),

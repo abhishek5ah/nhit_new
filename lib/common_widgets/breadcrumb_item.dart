@@ -1,103 +1,97 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:google_fonts/google_fonts.dart';
-
-class BreadcrumbItem {
-  final String label;
-  final String route;
-
-  const BreadcrumbItem({required this.label, required this.route});
-}
-
-// Map all routes to breadcrumb labels
-const Map<String, String> routeLabels = {
-  '/': 'Home',
-  '/products': 'Products',
-  '/products/details': 'Details',
-};
+import 'package:ppv_components/app/route_labels.dart';
 
 class Breadcrumbs extends StatelessWidget {
   final String? currentLocation;
+  final TextStyle? textStyle;
 
-  const Breadcrumbs({super.key, this.currentLocation});
+  const Breadcrumbs({super.key, this.currentLocation, this.textStyle});
 
-  List<BreadcrumbItem> _buildBreadcrumbs(BuildContext context) {
+  List<_Breadcrumb> _generateBreadcrumbs(BuildContext context) {
+    // get current location
     final location =
         currentLocation ??
-        GoRouterState.of(context).uri.toString().split('?')[0];
+            GoRouterState.of(context).uri.toString().split('?')[0];
 
-    final segments = <String>[];
-    var pathAccumulator = '';
+    final segments = location.split('/').where((s) => s.isNotEmpty).toList();
 
-    // Split path into segments to build breadcrumb paths
-    for (final part in location.split('/')) {
-      if (part.isEmpty) continue;
-      pathAccumulator += '/$part';
-      segments.add(pathAccumulator);
+    List<_Breadcrumb> crumbs = [];
+    String path = '';
+    for (var i = 0; i < segments.length; i++) {
+      path += "/${segments[i]}";
+      crumbs.add(
+        _Breadcrumb(
+          title: routeLabels[path] ??
+              segments[i][0].toUpperCase() + segments[i].substring(1),
+          href: path,
+        ),
+      );
     }
-
-    //root
-    final allPaths = ['/', ...segments];
-
-    // Convert valid routes into breadcrumb items
-    return allPaths
-        .where(routeLabels.containsKey)
-        .map((path) => BreadcrumbItem(label: routeLabels[path]!, route: path))
-        .toList();
+    // If at root, show Dashboard only
+    if (crumbs.isEmpty) {
+      crumbs.add(_Breadcrumb(title: "Dashboard", href: "/dashboard"));
+    }
+    return crumbs;
   }
 
   @override
   Widget build(BuildContext context) {
-    final items = _buildBreadcrumbs(context);
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-      decoration: BoxDecoration(
-        color: Colors.grey.shade100,
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: List.generate(items.length, (index) {
-          final item = items[index];
-          final isLast = index == items.length - 1;
+    final breadcrumbs = _generateBreadcrumbs(context);
+
+    // default styles based on theme
+    final defaultLinkStyle = textStyle ??
+        TextStyle(
+          color: Theme.of(context).colorScheme.primary,
+          decoration: TextDecoration.underline,
+          fontWeight: FontWeight.normal,
+        );
+
+    final defaultActiveStyle = textStyle?.copyWith(
+      color: Theme.of(context).colorScheme.onSurface,
+      fontWeight: FontWeight.bold,
+      decoration: TextDecoration.none,
+    ) ??
+        TextStyle(
+          color: Theme.of(context).colorScheme.onSurface,
+          fontWeight: FontWeight.bold,
+        );
+
+    return Row(
+      children: [
+        ...List.generate(breadcrumbs.length, (index) {
+          final crumb = breadcrumbs[index];
+          final isLast = index == breadcrumbs.length - 1;
 
           return Row(
             children: [
               if (!isLast)
                 InkWell(
-                  onTap: () => context.go(item.route),
-                  child: Text(
-                    item.label,
-                    style: GoogleFonts.lato(
-                      fontSize: 16,
-                      fontWeight: FontWeight.normal,
-                      color: Colors.blue,
-                      decoration: TextDecoration.underline,
-                    ),
-                  ),
+                  onTap: () => context.go(crumb.href),
+                  child: Text(crumb.title, style: defaultLinkStyle),
                 )
               else
-                Text(
-                  item.label,
-                  style: GoogleFonts.lato(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    color: Theme.of(context).primaryColor,
-                  ),
-                ),
+                Text(crumb.title, style: defaultActiveStyle),
               if (!isLast)
-                const Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 8),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 6.0),
                   child: Icon(
                     Icons.chevron_right,
                     size: 16,
-                    color: Colors.black54,
+                    color: Theme.of(context).colorScheme.outline,
                   ),
                 ),
             ],
           );
         }),
-      ),
+      ],
     );
   }
+}
+
+class _Breadcrumb {
+  final String title;
+  final String href;
+
+  _Breadcrumb({required this.title, required this.href});
 }

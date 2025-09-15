@@ -52,7 +52,6 @@ class ActivityWidget extends StatelessWidget {
     );
   }
 }
-
 class _ActivityItem extends StatelessWidget {
   final String description;
   final String timestamp;
@@ -72,7 +71,7 @@ class _ActivityItem extends StatelessWidget {
       padding: const EdgeInsets.symmetric(vertical: 6.0),
       child: Row(
         children: [
-          Icon(Icons.check_circle, size: 18, color: cs.secondary), // typically the accent/success color
+          Icon(Icons.check_circle, size: 18, color: cs.onSurface), // now uses onSurface
           const SizedBox(width: 8),
           Expanded(
             child: Text(
@@ -85,7 +84,7 @@ class _ActivityItem extends StatelessWidget {
           Text(
             timestamp,
             style: text.bodySmall?.copyWith(
-              color: cs.onSurfaceVariant,
+              color: cs.onSurface,
               fontSize: 12,
             ),
           ),
