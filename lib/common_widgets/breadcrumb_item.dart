@@ -9,29 +9,47 @@ class Breadcrumbs extends StatelessWidget {
   const Breadcrumbs({super.key, this.currentLocation, this.textStyle});
 
   List<_Breadcrumb> _generateBreadcrumbs(BuildContext context) {
-    // get current location
     final location =
         currentLocation ??
-            GoRouterState.of(context).uri.toString().split('?')[0];
+        GoRouterState.of(context).uri.toString().split('?')[0];
 
     final segments = location.split('/').where((s) => s.isNotEmpty).toList();
 
     List<_Breadcrumb> crumbs = [];
     String path = '';
+
+    String normalizePath(String inputPath) {
+      final segs = inputPath.split('/');
+      if (segs.length > 2) {
+        if (segs[1] == 'finance') {
+          if (segs[2] == 'invoices') {
+            return '/finance/invoices';
+          }
+          if (segs[2] == 'expense') {
+            return '/finance/expense';
+          }
+        }
+      }
+      return inputPath;
+    }
+
     for (var i = 0; i < segments.length; i++) {
       path += "/${segments[i]}";
+      final normalizedPath = normalizePath(path);
       crumbs.add(
         _Breadcrumb(
-          title: routeLabels[path] ??
+          title:
+              routeLabels[normalizedPath] ??
               segments[i][0].toUpperCase() + segments[i].substring(1),
-          href: path,
+          href: normalizedPath,
         ),
       );
     }
-    // If at root, show Dashboard only
+
     if (crumbs.isEmpty) {
       crumbs.add(_Breadcrumb(title: "Dashboard", href: "/dashboard"));
     }
+
     return crumbs;
   }
 
@@ -40,18 +58,20 @@ class Breadcrumbs extends StatelessWidget {
     final breadcrumbs = _generateBreadcrumbs(context);
 
     // default styles based on theme
-    final defaultLinkStyle = textStyle ??
+    final defaultLinkStyle =
+        textStyle ??
         TextStyle(
           color: Theme.of(context).colorScheme.primary,
           decoration: TextDecoration.underline,
           fontWeight: FontWeight.normal,
         );
 
-    final defaultActiveStyle = textStyle?.copyWith(
-      color: Theme.of(context).colorScheme.onSurface,
-      fontWeight: FontWeight.bold,
-      decoration: TextDecoration.none,
-    ) ??
+    final defaultActiveStyle =
+        textStyle?.copyWith(
+          color: Theme.of(context).colorScheme.onSurface,
+          fontWeight: FontWeight.bold,
+          decoration: TextDecoration.none,
+        ) ??
         TextStyle(
           color: Theme.of(context).colorScheme.onSurface,
           fontWeight: FontWeight.bold,
