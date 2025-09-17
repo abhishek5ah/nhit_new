@@ -4,6 +4,8 @@ import 'package:ppv_components/features/crm/screens/crm_main_page.dart';
 import 'package:ppv_components/features/dashboard/presentation/dashboard_page.dart';
 import 'package:ppv_components/features/documents/screen/documents_page.dart';
 import 'package:ppv_components/features/finance/finance_page.dart';
+import 'package:ppv_components/features/finance/screens/accounts/account_detail_page.dart';
+import 'package:ppv_components/features/finance/screens/accounts/account_table.dart';
 import 'package:ppv_components/features/finance/screens/expenses/screens/expense_table.dart';
 import 'package:ppv_components/features/finance/screens/expenses/screens/expense_view_page_layout.dart';
 import 'package:ppv_components/features/finance/screens/invoices/invoice_table.dart';
@@ -16,6 +18,7 @@ import 'package:ppv_components/features/pantry/screen/pantry_page.dart';
 import 'package:ppv_components/features/projects/screen/projects_page.dart';
 import 'package:ppv_components/features/reports/screen/reports_page.dart';
 import 'package:ppv_components/features/vendors/screen/vendors_page.dart';
+import 'package:ppv_components/features/finance/screens/accounts/account_detail_page.dart';
 
 
 
@@ -66,6 +69,20 @@ final GoRouter router = GoRouter(
                 ),
               ],
             ),
+            GoRoute(
+              path: 'account',
+              builder: (context, state) => const AccountTableView(),
+              routes: [
+                GoRoute(
+                  path: ':id',
+                  builder: (context, state) {
+                    final accountId = state.pathParameters['id']!;
+                    return AccountDetailPage(accountId: accountId);
+                  },
+                ),
+              ],
+            ),
+
             // Account (example structure under finance)
             // GoRoute(
             //   path: 'account',

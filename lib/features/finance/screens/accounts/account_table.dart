@@ -1,4 +1,3 @@
-// account_table.dart (partial update)
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:ppv_components/common_widgets/button/toggle_button.dart';
@@ -73,14 +72,12 @@ class _AccountTableViewState extends State<AccountTableView> {
           DataCell(
             OutlinedButton(
               onPressed: () {
-                print('Navigating to account detail with id: ${account.code}');
-
                 context.go('/finance/account/${account.code}');
               },
               style: OutlinedButton.styleFrom(
                 side: BorderSide(
-                  color: colorScheme.outline.withAlpha(77),
-                  width: 1.2,
+                  color: colorScheme.outline,
+                  width: 0.25,
                 ),
                 foregroundColor: colorScheme.onSurface,
                 shape: RoundedRectangleBorder(
@@ -141,7 +138,9 @@ class _AccountTableViewState extends State<AccountTableView> {
                               Text(
                                 'Manage your financial accounts',
                                 style: TextStyle(
-                                  color: colorScheme.onSurface.withOpacity(0.65),
+                                  color: colorScheme.onSurface.withOpacity(
+                                    0.65,
+                                  ),
                                   fontSize: 16,
                                 ),
                               ),

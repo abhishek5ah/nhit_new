@@ -4,7 +4,7 @@ const Map<String, String> routeLabels = {
   '/': 'Dashboard',
   '/dashboard': 'Dashboard',
   '/finance': 'Finance',
-  '/finance/invoices': 'Invoices',
+  '/finance/invoices': 'Abhishek',
   '/finance/invoices/view': 'View',
   '/finance/invoices/:id': 'Invoice Details',
   '/finance/expense/:id': 'Expense Details',
@@ -17,5 +17,4 @@ const Map<String, String> routeLabels = {
   '/gst': 'GST',
   '/documents': 'Documents',
   '/reports': 'Reports',
-  // we can add more routes for breadcrumb
 };
