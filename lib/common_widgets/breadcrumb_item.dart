@@ -39,7 +39,7 @@ class Breadcrumbs extends StatelessWidget {
       crumbs.add(
         _Breadcrumb(
           title:
-              routeLabels[normalizedPath] ??
+              // routeLabels[normalizedPath] ??
               segments[i][0].toUpperCase() + segments[i].substring(1),
           href: normalizedPath,
         ),

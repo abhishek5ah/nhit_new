@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:ppv_components/core/theme/theme_notifier.dart';
 import 'package:ppv_components/common_widgets/breadcrumb_item.dart';
 
 class Navbar extends StatelessWidget {
@@ -16,6 +18,8 @@ class Navbar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
+    final themeNotifier = Provider.of<ThemeNotifier>(context);
+    final isDark = themeNotifier.themeMode == ThemeMode.dark;
 
     return Container(
       height: 56,
@@ -47,9 +51,20 @@ class Navbar extends StatelessWidget {
             ),
           ),
 
-          // Right Side Button - Help, Notification, User
+          // Right Side Button - Theme Toggle, Help, Notification, User
           Row(
             children: [
+              // Theme toggle button
+              IconButton(
+                icon: Icon(
+                  isDark ? Icons.light_mode : Icons.dark_mode,
+                  color: colorScheme.onSurfaceVariant,
+                ),
+                tooltip: isDark ? 'Switch to light mode' : 'Switch to dark mode',
+                onPressed: () {
+                  themeNotifier.toggleTheme();
+                },
+              ),
               IconButton(
                 icon: Icon(Icons.help_outline, color: colorScheme.onSurfaceVariant),
                 onPressed: () {}, // Help action

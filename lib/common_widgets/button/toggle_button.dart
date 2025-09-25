@@ -14,6 +14,10 @@ class ToggleBtn extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme
+        .of(context)
+        .colorScheme;
+
     return Container(
       decoration: BoxDecoration(
         color: const Color(0xFF181818),
@@ -23,6 +27,8 @@ class ToggleBtn extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: List.generate(2, (i) {
+          final bool isSelected = selectedIndex == i;
+
           return GestureDetector(
             onTap: () => onChanged(i),
             child: AnimatedContainer(
@@ -30,7 +36,7 @@ class ToggleBtn extends StatelessWidget {
               width: 108,
               padding: const EdgeInsets.symmetric(vertical: 13),
               decoration: BoxDecoration(
-                color: selectedIndex == i ? Colors.white : Colors.transparent,
+                color: isSelected ? colorScheme.primary : colorScheme.onPrimary,
                 borderRadius: BorderRadius.horizontal(
                   left: i == 0 ? const Radius.circular(18) : Radius.zero,
                   right: i == 1 ? const Radius.circular(18) : Radius.zero,
@@ -40,7 +46,8 @@ class ToggleBtn extends StatelessWidget {
               child: Text(
                 labels[i],
                 style: TextStyle(
-                  color: selectedIndex == i ? Colors.black : Colors.white,
+                  color: isSelected ? colorScheme.onPrimary : colorScheme
+                      .primary,
                   fontWeight: FontWeight.bold,
                   fontSize: 15,
                 ),

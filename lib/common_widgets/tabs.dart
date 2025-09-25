@@ -20,7 +20,7 @@ class TabsBar extends StatelessWidget {
 
     final pillBg = colorScheme.surfaceContainer;
     final borderColor = colorScheme.outline;
-    final selectedTabBg = colorScheme.onSurface;
+    final selectedTabBg = colorScheme.primary;
     final unselectedTabBg = Colors.transparent;
     final selectedText = colorScheme.surface;
     final unselectedText = colorScheme.onSurface;

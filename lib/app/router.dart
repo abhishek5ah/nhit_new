@@ -24,7 +24,7 @@ import 'package:ppv_components/features/finance/screens/accounts/account_detail_
 
 
 final GoRouter router = GoRouter(
-  initialLocation: '/finance',
+  initialLocation: '/finance/account/:id',
   routes: [
     ShellRoute(
       builder: (context, state, child) => LayoutPage(child: child),
