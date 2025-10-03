@@ -14,15 +14,16 @@ class ToggleBtn extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme
-        .of(context)
-        .colorScheme;
+    final colorScheme = Theme.of(context).colorScheme;
 
     return Container(
       decoration: BoxDecoration(
-        color: const Color(0xFF181818),
+        color: colorScheme.surface, // Use theme surface color for background
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: Colors.white24, width: 1),
+        border: Border.all(
+          color: colorScheme.outline, // Theme border color
+          width: 1,
+        ),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -36,7 +37,9 @@ class ToggleBtn extends StatelessWidget {
               width: 108,
               padding: const EdgeInsets.symmetric(vertical: 13),
               decoration: BoxDecoration(
-                color: isSelected ? colorScheme.primary : colorScheme.onPrimary,
+                color: isSelected
+                    ? colorScheme.primary
+                    : Colors.transparent,
                 borderRadius: BorderRadius.horizontal(
                   left: i == 0 ? const Radius.circular(18) : Radius.zero,
                   right: i == 1 ? const Radius.circular(18) : Radius.zero,
@@ -46,8 +49,9 @@ class ToggleBtn extends StatelessWidget {
               child: Text(
                 labels[i],
                 style: TextStyle(
-                  color: isSelected ? colorScheme.onPrimary : colorScheme
-                      .primary,
+                  color: isSelected
+                      ? colorScheme.onPrimary // Text color primary when selected
+                      : colorScheme.primary, // Text color when not selected
                   fontWeight: FontWeight.bold,
                   fontSize: 15,
                 ),

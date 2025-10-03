@@ -28,7 +28,7 @@ class TabsBar extends StatelessWidget {
     return Material(
       color: pillBg,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(20),
         side: BorderSide(color: borderColor, width: 0.5),
       ),
       child: Padding(
@@ -38,17 +38,40 @@ class TabsBar extends StatelessWidget {
           runSpacing: 4,
           alignment: WrapAlignment.start,
           children: List.generate(tabs.length, (i) {
+            //  border radius logic
+            BorderRadius borderRadius;
+
+            if (tabs.length == 1) {
+              // only one tab  round both sides
+              borderRadius = BorderRadius.circular(20);
+            } else if (i == 0) {
+              // first tab  round left only
+              borderRadius = const BorderRadius.horizontal(
+                left: Radius.circular(20),
+                right: Radius.circular(0),
+              );
+            } else if (i == tabs.length - 1) {
+              // last tab  round right only
+              borderRadius = const BorderRadius.horizontal(
+                left: Radius.circular(0),
+                right: Radius.circular(20),
+              );
+            } else {
+              // middle tabs no rounded corners
+              borderRadius = BorderRadius.zero;
+            }
+
             return GestureDetector(
               onTap: () => onChanged(i),
               child: AnimatedContainer(
                 duration: const Duration(milliseconds: 160),
                 padding: const EdgeInsets.symmetric(
-                  horizontal: 20,
-                  vertical: 10,
+                  horizontal: 40,
+                  vertical: 12,
                 ),
                 decoration: BoxDecoration(
                   color: selectedIndex == i ? selectedTabBg : unselectedTabBg,
-                  borderRadius: BorderRadius.circular(14),
+                  borderRadius: borderRadius,
                 ),
                 child: Text(
                   tabs[i],

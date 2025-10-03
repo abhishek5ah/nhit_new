@@ -16,18 +16,16 @@ class _SidebarState extends State<Sidebar> with SingleTickerProviderStateMixin {
   late Animation<double> widthAnim;
 
   final List<_SidebarItem> items = [
-    _SidebarItem(Icons.dashboard, "Dashboard", "/dashboard"),
-    _SidebarItem(Icons.assignment, "Projects", "/projects"),
-    _SidebarItem(Icons.attach_money, "Finance", "/finance"),
-    _SidebarItem(Icons.group, "CRM", "/crm"),
-    _SidebarItem(Icons.account_balance, "HRMS", "/hrms"),
-    _SidebarItem(Icons.inventory, "Inventory", "/inventory"),
-    _SidebarItem(Icons.business, "Vendors", "/vendors"),
-    _SidebarItem(Icons.local_cafe, "Pantry", "/pantry"),
-    _SidebarItem(Icons.memory, "IT Services", "/itservices"),
-    _SidebarItem(Icons.receipt_long, "GST", "/gst"),
-    _SidebarItem(Icons.folder, "Documents", "/documents"),
-    _SidebarItem(Icons.bar_chart, "Reports", "/reports"),
+    _SidebarItem(Icons.dashboard, "Role", "/roles"),
+    _SidebarItem(Icons.assignment, "User", "/user"),
+    _SidebarItem(Icons.attach_money, "Vendors", "/vendor"),
+    _SidebarItem(Icons.group, "Activity", "/activity"),
+    _SidebarItem(Icons.group, "Expense", "/expense"),
+    _SidebarItem(Icons.account_balance, "Payment Notes", "/payment-notes"),
+    _SidebarItem(Icons.travel_explore, "Travel", "/reimbursement"),
+    _SidebarItem(Icons.account_balance, "Bank", "/bank"),
+    _SidebarItem(Icons.inventory, "Designation", "/designation"),
+    _SidebarItem(Icons.business, "Department", "/department"),
   ];
 
   @override
