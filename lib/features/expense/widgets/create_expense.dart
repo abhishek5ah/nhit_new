@@ -241,6 +241,7 @@ final List<FormFieldConfig> addExpenseFields = [
   ),
 ];
 
+
 class CreateExpense extends StatelessWidget {
   const CreateExpense({super.key});
 
@@ -248,7 +249,8 @@ class CreateExpense extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       body: Padding(
-        padding: const EdgeInsets.all(12.0),
+        padding: const EdgeInsets.only(left: 12,right: 12),
+        // inner padding inside border radius
         child: ReusableForm(
           title: 'Create Green Note',
           fields: addExpenseFields,
@@ -258,7 +260,10 @@ class CreateExpense extends StatelessWidget {
                 content: const Text('Expense saved successfully'),
                 duration: const Duration(seconds: 3),
                 behavior: SnackBarBehavior.floating,
-                backgroundColor: Theme.of(context).colorScheme.primary,
+                backgroundColor: Theme
+                    .of(context)
+                    .colorScheme
+                    .primary,
               ),
             );
           },

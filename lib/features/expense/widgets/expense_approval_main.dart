@@ -13,7 +13,7 @@ class ExpenseApprovalRule extends StatelessWidget {
           padding: const EdgeInsets.all(12),
           child: Center(
             child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 1600),
+              constraints: const BoxConstraints(maxWidth: 1800),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: const [

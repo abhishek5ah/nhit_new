@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:ppv_components/common_widgets/tabs.dart';
+import 'package:ppv_components/features/activity/data/activity_logs_mockdb.dart';
 import 'package:ppv_components/features/activity/data/user_login_mockdb.dart';
 import 'package:ppv_components/features/activity/model/activity_logs_model.dart';
 import 'package:ppv_components/features/activity/model/user_login_history.dart';
 import 'package:ppv_components/features/activity/widgets/activity_header.dart';
-import 'package:ppv_components/features/activity/data/activity_logs_mockdb.dart';
 import 'package:ppv_components/features/activity/widgets/activity_logs_table.dart';
 import 'package:ppv_components/features/activity/widgets/login_header.dart';
 import 'package:ppv_components/features/activity/widgets/user_login_table.dart';
@@ -99,9 +99,7 @@ class _ActivityMainPageState extends State<ActivityMainPage> {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme
-        .of(context)
-        .colorScheme;
+    final colorScheme = Theme.of(context).colorScheme;
 
     Widget searchBar({
       required String hint,
@@ -118,7 +116,8 @@ class _ActivityMainPageState extends State<ActivityMainPage> {
             ),
           ),
           decoration: InputDecoration(
-            contentPadding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
+            contentPadding:
+            const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
             hintText: hint,
             prefixIcon: const Icon(Icons.search),
             border: OutlineInputBorder(
@@ -134,7 +133,6 @@ class _ActivityMainPageState extends State<ActivityMainPage> {
         ),
       );
     }
-
 
     Widget tabHeader() {
       if (tabIndex == 0) return ActivityHeader(tabIndex: 0);
@@ -190,16 +188,15 @@ class _ActivityMainPageState extends State<ActivityMainPage> {
                 ],
               ),
             ),
-            const SizedBox(height: 14),
+            const SizedBox(height: 12),
+
             Expanded(
               child: tabIndex == 0
                   ? ActivityTableView(
-                activityData: filteredActivityLogs, activityLogs: [],
-
+                activityData: filteredActivityLogs,
               )
                   : UserLoginTableView(
                 loginData: filteredLoginLogs,
-
               ),
             ),
           ],

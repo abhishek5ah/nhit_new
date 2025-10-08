@@ -63,6 +63,13 @@ class CustomTable extends StatelessWidget {
         return Container(
           width: constraints.maxWidth,
           padding: padding ?? const EdgeInsets.only(bottom: 1),
+          decoration: BoxDecoration(
+            border: Border.all(
+              color: Theme.of(context).colorScheme.outline,
+              width: 0.75,
+            ),
+            borderRadius: BorderRadius.circular(16),
+          ),
           child: ClipRRect(
             borderRadius: BorderRadius.circular(16),
             child: Container(

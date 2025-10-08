@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:ppv_components/common_widgets/tabs.dart';
 import 'package:ppv_components/features/designation/data/designation_mockdb.dart';
 import 'package:ppv_components/features/designation/model/designation_model.dart';
-import 'package:ppv_components/features/designation/widgets/add_designation.dart';
 import 'package:ppv_components/features/designation/widgets/designation_header.dart';
 import 'package:ppv_components/features/designation/widgets/designation_table.dart';
 
@@ -14,7 +12,6 @@ class DesignationMainPage extends StatefulWidget {
 }
 
 class _DesignationMainPageState extends State<DesignationMainPage> {
-  int tabIndex = 0;
   String searchQuery = '';
   late List<Designation> filteredDesignations;
   List<Designation> allDesignations = List<Designation>.from(designationData);
@@ -66,27 +63,13 @@ class _DesignationMainPageState extends State<DesignationMainPage> {
           children: [
             Padding(
               padding: const EdgeInsets.only(left: 12, bottom: 12, right: 12),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  DesignationHeader(tabIndex: tabIndex),
-                  const SizedBox(height: 12),
-                ],
-              ),
+              child: DesignationHeader(tabIndex: 0),
             ),
             Padding(
               padding: const EdgeInsets.only(right: 12),
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
-                  Padding(
-                    padding: const EdgeInsets.only(left: 12),
-                    child: TabsBar(
-                      tabs: const ['Designation', 'Add Designation'],
-                      selectedIndex: tabIndex,
-                      onChanged: (idx) => setState(() => tabIndex = idx),
-                    ),
-                  ),
                   const Spacer(),
                   SizedBox(
                     width: 250,
@@ -110,15 +93,12 @@ class _DesignationMainPageState extends State<DesignationMainPage> {
                 ],
               ),
             ),
-            const SizedBox(height: 14),
             Expanded(
-              child: tabIndex == 0
-                  ? DesignationTableView(
+              child: DesignationTableView(
                 designationData: filteredDesignations,
                 onDelete: onDeleteDesignation,
                 onEdit: onEditDesignation,
-              )
-                  : const AddDesignationPage(),
+              ),
             ),
           ],
         ),

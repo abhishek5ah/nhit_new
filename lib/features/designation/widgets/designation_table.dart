@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:ppv_components/common_widgets/button/outlined_button.dart';
-import 'package:ppv_components/common_widgets/button/toggle_button.dart';
+import 'package:ppv_components/common_widgets/button/primary_button.dart';
 import 'package:ppv_components/common_widgets/custom_table.dart';
 import 'package:ppv_components/features/designation/model/designation_model.dart';
-import 'package:ppv_components/features/designation/widgets/designation_grid.dart';
 
 class DesignationTableView extends StatefulWidget {
   final List<Designation> designationData;
@@ -22,7 +20,6 @@ class DesignationTableView extends StatefulWidget {
 }
 
 class _DesignationTableViewState extends State<DesignationTableView> {
-  int toggleIndex = 0;
   int rowsPerPage = 10;
   int currentPage = 0;
   late List<Designation> paginatedDesignations;
@@ -40,15 +37,14 @@ class _DesignationTableViewState extends State<DesignationTableView> {
   }
 
   void _updatePagination() {
+    final totalPages = (widget.designationData.length / rowsPerPage).ceil();
+    if (currentPage >= totalPages && totalPages > 0) {
+      currentPage = totalPages - 1;
+    }
     final start = currentPage * rowsPerPage;
     final end = (start + rowsPerPage).clamp(0, widget.designationData.length);
     setState(() {
       paginatedDesignations = widget.designationData.sublist(start, end);
-      final totalPages = (widget.designationData.length / rowsPerPage).ceil();
-      if (currentPage >= totalPages && totalPages > 0) {
-        currentPage = totalPages - 1;
-        paginatedDesignations = widget.designationData.sublist(start, end);
-      }
     });
   }
 
@@ -65,6 +61,35 @@ class _DesignationTableViewState extends State<DesignationTableView> {
       currentPage = page;
       _updatePagination();
     });
+  }
+
+  Future<void> onAddDesignation() async {
+    final formKey = GlobalKey<FormState>();
+    final nameController = TextEditingController();
+    final descriptionController = TextEditingController();
+
+    final result = await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => _designationDialog(
+        ctx: ctx,
+        formKey: formKey,
+        nameController: nameController,
+        descriptionController: descriptionController,
+        dialogTitle: "Add Designation",
+        saveLabel: "Add",
+      ),
+    );
+
+    if (result == true && nameController.text.isNotEmpty) {
+      final newDesignation = Designation(
+        id: DateTime.now().millisecondsSinceEpoch,
+        name: nameController.text,
+        description: descriptionController.text,
+      );
+      widget.onEdit(newDesignation); // Assuming onEdit adds new when id not exists
+      _updatePagination();
+    }
   }
 
   Future<void> deleteDesignation(Designation designation) async {
@@ -98,78 +123,15 @@ class _DesignationTableViewState extends State<DesignationTableView> {
 
     final result = await showDialog<bool>(
       context: context,
-      builder: (ctx) {
-        final colorScheme = Theme.of(ctx).colorScheme;
-        return Dialog(
-          child: Container(
-            width: MediaQuery.of(ctx).size.width * 0.4,
-            padding: const EdgeInsets.all(24),
-            decoration: BoxDecoration(
-              border: Border.all(color: colorScheme.outline, width: 0.5),
-              borderRadius: BorderRadius.circular(20),
-              color: colorScheme.surface,
-            ),
-            child: Form(
-              key: formKey,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        "Edit Designation",
-                        style: TextStyle(
-                          fontSize: 22,
-                          fontWeight: FontWeight.bold,
-                          color: colorScheme.onSurface,
-                        ),
-                      ),
-                      IconButton(
-                        onPressed: () => Navigator.of(ctx).pop(),
-                        icon: Icon(Icons.close, color: colorScheme.onSurface),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 20),
-                  _buildInputField(ctx, "Name", nameController),
-                  const SizedBox(height: 20),
-                  _buildInputField(ctx, "Description", descriptionController, maxLines: 4),
-                  const SizedBox(height: 30),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.end,
-                    children: [
-                      TextButton(
-                        onPressed: () => Navigator.of(ctx).pop(false),
-                        child: const Text("Cancel"),
-                      ),
-                      const SizedBox(width: 12),
-                      ElevatedButton(
-                        onPressed: () {
-                          if (formKey.currentState?.validate() ?? false) {
-                            Navigator.of(ctx).pop(true);
-                          }
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: colorScheme.primary,
-                          foregroundColor: colorScheme.onPrimary,
-                          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                        ),
-                        child: const Text("Save"),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          ),
-        );
-      },
       barrierDismissible: false,
+      builder: (ctx) => _designationDialog(
+        ctx: ctx,
+        formKey: formKey,
+        nameController: nameController,
+        descriptionController: descriptionController,
+        dialogTitle: "Edit Designation",
+        saveLabel: "Save",
+      ),
     );
 
     if (result == true) {
@@ -180,35 +142,6 @@ class _DesignationTableViewState extends State<DesignationTableView> {
       widget.onEdit(updatedDesignation);
       _updatePagination();
     }
-  }
-
-  Widget _buildInputField(BuildContext context, String label, TextEditingController controller,
-      {int maxLines = 1}) {
-    final theme = Theme.of(context);
-    return TextFormField(
-      controller: controller,
-      maxLines: maxLines,
-      decoration: InputDecoration(
-        labelText: label,
-        labelStyle: TextStyle(color: theme.colorScheme.onSurface),
-        filled: true,
-        fillColor: theme.colorScheme.surfaceContainer,
-        enabledBorder: OutlineInputBorder(
-          borderSide: BorderSide(color: theme.colorScheme.outline),
-          borderRadius: BorderRadius.circular(12),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderSide: BorderSide(color: theme.colorScheme.primary),
-          borderRadius: BorderRadius.circular(12),
-        ),
-      ),
-      validator: (val) {
-        if (val == null || val.isEmpty) {
-          return 'Please enter $label';
-        }
-        return null;
-      },
-    );
   }
 
   Future<void> onViewDesignation(Designation designation) async {
@@ -271,6 +204,35 @@ class _DesignationTableViewState extends State<DesignationTableView> {
     );
   }
 
+  Widget _buildInputField(BuildContext context, String label, TextEditingController controller,
+      {int maxLines = 1}) {
+    final theme = Theme.of(context);
+    return TextFormField(
+      controller: controller,
+      maxLines: maxLines,
+      decoration: InputDecoration(
+        labelText: label,
+        labelStyle: TextStyle(color: theme.colorScheme.onSurface),
+        filled: true,
+        fillColor: theme.colorScheme.surfaceContainer,
+        enabledBorder: OutlineInputBorder(
+          borderSide: BorderSide(color: theme.colorScheme.outline),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderSide: BorderSide(color: theme.colorScheme.primary),
+          borderRadius: BorderRadius.circular(12),
+        ),
+      ),
+      validator: (val) {
+        if (val == null || val.isEmpty) {
+          return 'Please enter $label';
+        }
+        return null;
+      },
+    );
+  }
+
   Widget _buildDetail(BuildContext ctx, String label, String value) {
     final colorScheme = Theme.of(ctx).colorScheme;
     return Container(
@@ -300,6 +262,85 @@ class _DesignationTableViewState extends State<DesignationTableView> {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _designationDialog({
+    required BuildContext ctx,
+    required GlobalKey<FormState> formKey,
+    required TextEditingController nameController,
+    required TextEditingController descriptionController,
+    required String dialogTitle,
+    required String saveLabel,
+  }) {
+    final colorScheme = Theme.of(ctx).colorScheme;
+    return Dialog(
+      child: Container(
+        width: MediaQuery.of(ctx).size.width * 0.4,
+        padding: const EdgeInsets.all(24),
+        decoration: BoxDecoration(
+          border: Border.all(color: colorScheme.outline, width: 0.5),
+          borderRadius: BorderRadius.circular(20),
+          color: colorScheme.surface,
+        ),
+        child: Form(
+          key: formKey,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    dialogTitle,
+                    style: TextStyle(
+                      fontSize: 22,
+                      fontWeight: FontWeight.bold,
+                      color: colorScheme.onSurface,
+                    ),
+                  ),
+                  IconButton(
+                    onPressed: () => Navigator.of(ctx).pop(false),
+                    icon: Icon(Icons.close, color: colorScheme.onSurface),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 20),
+              _buildInputField(ctx, "Name", nameController),
+              const SizedBox(height: 20),
+              _buildInputField(ctx, "Description", descriptionController, maxLines: 4),
+              const SizedBox(height: 30),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  TextButton(
+                    onPressed: () => Navigator.of(ctx).pop(false),
+                    child: const Text("Cancel"),
+                  ),
+                  const SizedBox(width: 12),
+                  ElevatedButton(
+                    onPressed: () {
+                      if (formKey.currentState?.validate() ?? false) {
+                        Navigator.of(ctx).pop(true);
+                      }
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: colorScheme.primary,
+                      foregroundColor: colorScheme.onPrimary,
+                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    child: Text(saveLabel),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -387,46 +428,20 @@ class _DesignationTableViewState extends State<DesignationTableView> {
                             fontWeight: FontWeight.bold,
                           ),
                         ),
-                        ToggleBtn(
-                          labels: ['Table', 'Grid'],
-                          selectedIndex: toggleIndex,
-                          onChanged: (index) => setState(() => toggleIndex = index),
+                        PrimaryButton(
+                          label: 'Add Designation',
+                          onPressed: onAddDesignation,
                         ),
                       ],
                     ),
                     const SizedBox(height: 16),
                     Expanded(
-                      child: toggleIndex == 0
-                          ? Column(
-                        children: [
-                          Expanded(
-                            child: CustomTable(
-                              columns: columns,
-                              rows: rows,
-                            ),
-                          ),
-                          _paginationBar(context),
-                        ],
-                      )
-                          : DesignationGridView(
-                        designationList: widget.designationData,
-                        rowsPerPage: rowsPerPage,
-                        currentPage: currentPage,
-                        onPageChanged: (page) {
-                          setState(() {
-                            currentPage = page;
-                            _updatePagination();
-                          });
-                        },
-                        onRowsPerPageChanged: (rows) {
-                          setState(() {
-                            rowsPerPage = rows ?? rowsPerPage;
-                            currentPage = 0;
-                            _updatePagination();
-                          });
-                        },
+                      child: CustomTable(
+                        columns: columns,
+                        rows: rows,
                       ),
                     ),
+                    _paginationBar(context),
                   ],
                 ),
               ),

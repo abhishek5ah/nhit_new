@@ -152,7 +152,8 @@ class _PaymentMainPageState extends State<PaymentMainPage> {
                 ],
               ),
             ),
-            const SizedBox(height: 14),
+            const SizedBox(height: 12),
+
             Expanded(
               child: () {
                 if (tabIndex == 0 || tabIndex == 1) {

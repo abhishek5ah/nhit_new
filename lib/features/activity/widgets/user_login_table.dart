@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:ppv_components/common_widgets/button/toggle_button.dart';
 import 'package:ppv_components/common_widgets/custom_table.dart';
 import 'package:ppv_components/features/activity/model/user_login_history.dart';
-import 'package:ppv_components/features/activity/widgets/user_login_grid.dart';
 
 class UserLoginTableView extends StatefulWidget {
   final List<UserLoginHistory> loginData;
@@ -14,7 +12,6 @@ class UserLoginTableView extends StatefulWidget {
 }
 
 class _UserLoginTableViewState extends State<UserLoginTableView> {
-  int toggleIndex = 0;
   int rowsPerPage = 10;
   int currentPage = 0;
   late List<UserLoginHistory> paginated;
@@ -77,59 +74,38 @@ class _UserLoginTableViewState extends State<UserLoginTableView> {
         label: Text('Login IP', style: TextStyle(color: colorScheme.onSurface)),
       ),
       DataColumn(
-        label: Text(
-          'User Agent',
-          style: TextStyle(color: colorScheme.onSurface),
-        ),
+        label: Text('User Agent', style: TextStyle(color: colorScheme.onSurface)),
       ),
       DataColumn(
-        label: Text(
-          'Created At',
-          style: TextStyle(color: colorScheme.onSurface),
-        ),
+        label: Text('Created At', style: TextStyle(color: colorScheme.onSurface)),
       ),
     ];
 
     final rows = paginated
         .map(
           (log) => DataRow(
-            cells: [
-              DataCell(
-                Text(
-                  log.id.toString(),
-                  style: TextStyle(color: colorScheme.onSurface),
-                ),
-              ),
-              DataCell(
-                Text(log.user, style: TextStyle(color: colorScheme.onSurface)),
-              ),
-              DataCell(
-                Text(
-                  log.loginAt,
-                  style: TextStyle(color: colorScheme.onSurface),
-                ),
-              ),
-              DataCell(
-                Text(
-                  log.loginIp,
-                  style: TextStyle(color: colorScheme.onSurface),
-                ),
-              ),
-              DataCell(
-                Text(
-                  log.userAgent,
-                  style: TextStyle(color: colorScheme.onSurface),
-                ),
-              ),
-              DataCell(
-                Text(
-                  log.createdAt,
-                  style: TextStyle(color: colorScheme.onSurface),
-                ),
-              ),
-            ],
+        cells: [
+          DataCell(
+            Text(log.id.toString(), style: TextStyle(color: colorScheme.onSurface)),
           ),
-        )
+          DataCell(
+            Text(log.user, style: TextStyle(color: colorScheme.onSurface)),
+          ),
+          DataCell(
+            Text(log.loginAt, style: TextStyle(color: colorScheme.onSurface)),
+          ),
+          DataCell(
+            Text(log.loginIp, style: TextStyle(color: colorScheme.onSurface)),
+          ),
+          DataCell(
+            Text(log.userAgent, style: TextStyle(color: colorScheme.onSurface)),
+          ),
+          DataCell(
+            Text(log.createdAt, style: TextStyle(color: colorScheme.onSurface)),
+          ),
+        ],
+      ),
+    )
         .toList();
 
     return Scaffold(
@@ -149,58 +125,22 @@ class _UserLoginTableViewState extends State<UserLoginTableView> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          'User Logins',
-                          style: TextStyle(
-                            color: colorScheme.onSurface,
-                            fontSize: 26,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        ToggleBtn(
-                          labels: ['Table', 'Grid'],
-                          selectedIndex: toggleIndex,
-                          onChanged: (index) =>
-                              setState(() => toggleIndex = index),
-                        ),
-                      ],
+                    Text(
+                      'User Logins',
+                      style: TextStyle(
+                        color: colorScheme.onSurface,
+                        fontSize: 26,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                     const SizedBox(height: 16),
                     Expanded(
-                      child: toggleIndex == 0
-                          ? Column(
-                              children: [
-                                Expanded(
-                                  child: CustomTable(
-                                    columns: columns,
-                                    rows: rows,
-                                  ),
-                                ),
-                                _paginationBar(context),
-                              ],
-                            )
-                          : UserLoginGridView(
-                              loginList: widget.loginData,
-                              rowsPerPage: rowsPerPage,
-                              currentPage: currentPage,
-                              onPageChanged: (page) {
-                                setState(() {
-                                  currentPage = page;
-                                  _updatePagination();
-                                });
-                              },
-                              onRowsPerPageChanged: (rows) {
-                                setState(() {
-                                  rowsPerPage = rows ?? rowsPerPage;
-                                  currentPage = 0;
-                                  _updatePagination();
-                                });
-                              },
-                            ),
+                      child: CustomTable(
+                        columns: columns,
+                        rows: rows,
+                      ),
                     ),
+                    _paginationBar(context),
                   ],
                 ),
               ),
@@ -247,25 +187,19 @@ class _UserLoginTableViewState extends State<UserLoginTableView> {
             children: [
               IconButton(
                 icon: const Icon(Icons.arrow_back),
-                onPressed: currentPage > 0
-                    ? () => gotoPage(currentPage - 1)
-                    : null,
+                onPressed: currentPage > 0 ? () => gotoPage(currentPage - 1) : null,
               ),
               for (int i = startWindow; i < endWindow; i++)
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 2),
                   child: ElevatedButton(
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: i == currentPage
-                          ? colorScheme.primary
-                          : colorScheme.surfaceContainer,
-                      foregroundColor: i == currentPage
-                          ? Colors.white
-                          : colorScheme.onSurface,
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 10,
-                      ),
+                      backgroundColor:
+                      i == currentPage ? colorScheme.primary : colorScheme.surfaceContainer,
+                      foregroundColor:
+                      i == currentPage ? Colors.white : colorScheme.onSurface,
+                      padding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                       minimumSize: const Size(40, 40),
                     ),
                     onPressed: () => gotoPage(i),
@@ -274,9 +208,8 @@ class _UserLoginTableViewState extends State<UserLoginTableView> {
                 ),
               IconButton(
                 icon: const Icon(Icons.arrow_forward),
-                onPressed: currentPage < totalPages - 1
-                    ? () => gotoPage(currentPage + 1)
-                    : null,
+                onPressed:
+                currentPage < totalPages - 1 ? () => gotoPage(currentPage + 1) : null,
               ),
               const SizedBox(width: 20),
               DropdownButton<int>(

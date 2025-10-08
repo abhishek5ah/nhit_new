@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:ppv_components/common_widgets/tabs.dart';
 import 'package:ppv_components/features/roles/model/roles_model.dart';
-import 'package:ppv_components/features/roles/widgets/add_roles_form.dart';
 import 'package:ppv_components/features/roles/data/roles_mockdb.dart';
 import 'package:ppv_components/features/roles/widgets/roles_header.dart';
 import 'package:ppv_components/features/roles/widgets/roles_table.dart';
@@ -14,7 +12,6 @@ class RoleMainPage extends StatefulWidget {
 }
 
 class _RoleMainPageState extends State<RoleMainPage> {
-  int tabIndex = 0;
   String searchQuery = '';
   late List<Role> filteredRoles;
   List<Role> allRoles = List<Role>.from(roleData);
@@ -70,24 +67,18 @@ class _RoleMainPageState extends State<RoleMainPage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  RoleHeader(tabIndex: tabIndex),
+                  RoleHeader(tabIndex: 0),
                   const SizedBox(height: 12),
                 ],
               ),
             ),
+            // Removed the TabsBar and related code here
             Padding(
               padding: const EdgeInsets.only(right: 12),
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
-                  Padding(
-                    padding: const EdgeInsets.only(left: 12),
-                    child: TabsBar(
-                      tabs: const ['Roles', 'Add Role', ],
-                      selectedIndex: tabIndex,
-                      onChanged: (idx) => setState(() => tabIndex = idx),
-                    ),
-                  ),
+                  // Removed the TabsBar widget
                   const Spacer(),
                   SizedBox(
                     width: 250,
@@ -112,15 +103,13 @@ class _RoleMainPageState extends State<RoleMainPage> {
                 ],
               ),
             ),
-            const SizedBox(height: 14),
+            const SizedBox(height: 12),
             Expanded(
-              child: tabIndex == 0
-                  ? RoleTableView(
+              child: RoleTableView(
                 roleData: filteredRoles,
                 onDelete: onDeleteRole,
                 onEdit: onEditRole,
-              )
-                  : const AddRolePage(),
+              ),
             ),
           ],
         ),

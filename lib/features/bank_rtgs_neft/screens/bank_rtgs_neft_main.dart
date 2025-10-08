@@ -157,8 +157,8 @@ class _BankMainPageState extends State<BankMainPage> {
                 ],
               ),
             ),
+            const SizedBox(height: 12),
 
-            const SizedBox(height: 14),
 
             // ===== Body =====
             Expanded(child: _buildTabContent()),

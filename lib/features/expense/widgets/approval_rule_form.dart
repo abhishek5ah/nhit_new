@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 
 /// Keep your custom button classes if you have them; otherwise the simple ElevatedButton below is used.
 class _CustomButton extends StatelessWidget {
@@ -150,14 +149,13 @@ class _ApprovalRulesFormState extends State<ApprovalRulesForm> {
     return LayoutBuilder(builder: (context, constraints) {
       final isMobile = constraints.maxWidth < 900;
 
-      return Container(
+      return SizedBox(
         width: double.infinity,
         child: Card(
-          elevation: 3,
-          color: colors.surface,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          color: colors.surfaceContainerHigh,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
           child: Padding(
-            padding: const EdgeInsets.all(28),
+            padding: const EdgeInsets.all(12),
             child: Form(
               key: _formKey,
               child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [

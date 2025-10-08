@@ -576,7 +576,7 @@ class _ReimbursementDetailPageState extends State<ReimbursementDetailPage> {
                             child: Card(
                               color: cs.surfaceContainerLow,
                               elevation: 0,
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8), side: BorderSide(color: cs.outline.withOpacity(0.06))),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8), side: BorderSide(color: cs.outline.withValues(alpha:0.06))),
                               child: Padding(
                                 padding: const EdgeInsets.all(12.0),
                                 child: Text(c, style: tt.bodyMedium),

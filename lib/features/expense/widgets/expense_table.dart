@@ -395,7 +395,7 @@ class _ExpenseTableViewState extends State<ExpenseTableView> {
     return Scaffold(
       backgroundColor: colorScheme.surface,
       body: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [

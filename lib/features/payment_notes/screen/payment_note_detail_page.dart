@@ -380,11 +380,11 @@ class _PaymentNoteDetailPageState extends State<PaymentNoteDetailPage> {
     final theme = Theme.of(context);
     return Container(
       decoration: BoxDecoration(
-        color: colorScheme.surfaceContainer,
+        color: colorScheme.surfaceContainerHigh,
         borderRadius: BorderRadius.circular(16),
       ),
       padding: const EdgeInsets.all(18),
-      margin: const EdgeInsets.only(top: 24, right: 12, left: 8, bottom: 12),
+      margin: const EdgeInsets.only(top: 24, right: 12, left:12, bottom: 24),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

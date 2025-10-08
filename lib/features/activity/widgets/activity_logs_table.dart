@@ -1,15 +1,13 @@
 import 'package:flutter/material.dart';
-import 'package:ppv_components/common_widgets/button/toggle_button.dart';
 import 'package:ppv_components/common_widgets/custom_table.dart';
 import 'package:ppv_components/features/activity/model/activity_logs_model.dart';
-import 'package:ppv_components/features/activity/widgets/activity_logs_grid.dart';
 
 class ActivityTableView extends StatefulWidget {
   final List<ActivityLog> activityData;
 
   const ActivityTableView({
     super.key,
-    required this.activityData, required List<ActivityLog> activityLogs,
+    required this.activityData,
   });
 
   @override
@@ -17,7 +15,6 @@ class ActivityTableView extends StatefulWidget {
 }
 
 class _ActivityTableViewState extends State<ActivityTableView> {
-  int toggleIndex = 0;
   int rowsPerPage = 10;
   int currentPage = 0;
   late List<ActivityLog> paginatedLogs;
@@ -101,57 +98,22 @@ class _ActivityTableViewState extends State<ActivityTableView> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          'Activity Logs',
-                          style: TextStyle(
-                            color: colorScheme.onSurface,
-                            fontSize: 26,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        ToggleBtn(
-                          labels: ['Table', 'Grid'],
-                          selectedIndex: toggleIndex,
-                          onChanged: (index) => setState(() => toggleIndex = index),
-                        ),
-                      ],
+                    Text(
+                      'Activity Logs',
+                      style: TextStyle(
+                        color: colorScheme.onSurface,
+                        fontSize: 26,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                     const SizedBox(height: 16),
                     Expanded(
-                      child: toggleIndex == 0
-                          ? Column(
-                        children: [
-                          Expanded(
-                            child: CustomTable(
-                              columns: columns,
-                              rows: rows,
-                            ),
-                          ),
-                          _paginationBar(context),
-                        ],
-                      )
-                          : ActivityGridView(
-                        activityList: widget.activityData,
-                        rowsPerPage: rowsPerPage,
-                        currentPage: currentPage,
-                        onPageChanged: (page) {
-                          setState(() {
-                            currentPage = page;
-                            _updatePagination();
-                          });
-                        },
-                        onRowsPerPageChanged: (rows) {
-                          setState(() {
-                            rowsPerPage = rows ?? rowsPerPage;
-                            currentPage = 0;
-                            _updatePagination();
-                          });
-                        },
+                      child: CustomTable(
+                        columns: columns,
+                        rows: rows,
                       ),
                     ),
+                    _paginationBar(context),
                   ],
                 ),
               ),

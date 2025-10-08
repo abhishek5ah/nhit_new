@@ -114,7 +114,7 @@ class _UserMainPageState extends State<UserMainPage> {
                 ],
               ),
             ),
-            const SizedBox(height: 14),
+            const SizedBox(height: 12),
             Expanded(
               child: tabIndex == 0
                   ? UserTableView(

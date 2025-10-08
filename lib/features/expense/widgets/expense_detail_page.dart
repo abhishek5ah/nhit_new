@@ -242,15 +242,13 @@ class _SupportingDocsPageState extends State<SupportingDocsPage> {
 
     // NOTE: we're explicitly hiding any AppBar by using PreferredSize with zero height.
     return Scaffold(
-      // hide any visible/top appbar (removes that purple sticky header)
-      appBar: const PreferredSize(preferredSize: Size.zero, child: SizedBox.shrink()),
       backgroundColor: cs.surface,
       body: SafeArea(
         child: Row(
           children: [
             Expanded(
               child: SingleChildScrollView(
-                padding: EdgeInsets.symmetric(vertical: 24, horizontal: mobile ? 16 : 32),
+                padding: EdgeInsets.symmetric(vertical: 12, horizontal: 12),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -258,8 +256,7 @@ class _SupportingDocsPageState extends State<SupportingDocsPage> {
                     Container(
                       decoration: BoxDecoration(
                         color: cs.surfaceContainer,
-                        borderRadius: BorderRadius.circular(8),
-                        boxShadow: [BoxShadow(color: cs.shadow.withValues(alpha:0.04), blurRadius: 12, offset: const Offset(0, 6))],
+                        borderRadius: BorderRadius.circular(20),
                         border: Border.all(color: cs.outline.withValues(alpha:0.08)),
                       ),
                       padding: EdgeInsets.all(mobile ? 16 : 28),

@@ -70,7 +70,13 @@ class _ExpenseMainPageState extends State<ExpenseMainPage> {
           children: [
             Padding(
               padding: const EdgeInsets.only(left: 12, bottom: 12, right: 12),
-              child: ExpenseHeader(tabIndex: tabIndex),
+              child: Column(
+                children: [
+                  ExpenseHeader(tabIndex: tabIndex),
+              const SizedBox(height: 12),
+                ],
+              ),
+
             ),
             Padding(
               padding: const EdgeInsets.only(right: 12),
@@ -108,7 +114,8 @@ class _ExpenseMainPageState extends State<ExpenseMainPage> {
                 ],
               ),
             ),
-            const SizedBox(height: 14),
+            const SizedBox(height: 12),
+
             Expanded(
               child: Builder(
                 builder: (context) {

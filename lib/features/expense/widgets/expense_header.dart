@@ -32,8 +32,12 @@ class ExpenseHeader extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.fromLTRB(36, 16, 0, 16),
       decoration: BoxDecoration(
-        color: colorScheme.surfaceContainerHigh,
+        color: colorScheme.surfaceContainer,
         borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: theme.colorScheme.outline,
+          width: 0.5,
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

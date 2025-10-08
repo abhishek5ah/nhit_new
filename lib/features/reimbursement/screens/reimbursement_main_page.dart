@@ -106,8 +106,9 @@ class _ReimbursementMainPageState extends State<ReimbursementMainPage> {
                 ],
               ),
             ),
+            const SizedBox(height: 12),
 
-            const SizedBox(height: 14),
+
 
             // body: handle all tabs explicitly using safeTabIndex
             Expanded(
@@ -116,10 +117,10 @@ class _ReimbursementMainPageState extends State<ReimbursementMainPage> {
                   switch (safeTabIndex) {
                     case 0:
                     // show reimbursement table (create ReimbursementTablePage accordingly)
-                      return ReimbursementForm();
+                      return const ReimbursementTablePage();
                     case 1:
                     // page to create a reimbursement
-                      return const ReimbursementTablePage();
+                      return ReimbursementForm();
                     case 2:
                     // reuse approval rules combined page
                       return const ReimbursementDetailPage();

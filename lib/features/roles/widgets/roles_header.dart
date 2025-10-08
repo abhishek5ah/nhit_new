@@ -27,8 +27,12 @@ class RoleHeader extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.fromLTRB(36, 16, 0, 16),
       decoration: BoxDecoration(
-        color: colorScheme.surfaceContainerHigh,
+        color: colorScheme.surfaceContainer,
         borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: theme.colorScheme.outline,
+          width: 0.5,
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -43,7 +47,7 @@ class RoleHeader extends StatelessWidget {
           Text(
             header.subtitle,
             style: theme.textTheme.bodyMedium?.copyWith(
-              color: colorScheme.onSurface.withValues(alpha:0.8),
+              color: colorScheme.onSurface.withAlpha(204),
             ),
           ),
         ],

@@ -101,7 +101,7 @@ class _ApprovalMainPageState extends State<ApprovalMainPage> {
                 ],
               ),
             ),
-            const SizedBox(height: 14),
+            const SizedBox(height: 12),
             Expanded(
               child: ApprovalTableView(
                 approvalData: filteredApprovals,

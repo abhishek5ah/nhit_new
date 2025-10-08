@@ -10,6 +10,8 @@ class Sidebar extends StatefulWidget {
 
 class _SidebarState extends State<Sidebar> with SingleTickerProviderStateMixin {
   bool isExpanded = true;
+  bool isOrgExpanded = false; // Controls organization submenu expand/collapse
+  int selectedOrgIndex = -1; // Track selected organization index (-1 means none selected)
   static const double expandedWidth = 200;
   static const double collapsedWidth = 64;
   late AnimationController _controller;
@@ -48,8 +50,44 @@ class _SidebarState extends State<Sidebar> with SingleTickerProviderStateMixin {
         _controller.reverse();
       } else {
         _controller.forward();
+        isOrgExpanded = false; // Close org submenu when collapsed
       }
     });
+  }
+
+  void toggleOrgExpansion() {
+    setState(() {
+      isOrgExpanded = !isOrgExpanded;
+    });
+  }
+
+  Widget _buildOrgOption(String label, int index) {
+    final bool isSelected = index == selectedOrgIndex;
+    return Padding(
+      padding: const EdgeInsets.only(left: 40, top: 6, bottom: 6),
+      child: InkWell(
+        onTap: () {
+          setState(() {
+            selectedOrgIndex = index; // Update selected organization
+          });
+          // switch org in backend, navigation etc.
+        },
+        borderRadius: BorderRadius.circular(5),
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 8),
+          child: Text(
+            label,
+            style: TextStyle(
+              color: isSelected
+                  ? Theme.of(context).colorScheme.error
+                  : Theme.of(context).colorScheme.onSurfaceVariant,
+              fontSize: 14,
+              fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+            ),
+          ),
+        ),
+      ),
+    );
   }
 
   @override
@@ -97,7 +135,7 @@ class _SidebarState extends State<Sidebar> with SingleTickerProviderStateMixin {
                       if (isExpanded)
                         Flexible(
                           child: Text(
-                            "Menu",
+                            "NHIT",
                             style: TextStyle(
                               color: colors.onSurface,
                               fontSize: 18,
@@ -141,12 +179,64 @@ class _SidebarState extends State<Sidebar> with SingleTickerProviderStateMixin {
                           context.go(item.route);
                         },
                         backgroundColor: isActive
-                            ? colors.surfaceContainerHigh
+                            ? colors.onSurface
                             : Colors.transparent,
-                        iconColor: isActive ? colors.primary : colors.onSurfaceVariant,
-                        textColor: isActive ? colors.primary : colors.onSurface,
+                        iconColor: isActive ? colors.surface : colors.onSurfaceVariant,
+                        textColor: isActive ? colors.surface : colors.onSurface,
                       );
                     },
+                  ),
+                ),
+                Divider(height: 1),
+                Padding(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: isExpanded ? 18 : 10,
+                    vertical: 8,
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      InkWell(
+                        onTap: toggleOrgExpansion,
+                        borderRadius: BorderRadius.circular(5),
+                        child: Row(
+                          children: [
+                            Icon(
+                              Icons.swap_horiz,
+                              color: colors.onSurfaceVariant,
+                              size: 22,
+                            ),
+                            if (isExpanded) ...[
+                              const SizedBox(width: 18, height: 36),
+                              Expanded(
+                                child: Text(
+                                  "Switch Organization",
+                                  style: TextStyle(
+                                    color: colors.onSurface,
+                                    fontWeight: FontWeight.w500,
+                                    fontSize: 16,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                              Icon(
+                                isOrgExpanded ? Icons.expand_less : Icons.expand_more,
+                                color: colors.onSurfaceVariant,
+                                size: 20,
+                              ),
+                            ],
+                          ],
+                        ),
+                      ),
+                      if (isOrgExpanded && isExpanded) ...[
+                        const SizedBox(height: 18),
+                        _buildOrgOption("Organization 1", 0),
+                        _buildOrgOption("Organization 2", 1),
+                        _buildOrgOption("Organization 3", 2),
+                        _buildOrgOption("Organization 4", 3),
+                      ],
+                    ],
                   ),
                 ),
               ],

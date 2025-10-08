@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:ppv_components/common_widgets/button/toggle_button.dart';
+import 'package:ppv_components/common_widgets/button/primary_button.dart';
 import 'package:ppv_components/common_widgets/custom_table.dart';
 import 'package:ppv_components/features/roles/model/roles_model.dart';
 import 'package:ppv_components/features/roles/widgets/roles_grid.dart';
@@ -7,7 +7,7 @@ import 'package:ppv_components/features/roles/widgets/roles_grid.dart';
 class RoleTableView extends StatefulWidget {
   final List<Role> roleData;
   final void Function(Role) onDelete;
-  final void Function(Role) onEdit;
+  final void Function(Role) onEdit; // Used for both edit and add
 
   const RoleTableView({
     super.key,
@@ -97,81 +97,14 @@ class _RoleTableViewState extends State<RoleTableView> {
 
     final result = await showDialog<bool>(
       context: context,
-      builder: (ctx) {
-        final colorScheme = Theme.of(ctx).colorScheme;
-        return Dialog(
-          child: Container(
-            width: MediaQuery.of(ctx).size.width * 0.4,
-            padding: const EdgeInsets.all(24),
-            decoration: BoxDecoration(
-              border: Border.all(color: colorScheme.outline, width: 0.5),
-              borderRadius: BorderRadius.circular(20),
-              color: colorScheme.surface,
-            ),
-            child: StatefulBuilder(
-              builder: (context, setState) => SingleChildScrollView(
-                child: Form(
-                  key: formKey,
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            "Edit Role",
-                            style: TextStyle(
-                              fontSize: 22,
-                              fontWeight: FontWeight.bold,
-                              color: colorScheme.onSurface,
-                            ),
-                          ),
-                          IconButton(
-                            onPressed: () => Navigator.of(ctx).pop(),
-                            icon: Icon(Icons.close, color: colorScheme.onSurface),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 20),
-                      _buildInputField(ctx, "Role Name", roleNameController),
-                      const SizedBox(height: 20),
-                      _buildInputField(ctx, "Permissions (comma separated)", permissionsController),
-                      const SizedBox(height: 30),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.end,
-                        children: [
-                          TextButton(
-                            onPressed: () => Navigator.of(ctx).pop(false),
-                            child: const Text("Cancel"),
-                          ),
-                          const SizedBox(width: 12),
-                          ElevatedButton(
-                            onPressed: () {
-                              if (formKey.currentState?.validate() ?? false) {
-                                Navigator.of(ctx).pop(true);
-                              }
-                            },
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: colorScheme.primary,
-                              foregroundColor: colorScheme.onPrimary,
-                              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                            ),
-                            child: const Text("Save"),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-          ),
-        );
-      },
+      builder: (ctx) => _roleDialog(
+        ctx: ctx,
+        formKey: formKey,
+        roleNameController: roleNameController,
+        permissionsController: permissionsController,
+        dialogTitle: "Edit Role",
+        saveLabel: "Save",
+      ),
       barrierDismissible: false,
     );
 
@@ -183,6 +116,127 @@ class _RoleTableViewState extends State<RoleTableView> {
       widget.onEdit(updatedRole);
       _updatePagination();
     }
+  }
+
+  // Add role dialog
+  Future<void> onAddRole() async {
+    final formKey = GlobalKey<FormState>();
+    final roleNameController = TextEditingController();
+    final permissionsController = TextEditingController();
+
+    final result = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => _roleDialog(
+        ctx: ctx,
+        formKey: formKey,
+        roleNameController: roleNameController,
+        permissionsController: permissionsController,
+        dialogTitle: "Add Role",
+        saveLabel: "Add",
+      ),
+      barrierDismissible: false,
+    );
+
+    if (result == true && roleNameController.text.isNotEmpty) {
+      final newRole = Role(
+        id: DateTime.now().millisecondsSinceEpoch,
+        roleName: roleNameController.text,
+        permissions: permissionsController.text
+            .split(',')
+            .map((e) => e.trim())
+            .where((perm) => perm.isNotEmpty)
+            .toList(),
+      );
+      widget.onEdit(newRole);
+      _updatePagination();
+    }
+  }
+
+  Widget _roleDialog({
+    required BuildContext ctx,
+    required GlobalKey<FormState> formKey,
+    required TextEditingController roleNameController,
+    required TextEditingController permissionsController,
+    required String dialogTitle,
+    required String saveLabel,
+  }) {
+    final colorScheme = Theme.of(ctx).colorScheme;
+    return Dialog(
+      child: Container(
+        width: MediaQuery.of(ctx).size.width * 0.4,
+        padding: const EdgeInsets.all(24),
+        decoration: BoxDecoration(
+          border: Border.all(color: colorScheme.outline, width: 0.5),
+          borderRadius: BorderRadius.circular(20),
+          color: colorScheme.surface,
+        ),
+        child: StatefulBuilder(
+          builder: (context, setState) => SingleChildScrollView(
+            child: Form(
+              key: formKey,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        dialogTitle,
+                        style: TextStyle(
+                          fontSize: 22,
+                          fontWeight: FontWeight.bold,
+                          color: colorScheme.onSurface,
+                        ),
+                      ),
+                      IconButton(
+                        onPressed: () => Navigator.of(ctx).pop(),
+                        icon: Icon(Icons.close, color: colorScheme.onSurface),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 20),
+                  _buildInputField(ctx, "Role Name", roleNameController),
+                  const SizedBox(height: 20),
+                  _buildInputField(
+                    ctx,
+                    "Permissions (comma separated)",
+                    permissionsController,
+                  ),
+                  const SizedBox(height: 30),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      TextButton(
+                        onPressed: () => Navigator.of(ctx).pop(false),
+                        child: const Text("Cancel"),
+                      ),
+                      const SizedBox(width: 12),
+                      ElevatedButton(
+                        onPressed: () {
+                          if (formKey.currentState?.validate() ?? false) {
+                            Navigator.of(ctx).pop(true);
+                          }
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: colorScheme.primary,
+                          foregroundColor: colorScheme.onPrimary,
+                          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        child: Text(saveLabel),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
   }
 
   Widget _buildInputField(BuildContext context, String label, TextEditingController controller) {
@@ -252,8 +306,6 @@ class _RoleTableViewState extends State<RoleTableView> {
                 const SizedBox(height: 20),
                 _buildDetail(ctx, "ID", role.id.toString()),
                 _buildDetail(ctx, "Role Name", role.roleName),
-
-                // Permissions badges inside input-style container
                 Padding(
                   padding: const EdgeInsets.symmetric(vertical: 6),
                   child: Column(
@@ -271,8 +323,6 @@ class _RoleTableViewState extends State<RoleTableView> {
                     ],
                   ),
                 ),
-
-                // close button inside view
                 const SizedBox(height: 24),
                 Align(
                   alignment: Alignment.centerRight,
@@ -333,7 +383,7 @@ class _RoleTableViewState extends State<RoleTableView> {
       margin: const EdgeInsets.symmetric(vertical: 6),
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
-        color: colorScheme.surfaceContainer, //view input background
+        color: colorScheme.surfaceContainer,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: colorScheme.outline, width: 0.5),
       ),
@@ -490,10 +540,13 @@ class _RoleTableViewState extends State<RoleTableView> {
                             fontWeight: FontWeight.bold,
                           ),
                         ),
-                        ToggleBtn(
-                          labels: ['Table', 'Grid'],
-                          selectedIndex: toggleIndex,
-                          onChanged: (index) => setState(() => toggleIndex = index),
+                        Row(
+                          children: [
+                            PrimaryButton(
+                              label: 'Add Role',
+                              onPressed: onAddRole,
+                            ),
+                          ],
                         ),
                       ],
                     ),
