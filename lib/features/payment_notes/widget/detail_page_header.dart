@@ -22,8 +22,12 @@ class PaymentDetailPageHeader extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.fromLTRB(16, 16, 0, 16),
       decoration: BoxDecoration(
-        color: colorScheme.surfaceContainer,
+        color: colorScheme.surface,
         borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: theme.colorScheme.outline,
+          width: 0.5,
+        ),
       ),
       child: Row(
         children: [
@@ -45,8 +49,6 @@ class PaymentDetailPageHeader extends StatelessWidget {
                     fontWeight: FontWeight.bold,
                   ),
                 ),
-                const SizedBox(height: 4),
-
               ],
             ),
           ),

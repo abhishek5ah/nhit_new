@@ -237,9 +237,9 @@ class _ReusableFormState extends State<ReusableForm> {
             width: double.infinity,
             padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
             decoration: BoxDecoration(
-              color: theme.colorScheme.surfaceContainerLow,
+              color: theme.colorScheme.surface,
               borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: theme.colorScheme.outline, width: 0.25),
+              border: Border.all(color: theme.colorScheme.outline, width: 1),
             ),
             child: Form(
               key: _formKey,

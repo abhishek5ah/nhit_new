@@ -149,7 +149,7 @@ class _ApprovalFlowPageState extends State<ApprovalFlowPage> {
       final surfaceContainer = cs.surfaceContainer;
 
       return SingleChildScrollView(
-        padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 32),
+        padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
         child: SizedBox(
           width: double.infinity,
           child: Card(
@@ -157,7 +157,7 @@ class _ApprovalFlowPageState extends State<ApprovalFlowPage> {
             elevation: 2,
             margin: EdgeInsets.zero,
             shape:
-            RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+            RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
               child: _loading

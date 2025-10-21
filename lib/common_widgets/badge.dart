@@ -1,70 +1,61 @@
 import 'package:flutter/material.dart';
 
 enum ChipType { status, removable }
-enum StatusType { newStatus, active, error }
 
 class BadgeChip extends StatelessWidget {
   final String label;
   final ChipType type;
-  final StatusType? status;
+  final String? statusKey;
+  final Color Function(String)? statusColorFunc;
   final VoidCallback? onRemove;
 
   const BadgeChip({
     super.key,
     required this.label,
     this.type = ChipType.status,
-    this.status,
+    this.statusKey,
+    this.statusColorFunc,
     this.onRemove,
   });
 
   @override
   Widget build(BuildContext context) {
-    if (type == ChipType.status) {
-      return Chip(
-        label: Text(
-          label,
-          style: TextStyle(
-            color: _textColor(status, context),
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        backgroundColor: _backgroundColor(status, context),
-      );
-    } else {
-      return Chip(
-        label: Text(label),
-        onDeleted: onRemove,
-        deleteIcon: const Icon(Icons.close, size: 18),
-        deleteIconColor: Colors.grey[700],
-        backgroundColor: Theme.of(context).colorScheme.secondaryContainer,
-      );
-    }
+    final bgColor = _backgroundColor(context);
+    final textColor = Colors.white;
+
+    final labelWidget = Text(
+      label,
+      style: const TextStyle(
+        color: Colors.white,
+        fontSize: 12,
+        fontWeight: FontWeight.w500,
+        height: 1.3,
+      ),
+      overflow: TextOverflow.ellipsis,
+      textAlign: TextAlign.center,
+    );
+
+    return Chip(
+      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+      label: labelWidget,
+      backgroundColor: bgColor,
+      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(20),
+      ),
+      visualDensity: VisualDensity.compact,
+      onDeleted: type == ChipType.removable ? onRemove : null,
+      deleteIcon: type == ChipType.removable
+          ? const Icon(Icons.close, size: 16)
+          : null,
+      deleteIconColor: textColor,
+    );
   }
 
-  // status colors
-  Color _backgroundColor(StatusType? status, BuildContext context) {
-    switch (status) {
-      case StatusType.newStatus:
-        return Colors.blue[100]!;
-      case StatusType.active:
-        return Colors.green[100]!;
-      case StatusType.error:
-        return Colors.red[100]!;
-      default:
-        return Theme.of(context).colorScheme.surfaceContainerHighest;
+  Color _backgroundColor(BuildContext context) {
+    if (statusColorFunc != null && statusKey != null) {
+      return statusColorFunc!(statusKey!);
     }
-  }
-
-  Color _textColor(StatusType? status, BuildContext context) {
-    switch (status) {
-      case StatusType.newStatus:
-        return Colors.blue[800]!;
-      case StatusType.active:
-        return Colors.green[800]!;
-      case StatusType.error:
-        return Colors.red[800]!;
-      default:
-        return Theme.of(context).colorScheme.onSurfaceVariant;
-    }
+    return Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha:0.4);
   }
 }

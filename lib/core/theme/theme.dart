@@ -64,8 +64,8 @@ class MaterialTheme {
       surfaceBright: Color(0xFFFAFAFA),
       surfaceContainerLowest: Color(0xFFFFFFFF),
       surfaceContainerLow: Color(0xFFF8F8F8),
-      surfaceContainer: Color(0xFFF0F0F0),
-      surfaceContainerHigh: Color(0xFFEBEBEB),
+      surfaceContainer: Color(0xFFF7F9FA),
+      surfaceContainerHigh: Color(0xFFF7F9FA),
       surfaceContainerHighest: Color(0xFFE5E5E5),
     );
   }

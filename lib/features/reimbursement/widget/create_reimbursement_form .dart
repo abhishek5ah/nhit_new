@@ -1,7 +1,4 @@
-// ignore_for_file: prefer_const_constructors
-import 'dart:io';
 import 'dart:convert';
-
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:open_filex/open_filex.dart';
@@ -11,44 +8,42 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 class ReimbursementForm extends StatefulWidget {
   const ReimbursementForm({super.key});
-
   @override
   _ReimbursementFormState createState() => _ReimbursementFormState();
 }
 
 class _ReimbursementFormState extends State<ReimbursementForm> {
   final _formKey = GlobalKey<FormState>();
-
   String? _selectedFile;
   String? _selectedFilePath;
-
   List<Map<String, dynamic>> expenseRows = [];
+  bool _loading = true;
 
   @override
   void initState() {
     super.initState();
-    _loadExpenseRows();
+    _initAsync();
+  }
+
+  Future<void> _initAsync() async {
+    await _loadExpenseRows();
+    setState(() => _loading = false);
   }
 
   Future<void> _loadExpenseRows() async {
     final prefs = await SharedPreferences.getInstance();
     final savedData = prefs.getString("expenseRows");
     if (savedData != null) {
-      setState(() {
-        expenseRows = List<Map<String, dynamic>>.from(json.decode(savedData));
-      });
+      expenseRows = List<Map<String, dynamic>>.from(json.decode(savedData));
     } else {
-      // default 5 rows
-      setState(() {
-        expenseRows = List.generate(5, (_) => {
-          "expenseType": "",
-          "billDate": "",
-          "billNumber": "",
-          "vendorName": "",
-          "billAmount": "",
-          "supporting": "Yes",
-          "remarks": "",
-        });
+      expenseRows = List.generate(5, (_) => {
+        "expenseType": "",
+        "billDate": "",
+        "billNumber": "",
+        "vendorName": "",
+        "billAmount": "",
+        "supporting": "Yes",
+        "remarks": "",
       });
     }
   }
@@ -62,8 +57,16 @@ class _ReimbursementFormState extends State<ReimbursementForm> {
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     final theme = Theme.of(context);
-
     double screenWidth = MediaQuery.of(context).size.width;
+
+    if (_loading) {
+      return Center(child: CircularProgressIndicator());
+    }
+
+    OutlineInputBorder borderStyle = OutlineInputBorder(
+      borderRadius: BorderRadius.circular(12),
+      borderSide: BorderSide(color: cs.outline, width: 0.5),
+    );
 
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
@@ -77,37 +80,37 @@ class _ReimbursementFormState extends State<ReimbursementForm> {
               // ---------- Top Section ----------
               Row(
                 children: [
-                  Expanded(child: _buildTextField(context, "Note No", Icons.note)),
+                  Expanded(child: _buildTextField(context, "Note No", Icons.note, border: borderStyle)),
                   SizedBox(width: 8),
-                  Expanded(child: _buildDropdown(context, "Project Name", Icons.work, ["Project A", "Project B"])),
+                  Expanded(child: _buildDropdown(context, "Project Name", Icons.work, ["Project A", "Project B"], border: borderStyle)),
                   SizedBox(width: 8),
-                  Expanded(child: _buildTextField(context, "User Department", Icons.apartment)),
+                  Expanded(child: _buildTextField(context, "User Department", Icons.apartment, border: borderStyle)),
                   SizedBox(width: 8),
-                  Expanded(child: _buildTextField(context, "Employee Name", Icons.person)),
+                  Expanded(child: _buildTextField(context, "Employee Name", Icons.person, border: borderStyle)),
                 ],
               ),
               SizedBox(height: 8),
               Row(
                 children: [
-                  Expanded(child: _buildTextField(context, "Employee ID", Icons.badge)),
+                  Expanded(child: _buildTextField(context, "Employee ID", Icons.badge, border: borderStyle)),
                   SizedBox(width: 8),
-                  Expanded(child: _buildTextField(context, "Employee Designation", Icons.engineering)),
+                  Expanded(child: _buildTextField(context, "Employee Designation", Icons.engineering, border: borderStyle)),
                   SizedBox(width: 8),
-                  Expanded(child: _buildDatePicker(context, "Date of Travel/Expenses", Icons.calendar_today)),
+                  Expanded(child: _buildDatePicker(context, "Date of Travel/Expenses", Icons.calendar_today, border: borderStyle)),
                   SizedBox(width: 8),
-                  Expanded(child: _buildTextField(context, "Mode of Travel", Icons.directions_car)),
+                  Expanded(child: _buildTextField(context, "Mode of Travel", Icons.directions_car, border: borderStyle)),
                 ],
               ),
               SizedBox(height: 8),
               Row(
                 children: [
-                  Expanded(child: _buildTextField(context, "Travel Mode Eligibility", Icons.verified)),
+                  Expanded(child: _buildTextField(context, "Travel Mode Eligibility", Icons.verified, border: borderStyle)),
                   SizedBox(width: 8),
-                  Expanded(child: _buildDropdown(context, "Initial Approver's Name", Icons.supervisor_account, ["Manager", "HR"])),
+                  Expanded(child: _buildDropdown(context, "Initial Approver's Name", Icons.supervisor_account, ["Manager", "HR"], border: borderStyle)),
                 ],
               ),
               SizedBox(height: 8),
-              _buildTextField(context, "Purpose of Travel", Icons.notes, maxLines: 2),
+              _buildTextField(context, "Purpose of Travel", Icons.notes, maxLines: 2, border: borderStyle),
 
               SizedBox(height: 20),
               Text("Expense Details:", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
@@ -132,7 +135,7 @@ class _ReimbursementFormState extends State<ReimbursementForm> {
                       ),
                     ),
                     Column(
-                      children: List.generate(expenseRows.length, (index) => _buildExpenseRow(context, index)),
+                      children: List.generate(expenseRows.length, (index) => _buildExpenseRow(context, index, borderStyle)),
                     ),
                   ],
                 ),
@@ -141,7 +144,6 @@ class _ReimbursementFormState extends State<ReimbursementForm> {
               SizedBox(height: 10),
               Row(
                 children: [
-                  // Add Row -> PrimaryButton
                   PrimaryButton(
                     label: "Add Row",
                     icon: Icons.add,
@@ -161,7 +163,6 @@ class _ReimbursementFormState extends State<ReimbursementForm> {
                     },
                   ),
                   SizedBox(width: 12),
-                  // Delete Row -> SecondaryButton (use errorContainer background for destructive look)
                   SecondaryButton(
                     label: "Delete Row",
                     icon: Icons.delete,
@@ -181,45 +182,42 @@ class _ReimbursementFormState extends State<ReimbursementForm> {
               SizedBox(height: 20),
               Text("Payment Details:", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
 
-              // ---------- Payment Section ----------
               Row(
                 children: [
-                  Expanded(child: _buildTextField(context, "Total Payable Amount", Icons.account_balance_wallet, keyboardType: TextInputType.number)),
+                  Expanded(child: _buildTextField(context, "Total Payable Amount", Icons.account_balance_wallet, keyboardType: TextInputType.number, border: borderStyle)),
                   SizedBox(width: 8),
-                  Expanded(child: _buildTextField(context, "Advance Adjusted (if Any)", Icons.money_off, keyboardType: TextInputType.number)),
+                  Expanded(child: _buildTextField(context, "Advance Adjusted (if Any)", Icons.money_off, keyboardType: TextInputType.number, border: borderStyle)),
                   SizedBox(width: 8),
-                  Expanded(child: _buildTextField(context, "Net Payable Amount", Icons.payments, keyboardType: TextInputType.number)),
+                  Expanded(child: _buildTextField(context, "Net Payable Amount", Icons.payments, keyboardType: TextInputType.number, border: borderStyle)),
                 ],
               ),
               SizedBox(height: 12),
               Row(
                 children: [
-                  Expanded(child: _buildTextField(context, "Name of Account Holder", Icons.person)),
+                  Expanded(child: _buildTextField(context, "Name of Account Holder", Icons.person, border: borderStyle)),
                   SizedBox(width: 8),
-                  Expanded(child: _buildTextField(context, "Bank Name", Icons.account_balance)),
+                  Expanded(child: _buildTextField(context, "Bank Name", Icons.account_balance, border: borderStyle)),
                 ],
               ),
               SizedBox(height: 12),
               Row(
                 children: [
-                  Expanded(child: _buildTextField(context, "Bank Account", Icons.account_balance_wallet)),
+                  Expanded(child: _buildTextField(context, "Bank Account", Icons.account_balance_wallet, border: borderStyle)),
                   SizedBox(width: 8),
-                  Expanded(child: _buildTextField(context, "IFSC", Icons.confirmation_number)),
+                  Expanded(child: _buildTextField(context, "IFSC", Icons.confirmation_number, border: borderStyle)),
                 ],
               ),
               SizedBox(height: 12),
 
-              // ---------- File Upload (reduced 40%) ----------
               Align(
                 alignment: Alignment.centerLeft,
                 child: Container(
-                  width: screenWidth * 0.3, // ✅ now much smaller (reduced 40% more)
-                  child: _buildFileUpload(context, "Attach File"),
+                  width: screenWidth * 0.3,
+                  child: _buildFileUpload(context, "Attach File", border: borderStyle),
                 ),
               ),
 
               SizedBox(height: 20),
-              // Submit -> PrimaryButton
               Center(
                 child: PrimaryButton(
                   label: "Submit",
@@ -245,10 +243,8 @@ class _ReimbursementFormState extends State<ReimbursementForm> {
     );
   }
 
-  // ================= Widgets =================
-
   Widget _buildTextField(BuildContext context, String label, IconData icon,
-      {int maxLines = 1, TextInputType keyboardType = TextInputType.text}) {
+      {int maxLines = 1, TextInputType keyboardType = TextInputType.text, OutlineInputBorder? border}) {
     final cs = Theme.of(context).colorScheme;
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 6),
@@ -260,7 +256,11 @@ class _ReimbursementFormState extends State<ReimbursementForm> {
           labelText: label,
           filled: true,
           fillColor: Theme.of(context).inputDecorationTheme.fillColor ?? cs.surfaceContainer,
-          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+          border: border ?? OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+          enabledBorder: border,
+          focusedBorder: border,
+          errorBorder: border,
+          focusedErrorBorder: border,
         ),
         validator: (value) {
           if (value == null || value.isEmpty) {
@@ -272,7 +272,8 @@ class _ReimbursementFormState extends State<ReimbursementForm> {
     );
   }
 
-  Widget _buildDropdown(BuildContext context, String label, IconData icon, List<String> items) {
+  Widget _buildDropdown(BuildContext context, String label, IconData icon, List<String> items,
+      {OutlineInputBorder? border}) {
     final cs = Theme.of(context).colorScheme;
     String? selectedValue;
     return Padding(
@@ -283,7 +284,11 @@ class _ReimbursementFormState extends State<ReimbursementForm> {
           labelText: label,
           filled: true,
           fillColor: Theme.of(context).inputDecorationTheme.fillColor ?? cs.surfaceContainer,
-          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+          border: border ?? OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+          enabledBorder: border,
+          focusedBorder: border,
+          errorBorder: border,
+          focusedErrorBorder: border,
         ),
         items: items.map((e) => DropdownMenuItem(value: e, child: Text(e))).toList(),
         onChanged: (value) => setState(() => selectedValue = value),
@@ -297,7 +302,7 @@ class _ReimbursementFormState extends State<ReimbursementForm> {
     );
   }
 
-  Widget _buildDatePicker(BuildContext context, String label, IconData icon) {
+  Widget _buildDatePicker(BuildContext context, String label, IconData icon, {OutlineInputBorder? border}) {
     final cs = Theme.of(context).colorScheme;
     TextEditingController controller = TextEditingController();
     return Padding(
@@ -310,7 +315,11 @@ class _ReimbursementFormState extends State<ReimbursementForm> {
           labelText: label,
           filled: true,
           fillColor: Theme.of(context).inputDecorationTheme.fillColor ?? cs.surfaceContainer,
-          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+          border: border ?? OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+          enabledBorder: border,
+          focusedBorder: border,
+          errorBorder: border,
+          focusedErrorBorder: border,
         ),
         validator: (value) {
           if (value == null || value.isEmpty) {
@@ -333,50 +342,65 @@ class _ReimbursementFormState extends State<ReimbursementForm> {
     );
   }
 
-  // ================= Expense Row =================
-  Widget _buildExpenseRow(BuildContext context, int index) {
+  Widget _buildExpenseRow(BuildContext context, int index, OutlineInputBorder border) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 6),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Expanded(flex: 2, child: _miniTextField(context, "Expense Type",
-              initialValue: expenseRows[index]["expenseType"],
-              onChanged: (val) {
-                expenseRows[index]["expenseType"] = val;
-                _saveExpenseRows();
-              })),
+          Expanded(
+              flex: 2,
+              child: _miniTextField(context, "Expense Type",
+                  initialValue: expenseRows[index]["expenseType"],
+                  onChanged: (val) {
+                    expenseRows[index]["expenseType"] = val;
+                    _saveExpenseRows();
+                  },
+                  border: border)),
           SizedBox(width: 8),
-          Expanded(flex: 2, child: _miniDatePicker(context, "Bill Date", index)),
+          Expanded(flex: 2, child: _miniDatePicker(context, "Bill Date", index, border: border)),
           SizedBox(width: 8),
-          Expanded(flex: 2, child: _miniTextField(context, "Bill Number",
-              initialValue: expenseRows[index]["billNumber"],
-              onChanged: (val) {
-                expenseRows[index]["billNumber"] = val;
-                _saveExpenseRows();
-              })),
+          Expanded(
+              flex: 2,
+              child: _miniTextField(context, "Bill Number",
+                  initialValue: expenseRows[index]["billNumber"],
+                  onChanged: (val) {
+                    expenseRows[index]["billNumber"] = val;
+                    _saveExpenseRows();
+                  },
+                  border: border)),
           SizedBox(width: 8),
-          Expanded(flex: 3, child: _miniTextField(context, "Vendor Name",
-              initialValue: expenseRows[index]["vendorName"],
-              onChanged: (val) {
-                expenseRows[index]["vendorName"] = val;
-                _saveExpenseRows();
-              })),
+          Expanded(
+              flex: 3,
+              child: _miniTextField(context, "Vendor Name",
+                  initialValue: expenseRows[index]["vendorName"],
+                  onChanged: (val) {
+                    expenseRows[index]["vendorName"] = val;
+                    _saveExpenseRows();
+                  },
+                  border: border)),
           SizedBox(width: 8),
-          Expanded(flex: 2, child: _miniTextField(context, "Bill Amount",
-              keyboardType: TextInputType.number,
-              initialValue: expenseRows[index]["billAmount"],
-              onChanged: (val) {
-                expenseRows[index]["billAmount"] = val;
-                _saveExpenseRows();
-              })),
+          Expanded(
+              flex: 2,
+              child: _miniTextField(context, "Bill Amount",
+                  keyboardType: TextInputType.number,
+                  initialValue: expenseRows[index]["billAmount"],
+                  onChanged: (val) {
+                    expenseRows[index]["billAmount"] = val;
+                    _saveExpenseRows();
+                  },
+                  border: border)),
           SizedBox(width: 8),
           Expanded(
             flex: 3,
             child: DropdownButtonFormField<String>(
               value: expenseRows[index]["supporting"],
               decoration: InputDecoration(
-                border: OutlineInputBorder(),
+                border: border,
+                enabledBorder: border,
+                focusedBorder: border,
+                errorBorder: border,
+                focusedErrorBorder: border,
                 contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 10),
                 fillColor: Theme.of(context).inputDecorationTheme.fillColor ?? Theme.of(context).colorScheme.surfaceContainer,
                 filled: true,
@@ -391,12 +415,15 @@ class _ReimbursementFormState extends State<ReimbursementForm> {
             ),
           ),
           SizedBox(width: 8),
-          Expanded(flex: 3, child: _miniTextField(context, "Remarks",
-              initialValue: expenseRows[index]["remarks"],
-              onChanged: (val) {
-                expenseRows[index]["remarks"] = val;
-                _saveExpenseRows();
-              })),
+          Expanded(
+              flex: 3,
+              child: _miniTextField(context, "Remarks",
+                  initialValue: expenseRows[index]["remarks"],
+                  onChanged: (val) {
+                    expenseRows[index]["remarks"] = val;
+                    _saveExpenseRows();
+                  },
+                  border: border)),
         ],
       ),
     );
@@ -406,7 +433,8 @@ class _ReimbursementFormState extends State<ReimbursementForm> {
       {int maxLines = 1,
         TextInputType keyboardType = TextInputType.text,
         String? initialValue,
-        Function(String)? onChanged}) {
+        Function(String)? onChanged,
+        OutlineInputBorder? border}) {
     final cs = Theme.of(context).colorScheme;
     return TextFormField(
       maxLines: maxLines,
@@ -415,7 +443,11 @@ class _ReimbursementFormState extends State<ReimbursementForm> {
       onChanged: onChanged,
       decoration: InputDecoration(
         hintText: hint,
-        border: OutlineInputBorder(),
+        border: border ?? OutlineInputBorder(),
+        enabledBorder: border,
+        focusedBorder: border,
+        errorBorder: border,
+        focusedErrorBorder: border,
         contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 10),
         fillColor: Theme.of(context).inputDecorationTheme.fillColor ?? cs.surfaceContainer,
         filled: true,
@@ -423,7 +455,7 @@ class _ReimbursementFormState extends State<ReimbursementForm> {
     );
   }
 
-  Widget _miniDatePicker(BuildContext context, String hint, int index) {
+  Widget _miniDatePicker(BuildContext context, String hint, int index, {OutlineInputBorder? border}) {
     final cs = Theme.of(context).colorScheme;
     TextEditingController controller = TextEditingController(text: expenseRows[index]["billDate"]);
     return TextFormField(
@@ -431,9 +463,13 @@ class _ReimbursementFormState extends State<ReimbursementForm> {
       readOnly: true,
       decoration: InputDecoration(
         hintText: hint,
-        border: OutlineInputBorder(),
-        contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 10),
+        border: border ?? OutlineInputBorder(),
+        enabledBorder: border,
+        focusedBorder: border,
+        errorBorder: border,
+        focusedErrorBorder: border,
         suffixIcon: Icon(Icons.calendar_today, size: 18, color: cs.onSurfaceVariant),
+        contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 10),
         fillColor: Theme.of(context).inputDecorationTheme.fillColor ?? cs.surfaceContainer,
         filled: true,
       ),
@@ -456,8 +492,7 @@ class _ReimbursementFormState extends State<ReimbursementForm> {
     );
   }
 
-  // ================= File Upload =================
-  Widget _buildFileUpload(BuildContext context, String label) {
+  Widget _buildFileUpload(BuildContext context, String label, {OutlineInputBorder? border}) {
     final cs = Theme.of(context).colorScheme;
     final fill = Theme.of(context).inputDecorationTheme.fillColor ?? cs.surfaceContainerLow;
     return Container(
@@ -471,7 +506,6 @@ class _ReimbursementFormState extends State<ReimbursementForm> {
         children: [
           Icon(Icons.attach_file, color: cs.primary),
           SizedBox(width: 10),
-          // Choose File -> PrimaryButton
           PrimaryButton(
             label: "Choose File",
             icon: Icons.upload_file,
@@ -503,14 +537,15 @@ class _ReimbursementFormState extends State<ReimbursementForm> {
                   ? Text(
                 "No file chosen",
                 overflow: TextOverflow.ellipsis,
-                style: TextStyle(color: cs.onSurface.withValues(alpha: 0.65)),
+                style: TextStyle(color: cs.onSurface.withAlpha(165)),
               )
                   : GestureDetector(
                 onTap: () => OpenFilex.open(_selectedFilePath!),
                 child: Text(
                   _selectedFile!,
                   overflow: TextOverflow.ellipsis,
-                  style: TextStyle(color: cs.primary, decoration: TextDecoration.underline),
+                  style:
+                  TextStyle(color: cs.primary, decoration: TextDecoration.underline),
                 ),
               ),
             ),

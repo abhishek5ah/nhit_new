@@ -22,7 +22,7 @@ class _SidebarState extends State<Sidebar> with SingleTickerProviderStateMixin {
     _SidebarItem(Icons.assignment, "User", "/user"),
     _SidebarItem(Icons.attach_money, "Vendors", "/vendor"),
     _SidebarItem(Icons.group, "Activity", "/activity"),
-    _SidebarItem(Icons.group, "Expense", "/expense"),
+    _SidebarItem(Icons.account_balance_wallet_rounded, "Expense", "/expense"),
     _SidebarItem(Icons.account_balance, "Payment Notes", "/payment-notes"),
     _SidebarItem(Icons.travel_explore, "Travel", "/reimbursement"),
     _SidebarItem(Icons.account_balance, "Bank", "/bank"),
@@ -110,136 +110,144 @@ class _SidebarState extends State<Sidebar> with SingleTickerProviderStateMixin {
     return AnimatedBuilder(
       animation: widthAnim,
       builder: (context, child) {
-        return Material(
-          elevation: 4,
-          color: colors.surfaceContainer,
-          child: SizedBox(
-            width: widthAnim.value,
-            child: Column(
-              children: [
-                const SizedBox(height: 16),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 8.0),
-                  child: Row(
-                    children: [
-                      IconButton(
-                        icon: Icon(
-                          isExpanded ? Icons.arrow_back_ios_new_rounded : Icons.menu,
-                          color: colors.onSurface,
-                          size: 22,
-                        ),
-                        onPressed: toggleSidebar,
-                        splashRadius: 22,
-                      ),
-                      if (isExpanded) const SizedBox(width: 10),
-                      if (isExpanded)
-                        Flexible(
-                          child: Text(
-                            "NHIT",
-                            style: TextStyle(
-                              color: colors.onSurface,
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            softWrap: false,
+        return Container(
+          decoration: BoxDecoration(
+            border: Border(
+              right: BorderSide(
+                width: 0.5,
+                color: colors.outline,
+              ),
+            ),
+          ),
+          child: Material(
+            elevation: 4,
+            color: colors.surface,
+            child: SizedBox(
+              width: widthAnim.value,
+              child: Column(
+                children: [
+                  const SizedBox(height: 16),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                    child: Row(
+                      children: [
+                        IconButton(
+                          icon: Icon(
+                            isExpanded ? Icons.arrow_back_ios_new_rounded : Icons.menu,
+                            color: colors.onSurface,
+                            size: 22,
                           ),
+                          onPressed: toggleSidebar,
+                          splashRadius: 22,
                         ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 10),
-                if (isExpanded) ...[
-                  CircleAvatar(
-                    radius: 28,
-                    backgroundColor: colors.surfaceContainerLow,
-                    child: Icon(
-                      Icons.person,
-                      color: colors.onSurface,
-                      size: 24,
+                        if (isExpanded) const SizedBox(width: 10),
+                        if (isExpanded)
+                          Flexible(
+                            child: Text(
+                              "NHIT",
+                              style: TextStyle(
+                                color: colors.onSurface,
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              softWrap: false,
+                            ),
+                          ),
+                      ],
                     ),
                   ),
-                  const SizedBox(height: 24),
-                ],
-                Expanded(
-                  child: ListView.builder(
-                    itemCount: items.length,
-                    itemBuilder: (context, idx) {
-                      final item = items[idx];
-                      final isActive = idx == activeIndex;
-
-                      return _SidebarTile(
-                        icon: item.icon,
-                        label: item.label,
-                        route: item.route,
-                        isActive: isActive,
-                        collapsed: !isExpanded,
-                        onTap: () {
-                          context.go(item.route);
-                        },
-                        backgroundColor: isActive
-                            ? colors.onSurface
-                            : Colors.transparent,
-                        iconColor: isActive ? colors.surface : colors.onSurfaceVariant,
-                        textColor: isActive ? colors.surface : colors.onSurface,
-                      );
-                    },
-                  ),
-                ),
-                Divider(height: 1),
-                Padding(
-                  padding: EdgeInsets.symmetric(
-                    horizontal: isExpanded ? 18 : 10,
-                    vertical: 8,
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      InkWell(
-                        onTap: toggleOrgExpansion,
-                        borderRadius: BorderRadius.circular(5),
-                        child: Row(
-                          children: [
-                            Icon(
-                              Icons.swap_horiz,
-                              color: colors.onSurfaceVariant,
-                              size: 22,
-                            ),
-                            if (isExpanded) ...[
-                              const SizedBox(width: 18, height: 36),
-                              Expanded(
-                                child: Text(
-                                  "Switch Organization",
-                                  style: TextStyle(
-                                    color: colors.onSurface,
-                                    fontWeight: FontWeight.w500,
-                                    fontSize: 16,
-                                  ),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ),
-                              Icon(
-                                isOrgExpanded ? Icons.expand_less : Icons.expand_more,
-                                color: colors.onSurfaceVariant,
-                                size: 20,
-                              ),
-                            ],
-                          ],
-                        ),
+                  const SizedBox(height: 10),
+                  if (isExpanded) ...[
+                    CircleAvatar(
+                      radius: 28,
+                      backgroundColor: colors.surfaceContainerLow,
+                      child: Icon(
+                        Icons.person,
+                        color: colors.onSurface,
+                        size: 24,
                       ),
-                      if (isOrgExpanded && isExpanded) ...[
-                        const SizedBox(height: 18),
-                        _buildOrgOption("Organization 1", 0),
-                        _buildOrgOption("Organization 2", 1),
-                        _buildOrgOption("Organization 3", 2),
-                        _buildOrgOption("Organization 4", 3),
-                      ],
-                    ],
+                    ),
+                    const SizedBox(height: 24),
+                  ],
+                  Expanded(
+                    child: ListView.builder(
+                      itemCount: items.length,
+                      itemBuilder: (context, idx) {
+                        final item = items[idx];
+                        final isActive = idx == activeIndex;
+
+                        return _SidebarTile(
+                          icon: item.icon,
+                          label: item.label,
+                          route: item.route,
+                          isActive: isActive,
+                          collapsed: !isExpanded,
+                          onTap: () {
+                            context.go(item.route);
+                          },
+                          backgroundColor: isActive ? colors.onSurface : Colors.transparent,
+                          iconColor: isActive ? colors.surface : colors.onSurfaceVariant,
+                          textColor: isActive ? colors.surface : colors.onSurface,
+                        );
+                      },
+                    ),
                   ),
-                ),
-              ],
+                  Divider(height: 1),
+                  Padding(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: isExpanded ? 18 : 10,
+                      vertical: 8,
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        InkWell(
+                          onTap: toggleOrgExpansion,
+                          borderRadius: BorderRadius.circular(5),
+                          child: Row(
+                            children: [
+                              Icon(
+                                Icons.swap_horiz,
+                                color: colors.onSurfaceVariant,
+                                size: 22,
+                              ),
+                              if (isExpanded) ...[
+                                const SizedBox(width: 18, height: 36),
+                                Expanded(
+                                  child: Text(
+                                    "Switch Organization",
+                                    style: TextStyle(
+                                      color: colors.onSurface,
+                                      fontWeight: FontWeight.w500,
+                                      fontSize: 16,
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                                Icon(
+                                  isOrgExpanded ? Icons.expand_less : Icons.expand_more,
+                                  color: colors.onSurfaceVariant,
+                                  size: 20,
+                                ),
+                              ],
+                            ],
+                          ),
+                        ),
+                        if (isOrgExpanded && isExpanded) ...[
+                          const SizedBox(height: 18),
+                          _buildOrgOption("Organization 1", 0),
+                          _buildOrgOption("Organization 2", 1),
+                          _buildOrgOption("Organization 3", 2),
+                          _buildOrgOption("Organization 4", 3),
+                        ],
+                      ],
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         );

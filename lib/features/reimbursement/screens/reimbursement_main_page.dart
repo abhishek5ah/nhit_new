@@ -27,8 +27,6 @@ class _ReimbursementMainPageState extends State<ReimbursementMainPage> {
   void updateSearch(String query) {
     setState(() {
       searchQuery = query.toLowerCase();
-      // If you have a list of reimbursements, filter it here using searchQuery
-      // e.g. filtered = allReimb.where(...).toList();
     });
   }
 
@@ -36,7 +34,7 @@ class _ReimbursementMainPageState extends State<ReimbursementMainPage> {
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
 
-    // central tabs list (single source of truth)
+    // central tabs list
     final List<String> tabs = const [
       'Reimbursements',
       'Add Reimbursement',

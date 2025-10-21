@@ -23,7 +23,9 @@ class CustomTable extends StatelessWidget {
           constraints: const BoxConstraints(maxWidth: 180),
           child: Text(
             (col.label is Text) ? (col.label as Text).data ?? '' : '',
-            style: (col.label is Text) ? (col.label as Text).style : null,
+            style: (col.label is Text)
+                ? (col.label as Text).style
+                : null,
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
           ),
@@ -37,7 +39,8 @@ class CustomTable extends StatelessWidget {
 
     return LayoutBuilder(
       builder: (context, constraints) {
-        final bool needsHorizontalScroll = constraints.maxWidth < minTableWidth;
+        final bool needsHorizontalScroll =
+            constraints.maxWidth < minTableWidth;
 
         Widget dataTableWidget = SizedBox(
           width: needsHorizontalScroll ? minTableWidth : constraints.maxWidth,
@@ -66,7 +69,7 @@ class CustomTable extends StatelessWidget {
           decoration: BoxDecoration(
             border: Border.all(
               color: Theme.of(context).colorScheme.outline,
-              width: 0.75,
+              width: 0.7,
             ),
             borderRadius: BorderRadius.circular(16),
           ),
@@ -74,12 +77,15 @@ class CustomTable extends StatelessWidget {
             borderRadius: BorderRadius.circular(16),
             child: Container(
               color: Theme.of(context).colorScheme.surface,
-              child: needsHorizontalScroll
-                  ? SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                child: dataTableWidget,
-              )
-                  : dataTableWidget,
+              child: Padding(
+                padding: const EdgeInsets.only(left: 1),
+                child: needsHorizontalScroll
+                    ? SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: dataTableWidget,
+                )
+                    : dataTableWidget,
+              ),
             ),
           ),
         );

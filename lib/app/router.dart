@@ -12,7 +12,7 @@ import 'package:ppv_components/features/user/screens/user_main_page.dart';
 import 'package:ppv_components/features/vendor/screen/vendor_main_page.dart';
 
 final GoRouter router = GoRouter(
-  initialLocation: '/expense',
+  initialLocation: '/roles',
   routes: [
     ShellRoute(
       builder: (context, state, child) => LayoutPage(child: child),

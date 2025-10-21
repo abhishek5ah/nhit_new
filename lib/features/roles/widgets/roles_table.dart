@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:ppv_components/common_widgets/badge.dart';
 import 'package:ppv_components/common_widgets/button/primary_button.dart';
 import 'package:ppv_components/common_widgets/custom_table.dart';
 import 'package:ppv_components/features/roles/model/roles_model.dart';
@@ -7,7 +8,7 @@ import 'package:ppv_components/features/roles/widgets/roles_grid.dart';
 class RoleTableView extends StatefulWidget {
   final List<Role> roleData;
   final void Function(Role) onDelete;
-  final void Function(Role) onEdit; // Used for both edit and add
+  final void Function(Role) onEdit;
 
   const RoleTableView({
     super.key,
@@ -118,7 +119,6 @@ class _RoleTableViewState extends State<RoleTableView> {
     }
   }
 
-  // Add role dialog
   Future<void> onAddRole() async {
     final formKey = GlobalKey<FormState>();
     final roleNameController = TextEditingController();
@@ -319,7 +319,18 @@ class _RoleTableViewState extends State<RoleTableView> {
                         ),
                       ),
                       const SizedBox(height: 8),
-                      _buildPermissionChips(role.permissions, ctx),
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: role.permissions
+                            .map((perm) => BadgeChip(
+                          label: perm,
+                          type: ChipType.status,
+                          statusKey: perm,
+                          statusColorFunc: (_) => colorScheme.primary,
+                        ))
+                            .toList(),
+                      ),
                     ],
                   ),
                 ),
@@ -340,39 +351,6 @@ class _RoleTableViewState extends State<RoleTableView> {
           ),
         );
       },
-    );
-  }
-
-  Widget _buildPermissionChips(List<String> permissions, BuildContext context) {
-    final theme = Theme.of(context);
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: theme.colorScheme.outline, width: 1),
-        color: theme.colorScheme.surfaceContainer,
-      ),
-      child: Wrap(
-        spacing: 8,
-        runSpacing: 8,
-        children: permissions.map((perm) {
-          return Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-            decoration: BoxDecoration(
-              color: theme.colorScheme.primaryContainer,
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Text(
-              perm,
-              style: TextStyle(
-                fontSize: 13,
-                color: theme.colorScheme.onPrimaryContainer,
-              ),
-            ),
-          );
-        }).toList(),
-      ),
     );
   }
 
@@ -422,41 +400,24 @@ class _RoleTableViewState extends State<RoleTableView> {
     ];
 
     final rows = paginatedRoles.map((role) {
-      final List<Widget> permissionBadges = [];
       final limitedPermissions = role.permissions.take(2).toList();
+      final additionalCount = role.permissions.length - limitedPermissions.length;
 
-      for (var permission in limitedPermissions) {
-        permissionBadges.add(
-          Container(
-            padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
-            decoration: BoxDecoration(
-              color: colorScheme.primary,
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Text(
-              permission,
-              style: TextStyle(color: colorScheme.onPrimary, fontSize: 12),
-            ),
-          ),
-        );
-      }
+      final List<Widget> permissionBadges = limitedPermissions
+          .map((perm) => BadgeChip(
+        label: perm,
+        type: ChipType.status,
+        statusKey: perm,
+        statusColorFunc: (_) => colorScheme.primary,
+      ))
+          .toList();
 
-      if (role.permissions.length > 2) {
+      if (additionalCount > 0) {
         permissionBadges.add(
-          Container(
-            padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
-            decoration: BoxDecoration(
-              color: colorScheme.primaryContainer,
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Text(
-              '+${role.permissions.length - 2}',
-              style: TextStyle(
-                color: colorScheme.primary,
-                fontWeight: FontWeight.bold,
-                fontSize: 12,
-              ),
-            ),
+          BadgeChip(
+            label: '+$additionalCount',
+            type: ChipType.status,
+            statusColorFunc: (_) => colorScheme.primary,
           ),
         );
       }

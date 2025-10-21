@@ -10,7 +10,7 @@ final paymentNoteDetailMockData = PaymentNoteDetail(
   greenNoteApprover: 'Rakshit Jain',
   subject:
   'Payment against Milestone - 1 (Mobilization Advance) for Design, Supply, Installation, Configuration, Integration, Testing & Commissioning of ATMS at Shivpuri Jhansi Project',
-  vendorCode: 'E0979',
+  vendorCode: 'E0789',
   vendorName: 'M/s Qualix Information Systems Llp',
   invoiceNo: 'QIS/PI/25-26/033',
   invoiceAmount: '13932915.00',
