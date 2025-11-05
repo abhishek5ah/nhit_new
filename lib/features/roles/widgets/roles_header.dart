@@ -12,12 +12,12 @@ class RoleHeader extends StatelessWidget {
 
     final List<_HeaderData> headerData = [
       _HeaderData(
-        title: 'Roles',
-        subtitle: 'Manage the roles and permissions here',
+        title: 'Roles & Permissions Management',
+        subtitle: 'Manage system roles and their associated permissions',
       ),
       _HeaderData(
-        title: 'Add Role',
-        subtitle: 'Add a new role',
+        title: 'Create Role',
+        subtitle: 'Fill in the details to create a new role with permissions',
       ),
     ];
 

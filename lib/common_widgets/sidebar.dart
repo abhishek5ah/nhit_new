@@ -10,24 +10,50 @@ class Sidebar extends StatefulWidget {
 
 class _SidebarState extends State<Sidebar> with SingleTickerProviderStateMixin {
   bool isExpanded = true;
-  bool isOrgExpanded = false; // Controls organization submenu expand/collapse
-  int selectedOrgIndex = -1; // Track selected organization index (-1 means none selected)
-  static const double expandedWidth = 200;
+  bool isOrgExpanded = false;
+  int selectedOrgIndex = -1;
+  Set<int> expandedMenuIndices = {};
+  String? selectedSubRoute;
+
+  static const double expandedWidth = 280;
   static const double collapsedWidth = 64;
   late AnimationController _controller;
   late Animation<double> widthAnim;
 
-  final List<_SidebarItem> items = [
-    _SidebarItem(Icons.dashboard, "Role", "/roles"),
-    _SidebarItem(Icons.assignment, "User", "/user"),
-    _SidebarItem(Icons.attach_money, "Vendors", "/vendor"),
-    _SidebarItem(Icons.group, "Activity", "/activity"),
-    _SidebarItem(Icons.account_balance_wallet_rounded, "Expense", "/expense"),
-    _SidebarItem(Icons.account_balance, "Payment Notes", "/payment-notes"),
-    _SidebarItem(Icons.travel_explore, "Travel", "/reimbursement"),
-    _SidebarItem(Icons.account_balance, "Bank", "/bank"),
-    _SidebarItem(Icons.inventory, "Designation", "/designation"),
-    _SidebarItem(Icons.business, "Department", "/department"),
+  final List<_SidebarCategory> categories = [
+    _SidebarCategory(
+      heading: "EXPENSE MANAGEMENT",
+      items: [
+        _SidebarItem(Icons.receipt_long, "Expense Approval Notes", "/expense-notes", subItems: [
+          _SubItem("All Notes", "/expense-notes/all"),
+          _SubItem("Create Note", "/expense-notes/create"),
+        ]),
+        _SidebarItem(Icons.money, "Payment Notes", "/payment-notes", subItems: []),
+      ],
+    ),
+    _SidebarCategory(
+      heading: "APPROVAL RULES",
+      items: [
+        _SidebarItem(Icons.rule, "Approval Rules Management", "/approval-rules", subItems: [
+          _SubItem("All Rules", "/approval-rules/all"),
+          _SubItem("Create Rule", "/approval-rules/create"),
+        ]),
+        _SidebarItem(Icons.account_balance, "Escrow Banking System", "/escrow", subItems: [
+          _SubItem(label, route)
+        ]),
+        _SidebarItem(Icons.receipt, "Travel & Reimbursement", "/reimbursement", subItems: []),
+      ],
+    ),
+    _SidebarCategory(
+      heading: "MANAGEMENT",
+      items: [
+        _SidebarItem(Icons.people, "User Management", "/users", subItems: []),
+        _SidebarItem(Icons.shield, "Role Management", "/roles", subItems: []),
+        _SidebarItem(Icons.account_tree, "Departments", "/departments", subItems: []),
+        _SidebarItem(Icons.badge, "Designations", "/designations", subItems: []),
+        _SidebarItem(Icons.store, "Vendor Management", "/vendors", subItems: []),
+      ],
+    ),
   ];
 
   @override
@@ -37,10 +63,9 @@ class _SidebarState extends State<Sidebar> with SingleTickerProviderStateMixin {
       duration: const Duration(milliseconds: 300),
       vsync: this,
     );
-    widthAnim = Tween<double>(
-      begin: expandedWidth,
-      end: collapsedWidth,
-    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
+    widthAnim = Tween<double>(begin: expandedWidth, end: collapsedWidth).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
+    );
   }
 
   void toggleSidebar() {
@@ -50,7 +75,8 @@ class _SidebarState extends State<Sidebar> with SingleTickerProviderStateMixin {
         _controller.reverse();
       } else {
         _controller.forward();
-        isOrgExpanded = false; // Close org submenu when collapsed
+        isOrgExpanded = false;
+        expandedMenuIndices.clear();
       }
     });
   }
@@ -61,16 +87,42 @@ class _SidebarState extends State<Sidebar> with SingleTickerProviderStateMixin {
     });
   }
 
+  void toggleMenuExpansion(int index) {
+    if (!isExpanded) return;
+    setState(() {
+      if (expandedMenuIndices.contains(index)) {
+        expandedMenuIndices.remove(index);
+      } else {
+        expandedMenuIndices.add(index);
+      }
+    });
+  }
+
+  void _navigate(String route) {
+    setState(() {
+      selectedSubRoute = route;
+    });
+    GoRouter.of(context).go(route); // Navigation call
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
   Widget _buildOrgOption(String label, int index) {
     final bool isSelected = index == selectedOrgIndex;
+    if (!isExpanded) return const SizedBox();
+
     return Padding(
       padding: const EdgeInsets.only(left: 40, top: 6, bottom: 6),
       child: InkWell(
         onTap: () {
           setState(() {
-            selectedOrgIndex = index; // Update selected organization
+            selectedOrgIndex = index;
           });
-          // switch org in backend, navigation etc.
+          // Add org switch navigation here if needed
         },
         borderRadius: BorderRadius.circular(5),
         child: Container(
@@ -78,9 +130,7 @@ class _SidebarState extends State<Sidebar> with SingleTickerProviderStateMixin {
           child: Text(
             label,
             style: TextStyle(
-              color: isSelected
-                  ? Theme.of(context).colorScheme.error
-                  : Theme.of(context).colorScheme.onSurfaceVariant,
+              color: isSelected ? Theme.of(context).colorScheme.error : Theme.of(context).colorScheme.onSurfaceVariant,
               fontSize: 14,
               fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
             ),
@@ -91,33 +141,15 @@ class _SidebarState extends State<Sidebar> with SingleTickerProviderStateMixin {
   }
 
   @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
-
-    final currentLocation = GoRouterState.of(context).uri.toString();
-
-    final selectedIndex = items.indexWhere(
-          (item) => currentLocation.startsWith(item.route),
-    );
-    final activeIndex = selectedIndex >= 0 ? selectedIndex : 0;
 
     return AnimatedBuilder(
       animation: widthAnim,
       builder: (context, child) {
         return Container(
           decoration: BoxDecoration(
-            border: Border(
-              right: BorderSide(
-                width: 0.5,
-                color: colors.outline,
-              ),
-            ),
+            border: Border(right: BorderSide(width: 0.5, color: colors.outline)),
           ),
           child: Material(
             elevation: 4,
@@ -125,6 +157,7 @@ class _SidebarState extends State<Sidebar> with SingleTickerProviderStateMixin {
             child: SizedBox(
               width: widthAnim.value,
               child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const SizedBox(height: 16),
                   Padding(
@@ -158,48 +191,38 @@ class _SidebarState extends State<Sidebar> with SingleTickerProviderStateMixin {
                       ],
                     ),
                   ),
-                  const SizedBox(height: 10),
-                  if (isExpanded) ...[
-                    CircleAvatar(
-                      radius: 28,
-                      backgroundColor: colors.surfaceContainerLow,
-                      child: Icon(
-                        Icons.person,
-                        color: colors.onSurface,
-                        size: 24,
-                      ),
-                    ),
-                    const SizedBox(height: 24),
-                  ],
                   Expanded(
-                    child: ListView.builder(
-                      itemCount: items.length,
-                      itemBuilder: (context, idx) {
-                        final item = items[idx];
-                        final isActive = idx == activeIndex;
-
-                        return _SidebarTile(
-                          icon: item.icon,
-                          label: item.label,
-                          route: item.route,
-                          isActive: isActive,
-                          collapsed: !isExpanded,
-                          onTap: () {
-                            context.go(item.route);
-                          },
-                          backgroundColor: isActive ? colors.onSurface : Colors.transparent,
-                          iconColor: isActive ? colors.surface : colors.onSurfaceVariant,
-                          textColor: isActive ? colors.surface : colors.onSurface,
-                        );
-                      },
+                    child: ListView(
+                      padding: EdgeInsets.zero,
+                      shrinkWrap: true,
+                      children: [
+                        for (int i = 0; i < categories.length; i++) ...[
+                          if (isExpanded)
+                            Padding(
+                              padding: const EdgeInsets.fromLTRB(18, 18, 18, 6),
+                              child: Text(
+                                categories[i].heading,
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w700,
+                                  letterSpacing: 1.2,
+                                  color: colors.onSurfaceVariant,
+                                ),
+                              ),
+                            ),
+                          for (int j = 0; j < categories[i].items.length; j++)
+                            _buildSidebarItem(
+                              categories[i].items[j],
+                              i * 100 + j,
+                              colors,
+                            ),
+                        ],
+                      ],
                     ),
                   ),
                   Divider(height: 1),
                   Padding(
-                    padding: EdgeInsets.symmetric(
-                      horizontal: isExpanded ? 18 : 10,
-                      vertical: 8,
-                    ),
+                    padding: EdgeInsets.symmetric(horizontal: isExpanded ? 18 : 10, vertical: 8),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -246,6 +269,7 @@ class _SidebarState extends State<Sidebar> with SingleTickerProviderStateMixin {
                       ],
                     ),
                   ),
+                  const SizedBox(height: 12),
                 ],
               ),
             ),
@@ -254,77 +278,90 @@ class _SidebarState extends State<Sidebar> with SingleTickerProviderStateMixin {
       },
     );
   }
+
+  Widget _buildSidebarItem(_SidebarItem item, int index, ColorScheme colors) {
+    final bool isExpandedItem = expandedMenuIndices.contains(index);
+    final bool isActive = selectedSubRoute == item.route || item.subItems.any((si) => si.route == selectedSubRoute);
+
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: isActive ? colors.surfaceContainerHighest.withAlpha(80) : Colors.transparent,
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: ExpansionTile(
+        onExpansionChanged: (expanded) => toggleMenuExpansion(index),
+        trailing: isExpanded && item.subItems.isNotEmpty
+            ? Icon(
+          isExpandedItem ? Icons.expand_less : Icons.expand_more,
+          color: colors.onSurfaceVariant,
+          size: 20,
+        )
+            : null,
+        initiallyExpanded: isExpandedItem,
+        leading: Icon(item.icon, color: colors.onSurfaceVariant),
+        textColor: isExpanded ? colors.onSurface : Colors.transparent,
+        iconColor: isExpanded ? colors.onSurfaceVariant : Colors.transparent,
+        title: isExpanded
+            ? InkWell(
+          onTap: () {
+            _navigate(item.route);
+          },
+          child: Text(
+            item.label,
+            style: TextStyle(
+              fontWeight: FontWeight.w600,
+              color: isActive ? colors.primary : colors.onSurface,
+              fontSize: 16,
+            ),
+          ),
+        )
+            : const SizedBox.shrink(),
+        childrenPadding: const EdgeInsets.only(left: 56, bottom: 8),
+        children: isExpanded && item.subItems.isNotEmpty
+            ? item.subItems
+            .map((_SubItem subItem) => ListTile(
+          contentPadding: EdgeInsets.zero,
+          horizontalTitleGap: 0,
+          minLeadingWidth: 20,
+          leading: Icon(Icons.circle, size: 8, color: subItem.route == selectedSubRoute ? colors.primary : colors.onSurfaceVariant),
+          title: InkWell(
+            onTap: () {
+              _navigate(subItem.route);
+            },
+            child: Text(
+              subItem.label,
+              style: TextStyle(
+                color: subItem.route == selectedSubRoute ? colors.primary : colors.onSurface,
+                fontSize: 14,
+                fontWeight: subItem.route == selectedSubRoute ? FontWeight.bold : FontWeight.normal,
+              ),
+            ),
+          ),
+        ))
+            .toList()
+            : [],
+      ),
+    );
+  }
+}
+
+class _SidebarCategory {
+  final String heading;
+  final List<_SidebarItem> items;
+  _SidebarCategory({required this.heading, required this.items});
 }
 
 class _SidebarItem {
   final IconData icon;
   final String label;
   final String route;
-
-  _SidebarItem(this.icon, this.label, this.route);
+  final List<_SubItem> subItems;
+  _SidebarItem(this.icon, this.label, this.route, {this.subItems = const []});
 }
 
-class _SidebarTile extends StatelessWidget {
-  final IconData icon;
+class _SubItem {
   final String label;
-  final bool isActive;
-  final bool collapsed;
-  final VoidCallback onTap;
   final String route;
-  final Color? backgroundColor;
-  final Color? textColor;
-  final Color? iconColor;
-
-  const _SidebarTile({
-    required this.icon,
-    required this.label,
-    required this.isActive,
-    required this.collapsed,
-    required this.onTap,
-    required this.route,
-    this.backgroundColor,
-    this.textColor,
-    this.iconColor,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: backgroundColor,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(5),
-        child: Container(
-          padding: EdgeInsets.symmetric(
-            horizontal: collapsed ? 10 : 18,
-            vertical: 12,
-          ),
-          child: Row(
-            children: [
-              Icon(
-                icon,
-                color: iconColor,
-                size: 22,
-              ),
-              if (!collapsed) ...[
-                const SizedBox(width: 18),
-                Expanded(
-                  child: Text(
-                    label,
-                    style: TextStyle(
-                      color: textColor,
-                      fontWeight: isActive ? FontWeight.bold : FontWeight.w500,
-                      fontSize: 16,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-              ],
-            ],
-          ),
-        ),
-      ),
-    );
-  }
+  _SubItem(this.label, this.route);
 }

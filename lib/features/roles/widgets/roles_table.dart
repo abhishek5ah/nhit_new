@@ -119,7 +119,7 @@ class _RoleTableViewState extends State<RoleTableView> {
     }
   }
 
-  Future<void> onAddRole() async {
+  Future<void> onCreateRole() async {
     final formKey = GlobalKey<FormState>();
     final roleNameController = TextEditingController();
     final permissionsController = TextEditingController();
@@ -131,8 +131,8 @@ class _RoleTableViewState extends State<RoleTableView> {
         formKey: formKey,
         roleNameController: roleNameController,
         permissionsController: permissionsController,
-        dialogTitle: "Add Role",
-        saveLabel: "Add",
+        dialogTitle: "Create Role",
+        saveLabel: "Create",
       ),
       barrierDismissible: false,
     );
@@ -504,8 +504,8 @@ class _RoleTableViewState extends State<RoleTableView> {
                         Row(
                           children: [
                             PrimaryButton(
-                              label: 'Add Role',
-                              onPressed: onAddRole,
+                              label: 'Create Role',
+                              onPressed: onCreateRole,
                             ),
                           ],
                         ),

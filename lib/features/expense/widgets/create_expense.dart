@@ -7,39 +7,65 @@ final List<FormFieldConfig> addExpenseFields = [
     label: 'Approval For',
     type: FormFieldType.dropdown,
     name: 'approvalFor',
-    options: ['Invoice', 'Purchase Order', 'Other'],
+    options: ['Invoice', 'Advance', 'Adhoc'],
     validator: (value) =>
-    value == null || value.isEmpty ? 'Approval type required' : null,
-  ),
-  FormFieldConfig(
-    label: 'User Department',
-    type: FormFieldType.dropdown,
-    name: 'userDepartment',
-    options: ['Operations', 'Finance', 'HR', 'Engineering'],
-    validator: (value) =>
-    value == null || value.isEmpty ? 'Department required' : null,
-  ),
-  FormFieldConfig(
-    label: 'Work/Purchase Order Date',
-    type: FormFieldType.date,
-    name: 'workPoDate',
-    validator: (value) =>
-    value == null || value.isEmpty ? 'Date required' : null,
+        value == null || value.isEmpty ? 'Approval type required' : null,
   ),
   FormFieldConfig(
     label: 'Project Name',
     type: FormFieldType.dropdown,
     name: 'projectName',
-    options: ['Corporate Office Delhi', 'Kothakota Bypass', 'Other'],
+    options: [
+      'Abu Road - Swaroopganj',
+      'Palanpur- - Abu Road',
+      'Kothakota Bypass - Kurnool',
+      'Belguam - Karnataka Border',
+      'Chittorgarh - Kota',
+      'Agra By Pass',
+      'Shivpuri Jhansi',
+      'Borekhedi Wadner',
+      'Corporate Office Delhi',
+      'Corporate Office Mumbai',
+    ],
     validator: (value) =>
-    value == null || value.isEmpty ? 'Project name required' : null,
+        value == null || value.isEmpty ? 'Project name required' : null,
+  ),
+  FormFieldConfig(
+    label: 'User Department',
+    type: FormFieldType.dropdown,
+    name: 'userDepartment',
+    options: [
+      'Operations',
+      'HR & Admin',
+      'ITS, EHS',
+      'Finance & Accounts',
+      'Secretarial',
+      'Procurement',
+      'I & A',
+      'HR & Admin (Corporate)',
+      'IT',
+      'Concurrent/Internal Audit / Corp Communication',
+      'HR & Admin (Admin HO)',
+      'Traffic & Revenue',
+      'Legal and Profession',
+      'Civil & Maintenance',
+    ],
+    validator: (value) =>
+        value == null || value.isEmpty ? 'Department required' : null,
   ),
   FormFieldConfig(
     label: 'Work/Purchase Order No.',
     type: FormFieldType.text,
     name: 'workPoNo',
     validator: (value) =>
-    value == null || value.isEmpty ? 'PO number required' : null,
+        value == null || value.isEmpty ? 'PO number required' : null,
+  ),
+  FormFieldConfig(
+    label: 'Work/Purchase Order Date',
+    type: FormFieldType.date,
+    name: 'workPoDate',
+    validator: (value) =>
+        value == null || value.isEmpty ? 'Date required' : null,
   ),
   FormFieldConfig(
     label: 'Name of Supplier',
@@ -48,15 +74,21 @@ final List<FormFieldConfig> addExpenseFields = [
     options: [
       'National Highways Invit Project Managers',
       'Surya Cartridge Solution',
-      'Other'
+      'Other',
     ],
     validator: (value) =>
-    value == null || value.isEmpty ? 'Supplier required' : null,
+        value == null || value.isEmpty ? 'Supplier required' : null,
   ),
   FormFieldConfig(
     label: 'Amount of Work/Purchase Order Base Value',
     type: FormFieldType.text,
     name: 'orderBaseValue',
+    validator: (value) => null,
+  ),
+  FormFieldConfig(
+    label: 'Invoice Number',
+    type: FormFieldType.text,
+    name: 'invoiceNumber',
     validator: (value) => null,
   ),
   FormFieldConfig(
@@ -66,9 +98,21 @@ final List<FormFieldConfig> addExpenseFields = [
     validator: (value) => null,
   ),
   FormFieldConfig(
+    label: 'Invoice Date',
+    type: FormFieldType.date,
+    name: 'invoiceDate',
+    validator: (value) => null,
+  ),
+  FormFieldConfig(
     label: 'GST on Above',
     type: FormFieldType.text,
     name: 'orderGST',
+    validator: (value) => null,
+  ),
+  FormFieldConfig(
+    label: 'Taxable Value',
+    type: FormFieldType.text,
+    name: 'taxableValue',
     validator: (value) => null,
   ),
   FormFieldConfig(
@@ -77,6 +121,25 @@ final List<FormFieldConfig> addExpenseFields = [
     name: 'totalAmount',
     validator: (value) => null,
     readOnly: true,
+  ),
+
+  FormFieldConfig(
+    label: 'Add: GST on above',
+    type: FormFieldType.text,
+    name: 'addedGST',
+    validator: (value) => null,
+  ),
+  FormFieldConfig(
+    label: 'Invoice Other Charges',
+    type: FormFieldType.text,
+    name: 'invoiceOtherCharges',
+    validator: (value) => null,
+  ),
+  FormFieldConfig(
+    label: 'Invoice Value',
+    type: FormFieldType.text,
+    name: 'invoiceValue',
+    validator: (value) => null,
   ),
   FormFieldConfig(
     label: 'MSME Classification',
@@ -107,42 +170,9 @@ final List<FormFieldConfig> addExpenseFields = [
     name: 'goodsBrief',
     validator: (value) => null,
   ),
-  FormFieldConfig(
-    label: 'Invoice Date',
-    type: FormFieldType.date,
-    name: 'invoiceDate',
-    validator: (value) => null,
-  ),
-  FormFieldConfig(
-    label: 'Invoice Number',
-    type: FormFieldType.text,
-    name: 'invoiceNumber',
-    validator: (value) => null,
-  ),
-  FormFieldConfig(
-    label: 'Taxable Value',
-    type: FormFieldType.text,
-    name: 'taxableValue',
-    validator: (value) => null,
-  ),
-  FormFieldConfig(
-    label: 'Add: GST on above',
-    type: FormFieldType.text,
-    name: 'addedGST',
-    validator: (value) => null,
-  ),
-  FormFieldConfig(
-    label: 'Invoice Other Charges',
-    type: FormFieldType.text,
-    name: 'invoiceOtherCharges',
-    validator: (value) => null,
-  ),
-  FormFieldConfig(
-    label: 'Invoice Value',
-    type: FormFieldType.text,
-    name: 'invoiceValue',
-    validator: (value) => null,
-  ),
+
+
+
   FormFieldConfig(
     label: 'Appointed date/Date for start of work',
     type: FormFieldType.date,
@@ -241,7 +271,6 @@ final List<FormFieldConfig> addExpenseFields = [
   ),
 ];
 
-
 class CreateExpense extends StatelessWidget {
   const CreateExpense({super.key});
 
@@ -249,7 +278,7 @@ class CreateExpense extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       body: Padding(
-        padding: const EdgeInsets.only(left: 12,right: 12),
+        padding: const EdgeInsets.only(left: 12, right: 12),
         // inner padding inside border radius
         child: ReusableForm(
           title: 'Create Green Note',
@@ -260,10 +289,7 @@ class CreateExpense extends StatelessWidget {
                 content: const Text('Expense saved successfully'),
                 duration: const Duration(seconds: 3),
                 behavior: SnackBarBehavior.floating,
-                backgroundColor: Theme
-                    .of(context)
-                    .colorScheme
-                    .primary,
+                backgroundColor: Theme.of(context).colorScheme.primary,
               ),
             );
           },
