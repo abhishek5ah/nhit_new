@@ -39,9 +39,18 @@ class _SidebarState extends State<Sidebar> with SingleTickerProviderStateMixin {
           _SubItem("Create Rule", "/approval-rules/create"),
         ]),
         _SidebarItem(Icons.account_balance, "Escrow Banking System", "/escrow", subItems: [
-          _SubItem(label, route)
+          _SubItem("Escrow Accounts", "/escrow/accounts"),
+          _SubItem("Create Account", "/escrow/create"),
+          _SubItem("Fund Transfers", "/escrow/fund-transfers"),
+          _SubItem("New Transfer", "/escrow/new-transfer"),
+          _SubItem("Bank Letter", "/escrow/bank-letter"),
+          _SubItem("Create Letter", "/escrow/create-letter"),
         ]),
-        _SidebarItem(Icons.receipt, "Travel & Reimbursement", "/reimbursement", subItems: []),
+        _SidebarItem(Icons.receipt, "Travel & Reimbursement", "/reimbursement", subItems: [
+          _SubItem("Create Request", "/reimbursement/create"),
+          _SubItem("All Reimbursements", "/reimbursement/all"),
+
+        ]),
       ],
     ),
     _SidebarCategory(
