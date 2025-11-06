@@ -1,23 +1,42 @@
-// lib/screens/create_role_screen.dart
+// lib/screens/edit_role_screen.dart
 import 'package:flutter/material.dart';
 
-class CreateRoleScreen extends StatefulWidget {
-  const CreateRoleScreen({super.key});
+class EditRoleScreen extends StatefulWidget {
+  final String roleId;
+  final String roleName;
+  final List<String> selectedPermissions;
+
+  const EditRoleScreen({
+    super.key,
+    required this.roleId,
+    required this.roleName,
+    required this.selectedPermissions,
+  });
 
   @override
-  State<CreateRoleScreen> createState() => _CreateRoleScreenState();
+  State<EditRoleScreen> createState() => _EditRoleScreenState();
 }
 
-class _CreateRoleScreenState extends State<CreateRoleScreen> {
+class _EditRoleScreenState extends State<EditRoleScreen> {
   final TextEditingController _roleNameController = TextEditingController();
   final Map<String, bool> _permissions = {};
 
   @override
   void initState() {
     super.initState();
+    // Initialize role name
+    _roleNameController.text = widget.roleName;
+
     // Initialize all permissions with false
     for (var permission in _allPermissions) {
       _permissions[permission] = false;
+    }
+
+    // Set selected permissions to true
+    for (var permission in widget.selectedPermissions) {
+      if (_permissions.containsKey(permission)) {
+        _permissions[permission] = true;
+      }
     }
   }
 
@@ -282,7 +301,7 @@ class _CreateRoleScreenState extends State<CreateRoleScreen> {
     });
   }
 
-  void _createRole() {
+  void _updateRole() {
     final colorScheme = Theme.of(context).colorScheme;
 
     if (_roleNameController.text.isEmpty) {
@@ -321,13 +340,14 @@ class _CreateRoleScreenState extends State<CreateRoleScreen> {
     }
 
     // TODO: Implement your API call here
-    print('Role Name: ${_roleNameController.text}');
-    print('Selected Permissions: $selectedPermissions');
+    print('Role ID: ${widget.roleId}');
+    print('Updated Role Name: ${_roleNameController.text}');
+    print('Updated Permissions: $selectedPermissions');
 
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(
-          'Role created with ${selectedPermissions.length} permissions',
+          'Role updated with ${selectedPermissions.length} permissions',
           style: TextStyle(
             color: colorScheme.onPrimary,
           ),
@@ -369,12 +389,12 @@ class _CreateRoleScreenState extends State<CreateRoleScreen> {
                         width: 48,
                         height: 48,
                         decoration: BoxDecoration(
-                          color: colorScheme.primary,
+                          color: Colors.orange[600],
                           borderRadius: BorderRadius.circular(12),
                         ),
-                        child: Icon(
-                          Icons.add_circle_outline,
-                          color: colorScheme.onPrimary.withValues(alpha: 0.9),
+                        child: const Icon(
+                          Icons.edit_outlined,
+                          color: Colors.white,
                           size: 24,
                         ),
                       ),
@@ -383,7 +403,7 @@ class _CreateRoleScreenState extends State<CreateRoleScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'Create Role',
+                            'Edit Role',
                             style: textTheme.titleLarge?.copyWith(
                               fontWeight: FontWeight.bold,
                               color: colorScheme.onSurface,
@@ -391,7 +411,7 @@ class _CreateRoleScreenState extends State<CreateRoleScreen> {
                           ),
                           const SizedBox(height: 4),
                           Text(
-                            'Fill in the details to create a new role with permissions',
+                            'Update role details and permissions',
                             style: textTheme.bodyMedium?.copyWith(
                               color: colorScheme.onSurface.withValues(alpha: 0.6),
                             ),
@@ -400,11 +420,54 @@ class _CreateRoleScreenState extends State<CreateRoleScreen> {
                       ),
                     ],
                   ),
+                  Row(
+                    children: [
+                      OutlinedButton.icon(
+                        onPressed: () {
+                          // Show permissions guide
+                          showDialog(
+                            context: context,
+                            builder: (context) => AlertDialog(
+                              title: const Text('Permissions Guide'),
+                              content: const SingleChildScrollView(
+                                child: Text(
+                                  'Permissions define what actions a user with this role can perform in the system.',
+                                ),
+                              ),
+                              actions: [
+                                TextButton(
+                                  onPressed: () => Navigator.pop(context),
+                                  child: const Text('Close'),
+                                ),
+                              ],
+                            ),
+                          );
+                        },
+                        icon: const Icon(Icons.info_outline, size: 18),
+                        label: const Text('Permissions Guide'),
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: Colors.blue[600],
+                          side: BorderSide(color: Colors.blue[600]!),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      OutlinedButton.icon(
+                        onPressed: () => Navigator.pop(context),
+                        icon: const Icon(Icons.arrow_back, size: 18),
+                        label: const Text('Back to Roles'),
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: colorScheme.onSurface,
+                          side: BorderSide(
+                            color: colorScheme.outline.withValues(alpha: 0.5),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
                 ],
               ),
             ),
-
-            const SizedBox(height: 32),
+            const SizedBox(height: 24),
 
             // Role Information Section
             Container(
@@ -420,22 +483,10 @@ class _CreateRoleScreenState extends State<CreateRoleScreen> {
                 children: [
                   Row(
                     children: [
-                      Container(
-                        width: 24,
-                        height: 24,
-                        decoration: BoxDecoration(
-                          color: colorScheme.primary,
-                          shape: BoxShape.circle,
-                        ),
-                        child: Center(
-                          child: Text(
-                            '1',
-                            style: textTheme.labelSmall?.copyWith(
-                              color: colorScheme.onPrimary,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ),
+                      Icon(
+                        Icons.info_outline,
+                        size: 20,
+                        color: colorScheme.primary,
                       ),
                       const SizedBox(width: 8),
                       Text(
@@ -508,22 +559,10 @@ class _CreateRoleScreenState extends State<CreateRoleScreen> {
                     children: [
                       Row(
                         children: [
-                          Container(
-                            width: 24,
-                            height: 24,
-                            decoration: BoxDecoration(
-                              color: colorScheme.primary,
-                              shape: BoxShape.circle,
-                            ),
-                            child: Center(
-                              child: Text(
-                                '2',
-                                style: textTheme.labelSmall?.copyWith(
-                                  color: colorScheme.onPrimary,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ),
+                          Icon(
+                            Icons.security_outlined,
+                            size: 20,
+                            color: colorScheme.primary,
                           ),
                           const SizedBox(width: 8),
                           Text(
@@ -537,7 +576,6 @@ class _CreateRoleScreenState extends State<CreateRoleScreen> {
                       ),
                       TextButton(
                         onPressed: () {
-                          // Show dialog to select/deselect all
                           showDialog(
                             context: context,
                             builder: (dialogContext) => AlertDialog(
@@ -581,7 +619,7 @@ class _CreateRoleScreenState extends State<CreateRoleScreen> {
                           );
                         },
                         child: Text(
-                          'What are these permissions mean?',
+                          'What do these permissions mean?',
                           style: TextStyle(color: colorScheme.primary),
                         ),
                       ),
@@ -627,8 +665,10 @@ class _CreateRoleScreenState extends State<CreateRoleScreen> {
             Row(
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
-                OutlinedButton(
+                OutlinedButton.icon(
                   onPressed: () => Navigator.of(context).pop(),
+                  icon: const Icon(Icons.close, size: 18),
+                  label: const Text('Cancel'),
                   style: OutlinedButton.styleFrom(
                     padding: const EdgeInsets.symmetric(
                       horizontal: 24,
@@ -642,18 +682,14 @@ class _CreateRoleScreenState extends State<CreateRoleScreen> {
                       borderRadius: BorderRadius.circular(8),
                     ),
                   ),
-                  child: Text(
-                    'Cancel',
-                    style: textTheme.bodyMedium?.copyWith(
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
                 ),
                 const SizedBox(width: 12),
-                ElevatedButton(
-                  onPressed: _createRole,
+                ElevatedButton.icon(
+                  onPressed: _updateRole,
+                  icon: const Icon(Icons.check, size: 18),
+                  label: const Text('Update Role'),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.green[600],
+                    backgroundColor: Colors.orange[600],
                     foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(
                       horizontal: 24,
@@ -663,13 +699,6 @@ class _CreateRoleScreenState extends State<CreateRoleScreen> {
                       borderRadius: BorderRadius.circular(8),
                     ),
                     elevation: 0,
-                  ),
-                  child: Text(
-                    'Create Role',
-                    style: textTheme.bodyMedium?.copyWith(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w600,
-                    ),
                   ),
                 ),
               ],
