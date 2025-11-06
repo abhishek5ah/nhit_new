@@ -1,19 +1,19 @@
 import 'package:flutter/material.dart';
-import 'package:ppv_components/features/user/model/user_model.dart';
+import 'package:ppv_components/features/department/model/department_model.dart';
 
-class ViewUserDetailsPage extends StatefulWidget {
-  final User user;
+class ViewDepartmentPage extends StatefulWidget {
+  final Department department;
 
-  const ViewUserDetailsPage({
+  const ViewDepartmentPage({
     super.key,
-    required this.user,
+    required this.department,
   });
 
   @override
-  State<ViewUserDetailsPage> createState() => _ViewUserDetailsPageState();
+  State<ViewDepartmentPage> createState() => _ViewDepartmentPageState();
 }
 
-class _ViewUserDetailsPageState extends State<ViewUserDetailsPage> {
+class _ViewDepartmentPageState extends State<ViewDepartmentPage> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -50,7 +50,7 @@ class _ViewUserDetailsPageState extends State<ViewUserDetailsPage> {
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: const Icon(
-                          Icons.person_outline,
+                          Icons.visibility_outlined,
                           color: Colors.white,
                           size: 24,
                         ),
@@ -60,7 +60,7 @@ class _ViewUserDetailsPageState extends State<ViewUserDetailsPage> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'User Details',
+                            'View Department',
                             style: textTheme.titleLarge?.copyWith(
                               fontWeight: FontWeight.bold,
                               color: colorScheme.onSurface,
@@ -68,7 +68,7 @@ class _ViewUserDetailsPageState extends State<ViewUserDetailsPage> {
                           ),
                           const SizedBox(height: 4),
                           Text(
-                            'View user information and profile',
+                            'View department details and information',
                             style: textTheme.bodyMedium?.copyWith(
                               color: colorScheme.onSurface.withValues(alpha: 0.6),
                             ),
@@ -82,7 +82,7 @@ class _ViewUserDetailsPageState extends State<ViewUserDetailsPage> {
                       OutlinedButton.icon(
                         onPressed: () => Navigator.pop(context),
                         icon: const Icon(Icons.arrow_back, size: 18),
-                        label: const Text('Back to Users'),
+                        label: const Text('Back to Departments'),
                         style: OutlinedButton.styleFrom(
                           foregroundColor: colorScheme.onSurface,
                           side: BorderSide(
@@ -105,15 +105,15 @@ class _ViewUserDetailsPageState extends State<ViewUserDetailsPage> {
                 const SizedBox(width: 4),
                 Text('Dashboard', style: TextStyle(color: Colors.grey[600], fontSize: 14)),
                 Text(' / ', style: TextStyle(color: Colors.grey[600])),
-                Text('Users', style: TextStyle(color: Colors.grey[600], fontSize: 14)),
+                Text('Departments', style: TextStyle(color: Colors.grey[600], fontSize: 14)),
                 Text(' / ', style: TextStyle(color: Colors.grey[600])),
-                Text('View ${widget.user.name}', style: const TextStyle(fontSize: 14)),
+                Text('View ${widget.department.name}', style: const TextStyle(fontSize: 14)),
               ],
             ),
 
             const SizedBox(height: 24),
 
-            // User Information Section (Read-only)
+            // Department Information Section (Read-only)
             Container(
               decoration: BoxDecoration(
                 border: Border.all(
@@ -134,7 +134,7 @@ class _ViewUserDetailsPageState extends State<ViewUserDetailsPage> {
                       ),
                       const SizedBox(width: 8),
                       Text(
-                        'User Information',
+                        'Department Information',
                         style: textTheme.titleMedium?.copyWith(
                           fontWeight: FontWeight.w600,
                           color: colorScheme.onSurface,
@@ -143,23 +143,39 @@ class _ViewUserDetailsPageState extends State<ViewUserDetailsPage> {
                     ],
                   ),
                   const SizedBox(height: 24),
-                  _buildReadOnlyField(context, 'User ID', widget.user.id.toString()),
+                  _buildReadOnlyField(context, 'Department ID', widget.department.id.toString()),
                   const SizedBox(height: 16),
-                  _buildReadOnlyField(context, 'Full Name', widget.user.name),
+                  _buildReadOnlyField(context, 'Department Name', widget.department.name),
                   const SizedBox(height: 16),
-                  _buildReadOnlyField(context, 'Username', widget.user.username),
-                  const SizedBox(height: 16),
-                  _buildReadOnlyField(context, 'Email', widget.user.email),
-                  const SizedBox(height: 16),
-                  _buildReadOnlyField(
-                    context,
-                    'Roles',
-                    widget.user.roles.isNotEmpty ? widget.user.roles.join(', ') : 'N/A',
-                  ),
-                  const SizedBox(height: 16),
-                  _buildStatusField(context, widget.user.isActive ? 'Active' : 'Inactive', widget.user.isActive),
+                  _buildReadOnlyField(context, 'Description', widget.department.description),
                 ],
               ),
+            ),
+
+            const SizedBox(height: 24),
+
+            // Action Button
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                ElevatedButton.icon(
+                  onPressed: () => Navigator.of(context).pop(),
+                  icon: const Icon(Icons.arrow_back, size: 18),
+                  label: const Text('Back to Departments'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.blue[600],
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 24,
+                      vertical: 16,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    elevation: 0,
+                  ),
+                ),
+              ],
             ),
           ],
         ),
@@ -198,57 +214,6 @@ class _ViewUserDetailsPageState extends State<ViewUserDetailsPage> {
             style: textTheme.bodyMedium?.copyWith(
               color: colorScheme.onSurface.withValues(alpha: 0.8),
             ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildStatusField(BuildContext context, String status, bool isActive) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-    final textTheme = theme.textTheme;
-    final bg = isActive ? colorScheme.secondaryContainer : colorScheme.errorContainer;
-    final txt = isActive ? colorScheme.onSecondaryContainer : colorScheme.onErrorContainer;
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Status',
-          style: textTheme.bodyMedium?.copyWith(
-            fontWeight: FontWeight.w500,
-            color: colorScheme.onSurface,
-          ),
-        ),
-        const SizedBox(height: 8),
-        Container(
-          width: double.infinity,
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-          decoration: BoxDecoration(
-            color: colorScheme.surfaceContainer.withValues(alpha: 0.5),
-            borderRadius: BorderRadius.circular(8),
-            border: Border.all(
-              color: colorScheme.outline.withValues(alpha: 0.3),
-            ),
-          ),
-          child: Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                decoration: BoxDecoration(
-                  color: bg,
-                  borderRadius: BorderRadius.circular(6),
-                ),
-                child: Text(
-                  status,
-                  style: textTheme.labelSmall?.copyWith(
-                    fontWeight: FontWeight.w600,
-                    color: txt,
-                  ),
-                ),
-              ),
-            ],
           ),
         ),
       ],

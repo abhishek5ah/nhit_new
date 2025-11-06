@@ -1,7 +1,14 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:ppv_components/common_widgets/button/primary_button.dart';
 import 'package:ppv_components/common_widgets/custom_table.dart';
 import 'package:ppv_components/features/department/model/department_model.dart';
+import 'package:ppv_components/features/department/screen/create_department.dart';
+import 'package:ppv_components/features/department/screen/view_department.dart';
+import 'package:ppv_components/features/department/widgets/add_department.dart';
+
+import '../screen/edit_department.dart';
 
 class DepartmentTableView extends StatefulWidget {
   final List<Department> departmentData;
@@ -63,33 +70,44 @@ class _DepartmentTableViewState extends State<DepartmentTableView> {
     });
   }
 
+  //Navigate to AddDepartmentPage
   Future<void> onAddDepartment() async {
-    final formKey = GlobalKey<FormState>();
-    final nameController = TextEditingController();
-    final descriptionController = TextEditingController();
-
-    final result = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => _departmentDialog(
-        ctx: ctx,
-        formKey: formKey,
-        nameController: nameController,
-        descriptionController: descriptionController,
-        dialogTitle: "Add Department",
-        saveLabel: "Add",
+    final result = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const AddDepartmentPage(),
       ),
-      barrierDismissible: false,
     );
 
-    if (result == true && nameController.text.isNotEmpty) {
-      final newDepartment = Department(
-        id: DateTime.now().millisecondsSinceEpoch,
-        name: nameController.text,
-        description: descriptionController.text,
-      );
-      widget.onEdit(newDepartment); // Assuming onEdit adds new when id not exists
+    if (result != null && result is Department) {
+      widget.onEdit(result);
       _updatePagination();
     }
+  }
+
+  // Navigate to EditDepartmentPage
+  Future<void> onEditDepartment(Department department) async {
+    final result = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => EditDepartmentPage(department: department),
+      ),
+    );
+
+    if (result != null && result is Department) {
+      widget.onEdit(result);
+      _updatePagination();
+    }
+  }
+
+  // Navigate to ViewDepartmentDetailsPage
+  Future<void> onViewDepartment(Department department) async {
+    await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => ViewDepartmentPage(department: department),
+      ),
+    );
   }
 
   Future<void> deleteDepartment(Department department) async {
@@ -114,157 +132,6 @@ class _DepartmentTableViewState extends State<DepartmentTableView> {
       widget.onDelete(department);
       _updatePagination();
     }
-  }
-
-  Future<void> onEditDepartment(Department department) async {
-    final formKey = GlobalKey<FormState>();
-    final nameController = TextEditingController(text: department.name);
-    final descriptionController = TextEditingController(text: department.description);
-
-    final result = await showDialog<bool>(
-      context: context,
-      builder: (ctx) {
-        final colorScheme = Theme.of(ctx).colorScheme;
-        return Dialog(
-          child: Container(
-            width: MediaQuery.of(ctx).size.width * 0.4,
-            padding: const EdgeInsets.all(24),
-            decoration: BoxDecoration(
-              border: Border.all(color: colorScheme.outline, width: 0.5),
-              borderRadius: BorderRadius.circular(20),
-              color: colorScheme.surface,
-            ),
-            child: Form(
-              key: formKey,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        "Edit Department",
-                        style: TextStyle(
-                          fontSize: 22,
-                          fontWeight: FontWeight.bold,
-                          color: colorScheme.onSurface,
-                        ),
-                      ),
-                      IconButton(
-                        onPressed: () => Navigator.of(ctx).pop(false),
-                        icon: Icon(Icons.close, color: colorScheme.onSurface),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 20),
-                  _buildInputField(ctx, "Name", nameController),
-                  const SizedBox(height: 20),
-                  _buildInputField(ctx, "Description", descriptionController, maxLines: 3),
-                  const SizedBox(height: 30),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.end,
-                    children: [
-                      TextButton(
-                        onPressed: () => Navigator.of(ctx).pop(false),
-                        child: const Text("Cancel"),
-                      ),
-                      const SizedBox(width: 12),
-                      ElevatedButton(
-                        onPressed: () {
-                          if (formKey.currentState?.validate() ?? false) {
-                            Navigator.of(ctx).pop(true);
-                          }
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: colorScheme.primary,
-                          foregroundColor: colorScheme.onPrimary,
-                          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                        ),
-                        child: const Text("Save"),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          ),
-        );
-      },
-      barrierDismissible: false,
-    );
-
-    if (result == true) {
-      final updatedDepartment = department.copyWith(
-        name: nameController.text,
-        description: descriptionController.text,
-      );
-      widget.onEdit(updatedDepartment);
-      _updatePagination();
-    }
-  }
-
-  Future<void> onViewDepartment(Department department) async {
-    await showDialog(
-      context: context,
-      builder: (ctx) {
-        final colorScheme = Theme.of(ctx).colorScheme;
-        return Dialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-          backgroundColor: colorScheme.surface,
-          child: Container(
-            width: MediaQuery.of(ctx).size.width * 0.4,
-            padding: const EdgeInsets.all(24),
-            decoration: BoxDecoration(
-              border: Border.all(color: colorScheme.outline, width: 0.5),
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      "Department Details",
-                      style: TextStyle(
-                        fontSize: 22,
-                        fontWeight: FontWeight.bold,
-                        color: colorScheme.onSurface,
-                      ),
-                    ),
-                    IconButton(
-                      onPressed: () => Navigator.of(ctx).pop(),
-                      icon: Icon(Icons.close, color: colorScheme.onSurface),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 20),
-                _buildDetail(ctx, "ID", department.id.toString()),
-                _buildDetail(ctx, "Name", department.name),
-                _buildDetail(ctx, "Description", department.description),
-                const SizedBox(height: 24),
-                Align(
-                  alignment: Alignment.centerRight,
-                  child: ElevatedButton(
-                    onPressed: () => Navigator.of(ctx).pop(),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: colorScheme.primary,
-                      foregroundColor: colorScheme.onPrimary,
-                    ),
-                    child: const Text("Close"),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        );
-      },
-    );
   }
 
   Widget _buildInputField(BuildContext context, String label, TextEditingController controller,
@@ -293,119 +160,6 @@ class _DepartmentTableViewState extends State<DepartmentTableView> {
         }
         return null;
       },
-    );
-  }
-
-  Widget _buildDetail(BuildContext ctx, String label, String value) {
-    final colorScheme = Theme.of(ctx).colorScheme;
-    return Container(
-      margin: const EdgeInsets.symmetric(vertical: 6),
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      decoration: BoxDecoration(
-        color: colorScheme.surfaceContainer,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: colorScheme.outline, width: 0.5),
-      ),
-      child: Row(
-        children: [
-          SizedBox(
-            width: 120,
-            child: Text(
-              label,
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                color: colorScheme.primary,
-              ),
-            ),
-          ),
-          Expanded(
-            child: Text(
-              value,
-              style: TextStyle(color: colorScheme.onSurface),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _departmentDialog({
-    required BuildContext ctx,
-    required GlobalKey<FormState> formKey,
-    required TextEditingController nameController,
-    required TextEditingController descriptionController,
-    required String dialogTitle,
-    required String saveLabel,
-  }) {
-    final colorScheme = Theme.of(ctx).colorScheme;
-    return Dialog(
-      child: Container(
-        width: MediaQuery.of(ctx).size.width * 0.4,
-        padding: const EdgeInsets.all(24),
-        decoration: BoxDecoration(
-          border: Border.all(color: colorScheme.outline, width: 0.5),
-          borderRadius: BorderRadius.circular(20),
-          color: colorScheme.surface,
-        ),
-        child: Form(
-          key: formKey,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    dialogTitle,
-                    style: TextStyle(
-                      fontSize: 22,
-                      fontWeight: FontWeight.bold,
-                      color: colorScheme.onSurface,
-                    ),
-                  ),
-                  IconButton(
-                    onPressed: () => Navigator.of(ctx).pop(false),
-                    icon: Icon(Icons.close, color: colorScheme.onSurface),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 20),
-              _buildInputField(ctx, "Name", nameController),
-              const SizedBox(height: 20),
-              _buildInputField(ctx, "Description", descriptionController, maxLines: 3),
-              const SizedBox(height: 30),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  TextButton(
-                    onPressed: () => Navigator.of(ctx).pop(false),
-                    child: const Text("Cancel"),
-                  ),
-                  const SizedBox(width: 12),
-                  ElevatedButton(
-                    onPressed: () {
-                      if (formKey.currentState?.validate() ?? false) {
-                        Navigator.of(ctx).pop(true);
-                      }
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: colorScheme.primary,
-                      foregroundColor: colorScheme.onPrimary,
-                      padding:
-                      const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                    child: Text(saveLabel),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
-      ),
     );
   }
 
@@ -492,10 +246,10 @@ class _DepartmentTableViewState extends State<DepartmentTableView> {
                             fontWeight: FontWeight.bold,
                           ),
                         ),
-                        PrimaryButton(
-                          label: 'Add Department',
-                          onPressed: onAddDepartment,
-                        )
+                        // PrimaryButton(
+                        //   label: 'Create Department',
+                        //   onPressed: onAddDepartment,
+                        // )
                       ],
                     ),
                     const SizedBox(height: 16),

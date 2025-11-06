@@ -3,6 +3,7 @@ import 'package:ppv_components/common_widgets/button/toggle_button.dart';
 import 'package:ppv_components/common_widgets/custom_table.dart';
 import 'package:ppv_components/features/user/model/user_model.dart';
 import 'package:ppv_components/features/user/screens/edit_user.dart';
+import 'package:ppv_components/features/user/screens/user_view_page.dart';
 import 'package:ppv_components/features/user/widgets/user_grid.dart';
 
 const List<String> availableRoles = [
@@ -118,167 +119,12 @@ class _UserTableViewState extends State<UserTableView> {
     }
   }
 
+  // Navigate to ViewUserDetailsPage
   Future<void> onViewUser(User user) async {
-    await showDialog(
-      context: context,
-      builder: (ctx) {
-        final colorScheme = Theme.of(ctx).colorScheme;
-
-        return Dialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20),
-          ),
-          backgroundColor: colorScheme.surface,
-          child: Container(
-            width: MediaQuery.of(ctx).size.width * 0.4,
-            padding: const EdgeInsets.all(24),
-            decoration: BoxDecoration(
-              border: Border.all(color: colorScheme.outline, width: 0.5),
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      "User Details",
-                      style: TextStyle(
-                        fontSize: 22,
-                        fontWeight: FontWeight.bold,
-                        color: colorScheme.onSurface,
-                      ),
-                    ),
-                    IconButton(
-                      onPressed: () => Navigator.of(ctx).pop(),
-                      icon: Icon(Icons.close, color: colorScheme.onSurface),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 20),
-                _buildDetail(
-                  ctx,
-                  Icons.confirmation_number,
-                  "ID",
-                  user.id.toString(),
-                ),
-                _buildDetail(ctx, Icons.person, "Name", user.name),
-                _buildDetail(
-                  ctx,
-                  Icons.alternate_email,
-                  "Username",
-                  user.username,
-                ),
-                _buildDetail(ctx, Icons.email, "Email", user.email),
-                _buildDetail(ctx, Icons.badge, "Roles", user.roles.join(', ')),
-                _buildStatus(ctx, user.isActive ? "Active" : "Inactive"),
-                const SizedBox(height: 24),
-                Align(
-                  alignment: Alignment.centerRight,
-                  child: ElevatedButton(
-                    onPressed: () => Navigator.of(ctx).pop(),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: colorScheme.primary,
-                      foregroundColor: colorScheme.onPrimary,
-                    ),
-                    child: const Text("Close"),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        );
-      },
-    );
-  }
-
-  Widget _buildDetail(
-      BuildContext ctx,
-      IconData icon,
-      String label,
-      String value,
-      ) {
-    final colorScheme = Theme.of(ctx).colorScheme;
-
-    return Container(
-      margin: const EdgeInsets.symmetric(vertical: 6),
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      decoration: BoxDecoration(
-        color: colorScheme.surfaceContainer,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: colorScheme.outline, width: 0.5),
-      ),
-      child: Row(
-        children: [
-          Icon(icon, color: colorScheme.primary, size: 22),
-          const SizedBox(width: 12),
-          SizedBox(
-            width: 120,
-            child: Text(
-              label,
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                color: colorScheme.primary,
-              ),
-            ),
-          ),
-          Expanded(
-            child: Text(
-              value,
-              style: TextStyle(color: colorScheme.onSurface),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildStatus(BuildContext ctx, String status) {
-    final colorScheme = Theme.of(ctx).colorScheme;
-    final isActive = status == "Active";
-    final bg = isActive
-        ? colorScheme.secondaryContainer
-        : colorScheme.errorContainer;
-    final txt = isActive
-        ? colorScheme.onSecondaryContainer
-        : colorScheme.onErrorContainer;
-
-    return Container(
-      margin: const EdgeInsets.symmetric(vertical: 6),
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      decoration: BoxDecoration(
-        color: colorScheme.surfaceContainer,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: colorScheme.outline, width: 0.5),
-      ),
-      child: Row(
-        children: [
-          Icon(Icons.verified, color: colorScheme.primary, size: 22),
-          const SizedBox(width: 12),
-          SizedBox(
-            width: 120,
-            child: Text(
-              "Status",
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                color: colorScheme.primary,
-              ),
-            ),
-          ),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-            decoration: BoxDecoration(
-              color: bg,
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Text(
-              status,
-              style: TextStyle(color: txt, fontWeight: FontWeight.w600),
-            ),
-          ),
-        ],
+    await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => ViewUserDetailsPage(user: user),
       ),
     );
   }
