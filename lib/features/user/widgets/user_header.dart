@@ -15,10 +15,6 @@ class UserHeader extends StatelessWidget {
         title: 'User',
         subtitle: 'Manage your user list here',
       ),
-      _HeaderData(
-        title: 'Add User',
-        subtitle: 'Add the new user',
-      ),
     ];
 
     final header = headerData[tabIndex];

@@ -6,7 +6,7 @@ import 'package:ppv_components/features/roles/model/roles_model.dart';
 import 'package:ppv_components/features/roles/screens/view_page.dart';
 import 'package:ppv_components/features/roles/widgets/roles_grid.dart';
 import 'package:ppv_components/features/roles/screens/edit_role.dart';
-
+import 'package:ppv_components/features/roles/screens/create_role.dart';
 
 class RoleTableView extends StatefulWidget {
   final List<Role> roleData;
@@ -75,7 +75,9 @@ class _RoleTableViewState extends State<RoleTableView> {
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Text('Confirm Delete'),
-        content: Text('Are you sure you want to delete role "${role.roleName}"?'),
+        content: Text(
+          'Are you sure you want to delete role "${role.roleName}"?',
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(false),
@@ -94,7 +96,7 @@ class _RoleTableViewState extends State<RoleTableView> {
     }
   }
 
-  // Updated onEditRole method to navigate to EditRoleScreen
+  // Navigate to EditRoleScreen
   Future<void> onEditRole(Role role) async {
     final result = await Navigator.push(
       context,
@@ -114,155 +116,21 @@ class _RoleTableViewState extends State<RoleTableView> {
     }
   }
 
+  // Navigate to CreateRoleScreen
   Future<void> onCreateRole() async {
-    final formKey = GlobalKey<FormState>();
-    final roleNameController = TextEditingController();
-    final permissionsController = TextEditingController();
-
-    final result = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => _roleDialog(
-        ctx: ctx,
-        formKey: formKey,
-        roleNameController: roleNameController,
-        permissionsController: permissionsController,
-        dialogTitle: "Create Role",
-        saveLabel: "Create",
-      ),
-      barrierDismissible: false,
+    final result = await Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => const CreateRoleScreen()),
     );
 
-    if (result == true && roleNameController.text.isNotEmpty) {
-      final newRole = Role(
-        id: DateTime.now().millisecondsSinceEpoch,
-        roleName: roleNameController.text,
-        permissions: permissionsController.text
-            .split(',')
-            .map((e) => e.trim())
-            .where((perm) => perm.isNotEmpty)
-            .toList(),
-      );
-      widget.onEdit(newRole);
+    // If result is returned (new role), call the onEdit callback
+    if (result != null && result is Role) {
+      widget.onEdit(result);
       _updatePagination();
     }
   }
 
-  Widget _roleDialog({
-    required BuildContext ctx,
-    required GlobalKey<FormState> formKey,
-    required TextEditingController roleNameController,
-    required TextEditingController permissionsController,
-    required String dialogTitle,
-    required String saveLabel,
-  }) {
-    final colorScheme = Theme.of(ctx).colorScheme;
-    return Dialog(
-      child: Container(
-        width: MediaQuery.of(ctx).size.width * 0.4,
-        padding: const EdgeInsets.all(24),
-        decoration: BoxDecoration(
-          border: Border.all(color: colorScheme.outline, width: 0.5),
-          borderRadius: BorderRadius.circular(20),
-          color: colorScheme.surface,
-        ),
-        child: StatefulBuilder(
-          builder: (context, setState) => SingleChildScrollView(
-            child: Form(
-              key: formKey,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        dialogTitle,
-                        style: TextStyle(
-                          fontSize: 22,
-                          fontWeight: FontWeight.bold,
-                          color: colorScheme.onSurface,
-                        ),
-                      ),
-                      IconButton(
-                        onPressed: () => Navigator.of(ctx).pop(),
-                        icon: Icon(Icons.close, color: colorScheme.onSurface),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 20),
-                  _buildInputField(ctx, "Role Name", roleNameController),
-                  const SizedBox(height: 20),
-                  _buildInputField(
-                    ctx,
-                    "Permissions (comma separated)",
-                    permissionsController,
-                  ),
-                  const SizedBox(height: 30),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.end,
-                    children: [
-                      TextButton(
-                        onPressed: () => Navigator.of(ctx).pop(false),
-                        child: const Text("Cancel"),
-                      ),
-                      const SizedBox(width: 12),
-                      ElevatedButton(
-                        onPressed: () {
-                          if (formKey.currentState?.validate() ?? false) {
-                            Navigator.of(ctx).pop(true);
-                          }
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: colorScheme.primary,
-                          foregroundColor: colorScheme.onPrimary,
-                          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                        ),
-                        child: Text(saveLabel),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildInputField(BuildContext context, String label, TextEditingController controller) {
-    final theme = Theme.of(context);
-    return TextFormField(
-      controller: controller,
-      decoration: InputDecoration(
-        labelText: label,
-        labelStyle: TextStyle(color: theme.colorScheme.onSurface),
-        filled: true,
-        fillColor: theme.colorScheme.surfaceContainer,
-        enabledBorder: OutlineInputBorder(
-          borderSide: BorderSide(color: theme.colorScheme.outline),
-          borderRadius: BorderRadius.circular(12),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderSide: BorderSide(color: theme.colorScheme.primary),
-          borderRadius: BorderRadius.circular(12),
-        ),
-      ),
-      validator: (val) {
-        if (val == null || val.isEmpty) {
-          return 'Please enter $label';
-        }
-        return null;
-      },
-      maxLines: label.contains('Permission') ? 3 : 1,
-    );
-  }
-
-
+  // Navigate to ViewRoleScreen
   Future<void> onViewRole(Role role) async {
     await Navigator.push(
       context,
@@ -276,64 +144,45 @@ class _RoleTableViewState extends State<RoleTableView> {
     );
   }
 
-
-
-  Widget _buildDetail(BuildContext context, String label, String value) {
-    final colorScheme = Theme.of(context).colorScheme;
-
-    return Container(
-      margin: const EdgeInsets.symmetric(vertical: 6),
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      decoration: BoxDecoration(
-        color: colorScheme.surfaceContainer,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: colorScheme.outline, width: 0.5),
-      ),
-      child: Row(
-        children: [
-          SizedBox(
-            width: 120,
-            child: Text(
-              label,
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                color: colorScheme.primary,
-              ),
-            ),
-          ),
-          Expanded(
-            child: Text(
-              value,
-              style: TextStyle(color: colorScheme.onSurface),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
 
     final columns = [
-      DataColumn(label: Text('ID', style: TextStyle(color: colorScheme.onSurface))),
-      DataColumn(label: Text('Role Name', style: TextStyle(color: colorScheme.onSurface))),
-      DataColumn(label: Text('Permissions', style: TextStyle(color: colorScheme.onSurface))),
-      DataColumn(label: Text('Actions', style: TextStyle(color: colorScheme.onSurface))),
+      DataColumn(
+        label: Text('ID', style: TextStyle(color: colorScheme.onSurface)),
+      ),
+      DataColumn(
+        label: Text(
+          'Role Name',
+          style: TextStyle(color: colorScheme.onSurface),
+        ),
+      ),
+      DataColumn(
+        label: Text(
+          'Permissions',
+          style: TextStyle(color: colorScheme.onSurface),
+        ),
+      ),
+      DataColumn(
+        label: Text('Actions', style: TextStyle(color: colorScheme.onSurface)),
+      ),
     ];
 
     final rows = paginatedRoles.map((role) {
       final limitedPermissions = role.permissions.take(2).toList();
-      final additionalCount = role.permissions.length - limitedPermissions.length;
+      final additionalCount =
+          role.permissions.length - limitedPermissions.length;
 
       final List<Widget> permissionBadges = limitedPermissions
-          .map((perm) => BadgeChip(
-        label: perm,
-        type: ChipType.status,
-        statusKey: perm,
-        statusColorFunc: (_) => colorScheme.primary,
-      ))
+          .map(
+            (perm) => BadgeChip(
+              label: perm,
+              type: ChipType.status,
+              statusKey: perm,
+              statusColorFunc: (_) => colorScheme.primary,
+            ),
+          )
           .toList();
 
       if (additionalCount > 0) {
@@ -349,14 +198,15 @@ class _RoleTableViewState extends State<RoleTableView> {
       return DataRow(
         cells: [
           DataCell(
-            Text(role.id.toString(), style: TextStyle(color: colorScheme.onSurface)),
+            Text(
+              role.id.toString(),
+              style: TextStyle(color: colorScheme.onSurface),
+            ),
           ),
           DataCell(
             Text(role.roleName, style: TextStyle(color: colorScheme.onSurface)),
           ),
-          DataCell(
-            Wrap(spacing: 6, runSpacing: 4, children: permissionBadges),
-          ),
+          DataCell(Wrap(spacing: 6, runSpacing: 4, children: permissionBadges)),
           DataCell(
             Row(
               mainAxisSize: MainAxisSize.min,
@@ -366,7 +216,10 @@ class _RoleTableViewState extends State<RoleTableView> {
                   style: OutlinedButton.styleFrom(
                     foregroundColor: colorScheme.onSurface,
                     side: BorderSide(color: colorScheme.outline),
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 6,
+                    ),
                   ),
                   child: const Text('Edit'),
                 ),
@@ -376,7 +229,10 @@ class _RoleTableViewState extends State<RoleTableView> {
                   style: OutlinedButton.styleFrom(
                     foregroundColor: colorScheme.primary,
                     side: BorderSide(color: colorScheme.outline),
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 6,
+                    ),
                   ),
                   child: const Text('View'),
                 ),
@@ -386,7 +242,10 @@ class _RoleTableViewState extends State<RoleTableView> {
                   style: OutlinedButton.styleFrom(
                     foregroundColor: colorScheme.error,
                     side: BorderSide(color: colorScheme.outline),
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 6,
+                    ),
                   ),
                   child: const Text('Delete'),
                 ),
@@ -439,34 +298,34 @@ class _RoleTableViewState extends State<RoleTableView> {
                     Expanded(
                       child: toggleIndex == 0
                           ? Column(
-                        children: [
-                          Expanded(
-                            child: CustomTable(
-                              columns: columns,
-                              rows: rows,
-                            ),
-                          ),
-                          _paginationBar(context),
-                        ],
-                      )
+                              children: [
+                                Expanded(
+                                  child: CustomTable(
+                                    columns: columns,
+                                    rows: rows,
+                                  ),
+                                ),
+                                _paginationBar(context),
+                              ],
+                            )
                           : RolesGridView(
-                        roleList: widget.roleData,
-                        rowsPerPage: rowsPerPage,
-                        currentPage: currentPage,
-                        onPageChanged: (page) {
-                          setState(() {
-                            currentPage = page;
-                            _updatePagination();
-                          });
-                        },
-                        onRowsPerPageChanged: (rows) {
-                          setState(() {
-                            rowsPerPage = rows ?? rowsPerPage;
-                            currentPage = 0;
-                            _updatePagination();
-                          });
-                        },
-                      ),
+                              roleList: widget.roleData,
+                              rowsPerPage: rowsPerPage,
+                              currentPage: currentPage,
+                              onPageChanged: (page) {
+                                setState(() {
+                                  currentPage = page;
+                                  _updatePagination();
+                                });
+                              },
+                              onRowsPerPageChanged: (rows) {
+                                setState(() {
+                                  rowsPerPage = rows ?? rowsPerPage;
+                                  currentPage = 0;
+                                  _updatePagination();
+                                });
+                              },
+                            ),
                     ),
                   ],
                 ),
@@ -515,17 +374,25 @@ class _RoleTableViewState extends State<RoleTableView> {
             children: [
               IconButton(
                 icon: const Icon(Icons.arrow_back),
-                onPressed: currentPage > 0 ? () => gotoPage(currentPage - 1) : null,
+                onPressed: currentPage > 0
+                    ? () => gotoPage(currentPage - 1)
+                    : null,
               ),
               for (int i = startWindow; i < endWindow; i++)
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 2),
                   child: ElevatedButton(
                     style: ElevatedButton.styleFrom(
-                      backgroundColor:
-                      i == currentPage ? colorScheme.primary : colorScheme.surfaceContainer,
-                      foregroundColor: i == currentPage ? Colors.white : colorScheme.onSurface,
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                      backgroundColor: i == currentPage
+                          ? colorScheme.primary
+                          : colorScheme.surfaceContainer,
+                      foregroundColor: i == currentPage
+                          ? Colors.white
+                          : colorScheme.onSurface,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 10,
+                      ),
                       minimumSize: const Size(40, 40),
                     ),
                     onPressed: () => gotoPage(i),
@@ -534,7 +401,9 @@ class _RoleTableViewState extends State<RoleTableView> {
                 ),
               IconButton(
                 icon: const Icon(Icons.arrow_forward),
-                onPressed: currentPage < totalPages - 1 ? () => gotoPage(currentPage + 1) : null,
+                onPressed: currentPage < totalPages - 1
+                    ? () => gotoPage(currentPage + 1)
+                    : null,
               ),
               const SizedBox(width: 20),
               DropdownButton<int>(

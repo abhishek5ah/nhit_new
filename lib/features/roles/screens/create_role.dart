@@ -354,10 +354,11 @@ class _CreateRoleScreenState extends State<CreateRoleScreen> {
             Container(
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
-                color: colorScheme.surface,
+                color: colorScheme.surfaceContainer,
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(
-                  color: colorScheme.outline.withValues(alpha: 0.2),
+                  color: colorScheme.outline,
+                  width: 0.5,
                 ),
               ),
               child: Row(
