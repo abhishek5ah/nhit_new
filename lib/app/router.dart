@@ -10,6 +10,7 @@ import 'package:ppv_components/features/payment_notes/screen/payment_notes_main_
 import 'package:ppv_components/features/reimbursement/screens/reimbursement_main_page.dart';
 import 'package:ppv_components/features/roles/screens/create_role.dart';
 import 'package:ppv_components/features/roles/screens/roles_main_page.dart';
+import 'package:ppv_components/features/user/screens/add_user.dart';
 import 'package:ppv_components/features/user/screens/user_main_page.dart';
 import 'package:ppv_components/features/vendor/screen/vendor_main_page.dart';
 
@@ -45,7 +46,7 @@ class PlaceholderPage extends StatelessWidget {
 }
 
 final GoRouter router = GoRouter(
-  initialLocation: '/roles/create',
+  initialLocation: '/users/create',
   routes: [
     ShellRoute(
       builder: (context, state, child) => LayoutPage(child: child),
@@ -158,7 +159,7 @@ final GoRouter router = GoRouter(
         ),
         GoRoute(
           path: '/users/create',
-          builder: (context, state) => const PlaceholderPage(title: 'Create User'),
+          builder: (context, state) => const CreateUserScreen(),
         ),
 
         // Role Management
