@@ -24,46 +24,88 @@ class _SidebarState extends State<Sidebar> with SingleTickerProviderStateMixin {
     _SidebarCategory(
       heading: "EXPENSE MANAGEMENT",
       items: [
-        _SidebarItem(Icons.receipt_long, "Expense Approval Notes", "/expense-notes", subItems: [
-          _SubItem("All Notes", "/expense-notes/all"),
-          _SubItem("Create Note", "/expense-notes/create"),
+        _SidebarItem(Icons.receipt_long, "Expense Approval Notes", "", subItems: [
+          _SubItem("All Notes", "/expense-notes/note"),
+          _SubItem("Create Note", "/expense-note/create"),
         ]),
-        _SidebarItem(Icons.money, "Payment Notes", "/payment-notes", subItems: []),
+        _SidebarItem(Icons.money, "Payment Notes", "", subItems: [
+          _SubItem("Create Payment Note", "/payment-notes/create"),
+          _SubItem("All Payment Notes", "/payment-notes"),
+          _SubItem("Draft Notes", "/drafts"),
+        ]),
       ],
     ),
     _SidebarCategory(
       heading: "APPROVAL RULES",
       items: [
-        _SidebarItem(Icons.rule, "Approval Rules Management", "/approval-rules", subItems: [
-          _SubItem("All Rules", "/approval-rules/all"),
-          _SubItem("Create Rule", "/approval-rules/create"),
+        _SidebarItem(Icons.rule, "Approval Rules Management", "", subItems: [
+          _SubItem("Rules Dashboard", "/approval-rules"),
+          _SubItem("Expense Note Rules", "/approval-rules/green_note"),
+          _SubItem("Create Expense Rules", "/approval-rules/green_note/create"),
+          _SubItem("Payment Note Rules", "/approval-rules/payment_note"),
+          _SubItem("Create Payment Rules", "/approval-rules/payment_note/create"),
+          _SubItem("Reimbursement Rules", "/approval-rules/reimbursement_note"),
+          _SubItem("Create Reimbursement Rules", "/approval-rules/reimbursement_note/create"),
+          _SubItem("Bank Letter", "/approval-rules/bank_letter"),
+          _SubItem("Create Bank Letter Rule", "/approval-rules/bank_letter/create"),
         ]),
-        _SidebarItem(Icons.account_balance, "Escrow Banking System", "/escrow", subItems: [
-          _SubItem("Escrow Accounts", "/escrow/accounts"),
-          _SubItem("Create Account", "/escrow/create"),
-          _SubItem("Fund Transfers", "/escrow/fund-transfers"),
-          _SubItem("New Transfer", "/escrow/new-transfer"),
+        _SidebarItem(Icons.account_balance, "Escrow Banking System", "", subItems: [
+          _SubItem("Escrow Accounts", "/escrow-accounts"),
+          _SubItem("Create Account", "/escrow-accounts/create"),
+          _SubItem("Fund Transfers", "/escrow/account-transfers"),
+          _SubItem("New Transfer", "/escrow/create"),
           _SubItem("Bank Letter", "/escrow/bank-letter"),
-          _SubItem("Create Letter", "/escrow/create-letter"),
+          _SubItem("Create Letter", "/escrow/bank-letter/create"),
         ]),
-        _SidebarItem(Icons.receipt, "Travel & Reimbursement", "/reimbursement", subItems: [
-          _SubItem("Create Request", "/reimbursement/create"),
-          _SubItem("All Reimbursements", "/reimbursement/all"),
-
+        _SidebarItem(Icons.receipt, "Travel & Reimbursement", "", subItems: [
+          _SubItem("Create Request", "/reimbursement-note/create"),
+          _SubItem("All Reimbursements", "/reimbursement-note"),
         ]),
       ],
     ),
     _SidebarCategory(
       heading: "MANAGEMENT",
       items: [
-        _SidebarItem(Icons.people, "User Management", "/users", subItems: []),
-        _SidebarItem(Icons.shield, "Role Management", "/roles", subItems: []),
-        _SidebarItem(Icons.account_tree, "Departments", "/departments", subItems: []),
-        _SidebarItem(Icons.badge, "Designations", "/designations", subItems: []),
-        _SidebarItem(Icons.store, "Vendor Management", "/vendors", subItems: []),
+        _SidebarItem(Icons.people, "User Management", "", subItems: [
+          _SubItem("All Users", "/users"),
+          _SubItem("Add New User", "/users/create"),
+
+        ]),
+        _SidebarItem(Icons.shield, "Role Management", "", subItems: [
+          _SubItem("All Roles", "/roles"),
+          _SubItem("Create Role", "/roles/create"),
+        ]),
+        _SidebarItem(Icons.account_tree, "Departments", "", subItems: [
+          _SubItem("All Department", "/department"),
+          _SubItem("Create Department", "/department/create"),
+
+        ]),
+        _SidebarItem(Icons.badge, "Designations", "", subItems: [
+          _SubItem("All Designation", "/designations"),
+          _SubItem("All Users", "/designations/create"),
+        ]),
+        _SidebarItem(Icons.store, "Vendor Management", "", subItems: [
+          _SubItem("All Vendors", "/vendors"),
+          _SubItem("Add Vendors", "/vendors/create"),
+        ]),
+        _SidebarItem(Icons.store, "Organization Management", "", subItems: [
+          _SubItem("All Organizations", "/organizations"),
+          _SubItem("Create Organization", "/organization/create"),
+        ]),
       ],
     ),
+    _SidebarCategory(
+      heading: "ACTIVITY & REPORTS",
+      items: [
+        _SidebarItem(Icons.people, "Activity", "", subItems: [
+          _SubItem("Activity Logs", "/activity"),
+          _SubItem("Login History", "/login-history"),
+        ]),
+      ]
+    ),
   ];
+
+
 
   @override
   void initState() {
@@ -111,7 +153,7 @@ class _SidebarState extends State<Sidebar> with SingleTickerProviderStateMixin {
     setState(() {
       selectedSubRoute = route;
     });
-    GoRouter.of(context).go(route); // Navigation call
+    GoRouter.of(context).go(route);
   }
 
   @override
@@ -312,17 +354,12 @@ class _SidebarState extends State<Sidebar> with SingleTickerProviderStateMixin {
         textColor: isExpanded ? colors.onSurface : Colors.transparent,
         iconColor: isExpanded ? colors.onSurfaceVariant : Colors.transparent,
         title: isExpanded
-            ? InkWell(
-          onTap: () {
-            _navigate(item.route);
-          },
-          child: Text(
-            item.label,
-            style: TextStyle(
-              fontWeight: FontWeight.w600,
-              color: isActive ? colors.primary : colors.onSurface,
-              fontSize: 16,
-            ),
+            ? Text(
+          item.label,
+          style: TextStyle(
+            fontWeight: FontWeight.w600,
+            color: isActive ? colors.primary : colors.onSurface,
+            fontSize: 16,
           ),
         )
             : const SizedBox.shrink(),
