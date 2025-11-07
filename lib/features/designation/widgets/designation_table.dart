@@ -2,6 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:ppv_components/common_widgets/button/primary_button.dart';
 import 'package:ppv_components/common_widgets/custom_table.dart';
 import 'package:ppv_components/features/designation/model/designation_model.dart';
+import 'package:ppv_components/features/designation/screen/create_designation.dart';
+import 'package:ppv_components/features/designation/screen/edit_designation.dart';
+import 'package:ppv_components/features/designation/screen/view_designation.dart';
+
+
 
 class DesignationTableView extends StatefulWidget {
   final List<Designation> designationData;
@@ -63,33 +68,44 @@ class _DesignationTableViewState extends State<DesignationTableView> {
     });
   }
 
+  // Navigate to CreateDesignationScreen
   Future<void> onAddDesignation() async {
-    final formKey = GlobalKey<FormState>();
-    final nameController = TextEditingController();
-    final descriptionController = TextEditingController();
-
-    final result = await showDialog<bool>(
-      context: context,
-      barrierDismissible: false,
-      builder: (ctx) => _designationDialog(
-        ctx: ctx,
-        formKey: formKey,
-        nameController: nameController,
-        descriptionController: descriptionController,
-        dialogTitle: "Add Designation",
-        saveLabel: "Add",
+    final result = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const CreateDesignationScreen(),
       ),
     );
 
-    if (result == true && nameController.text.isNotEmpty) {
-      final newDesignation = Designation(
-        id: DateTime.now().millisecondsSinceEpoch,
-        name: nameController.text,
-        description: descriptionController.text,
-      );
-      widget.onEdit(newDesignation); // Assuming onEdit adds new when id not exists
+    if (result != null && result is Designation) {
+      widget.onEdit(result);
       _updatePagination();
     }
+  }
+
+  // Navigate to EditDesignationScreen
+  Future<void> onEditDesignation(Designation designation) async {
+    final result = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => EditDesignationScreen(designation: designation),
+      ),
+    );
+
+    if (result != null && result is Designation) {
+      widget.onEdit(result);
+      _updatePagination();
+    }
+  }
+
+  // Navigate to ViewDesignationScreen
+  Future<void> onViewDesignation(Designation designation) async {
+    await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => ViewDesignationScreen(designation: designation),
+      ),
+    );
   }
 
   Future<void> deleteDesignation(Designation designation) async {
@@ -116,286 +132,91 @@ class _DesignationTableViewState extends State<DesignationTableView> {
     }
   }
 
-  Future<void> onEditDesignation(Designation designation) async {
-    final formKey = GlobalKey<FormState>();
-    final nameController = TextEditingController(text: designation.name);
-    final descriptionController = TextEditingController(text: designation.description);
-
-    final result = await showDialog<bool>(
-      context: context,
-      barrierDismissible: false,
-      builder: (ctx) => _designationDialog(
-        ctx: ctx,
-        formKey: formKey,
-        nameController: nameController,
-        descriptionController: descriptionController,
-        dialogTitle: "Edit Designation",
-        saveLabel: "Save",
-      ),
-    );
-
-    if (result == true) {
-      final updatedDesignation = designation.copyWith(
-        name: nameController.text,
-        description: descriptionController.text,
-      );
-      widget.onEdit(updatedDesignation);
-      _updatePagination();
-    }
-  }
-
-  Future<void> onViewDesignation(Designation designation) async {
-    await showDialog(
-      context: context,
-      builder: (ctx) {
-        final colorScheme = Theme.of(ctx).colorScheme;
-        return Dialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-          backgroundColor: colorScheme.surface,
-          child: Container(
-            width: MediaQuery.of(ctx).size.width * 0.4,
-            padding: const EdgeInsets.all(24),
-            decoration: BoxDecoration(
-              border: Border.all(color: colorScheme.outline, width: 0.5),
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      "Designation Details",
-                      style: TextStyle(
-                        fontSize: 22,
-                        fontWeight: FontWeight.bold,
-                        color: colorScheme.onSurface,
-                      ),
-                    ),
-                    IconButton(
-                      onPressed: () => Navigator.of(ctx).pop(),
-                      icon: Icon(Icons.close, color: colorScheme.onSurface),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 20),
-                _buildDetail(ctx, "ID", designation.id.toString()),
-                _buildDetail(ctx, "Name", designation.name),
-                _buildDetail(ctx, "Description", designation.description),
-                const SizedBox(height: 24),
-                Align(
-                  alignment: Alignment.centerRight,
-                  child: ElevatedButton(
-                    onPressed: () => Navigator.of(ctx).pop(),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: colorScheme.primary,
-                      foregroundColor: colorScheme.onPrimary,
-                    ),
-                    child: const Text("Close"),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        );
-      },
-    );
-  }
-
-  Widget _buildInputField(BuildContext context, String label, TextEditingController controller,
-      {int maxLines = 1}) {
-    final theme = Theme.of(context);
-    return TextFormField(
-      controller: controller,
-      maxLines: maxLines,
-      decoration: InputDecoration(
-        labelText: label,
-        labelStyle: TextStyle(color: theme.colorScheme.onSurface),
-        filled: true,
-        fillColor: theme.colorScheme.surfaceContainer,
-        enabledBorder: OutlineInputBorder(
-          borderSide: BorderSide(color: theme.colorScheme.outline),
-          borderRadius: BorderRadius.circular(12),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderSide: BorderSide(color: theme.colorScheme.primary),
-          borderRadius: BorderRadius.circular(12),
-        ),
-      ),
-      validator: (val) {
-        if (val == null || val.isEmpty) {
-          return 'Please enter $label';
-        }
-        return null;
-      },
-    );
-  }
-
-  Widget _buildDetail(BuildContext ctx, String label, String value) {
-    final colorScheme = Theme.of(ctx).colorScheme;
-    return Container(
-      margin: const EdgeInsets.symmetric(vertical: 6),
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      decoration: BoxDecoration(
-        color: colorScheme.surfaceContainer,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: colorScheme.outline, width: 0.5),
-      ),
-      child: Row(
-        children: [
-          SizedBox(
-            width: 120,
-            child: Text(
-              label,
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                color: colorScheme.primary,
-              ),
-            ),
-          ),
-          Expanded(
-            child: Text(
-              value,
-              style: TextStyle(color: colorScheme.onSurface),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _designationDialog({
-    required BuildContext ctx,
-    required GlobalKey<FormState> formKey,
-    required TextEditingController nameController,
-    required TextEditingController descriptionController,
-    required String dialogTitle,
-    required String saveLabel,
-  }) {
-    final colorScheme = Theme.of(ctx).colorScheme;
-    return Dialog(
-      child: Container(
-        width: MediaQuery.of(ctx).size.width * 0.4,
-        padding: const EdgeInsets.all(24),
-        decoration: BoxDecoration(
-          border: Border.all(color: colorScheme.outline, width: 0.5),
-          borderRadius: BorderRadius.circular(20),
-          color: colorScheme.surface,
-        ),
-        child: Form(
-          key: formKey,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    dialogTitle,
-                    style: TextStyle(
-                      fontSize: 22,
-                      fontWeight: FontWeight.bold,
-                      color: colorScheme.onSurface,
-                    ),
-                  ),
-                  IconButton(
-                    onPressed: () => Navigator.of(ctx).pop(false),
-                    icon: Icon(Icons.close, color: colorScheme.onSurface),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 20),
-              _buildInputField(ctx, "Name", nameController),
-              const SizedBox(height: 20),
-              _buildInputField(ctx, "Description", descriptionController, maxLines: 4),
-              const SizedBox(height: 30),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  TextButton(
-                    onPressed: () => Navigator.of(ctx).pop(false),
-                    child: const Text("Cancel"),
-                  ),
-                  const SizedBox(width: 12),
-                  ElevatedButton(
-                    onPressed: () {
-                      if (formKey.currentState?.validate() ?? false) {
-                        Navigator.of(ctx).pop(true);
-                      }
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: colorScheme.primary,
-                      foregroundColor: colorScheme.onPrimary,
-                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                    child: Text(saveLabel),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
 
     final columns = [
-      DataColumn(label: Text('ID', style: TextStyle(color: colorScheme.onSurface))),
-      DataColumn(label: Text('Name', style: TextStyle(color: colorScheme.onSurface))),
-      DataColumn(label: Text('Description', style: TextStyle(color: colorScheme.onSurface))),
-      DataColumn(label: Text('Actions', style: TextStyle(color: colorScheme.onSurface))),
+      DataColumn(
+        label: Text('ID', style: TextStyle(color: colorScheme.onSurface)),
+      ),
+      DataColumn(
+        label: Text('Name', style: TextStyle(color: colorScheme.onSurface)),
+      ),
+      DataColumn(
+        label: Text('Description', style: TextStyle(color: colorScheme.onSurface)),
+      ),
+      DataColumn(
+        label: Text('Actions', style: TextStyle(color: colorScheme.onSurface)),
+      ),
     ];
 
     final rows = paginatedDesignations.map((designation) {
       return DataRow(
         cells: [
-          DataCell(Text(designation.id.toString(), style: TextStyle(color: colorScheme.onSurface))),
-          DataCell(Text(designation.name, style: TextStyle(color: colorScheme.onSurface))),
-          DataCell(Text(designation.description, style: TextStyle(color: colorScheme.onSurface))),
-          DataCell(Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              OutlinedButton(
-                onPressed: () => onEditDesignation(designation),
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: colorScheme.onSurface,
-                  side: BorderSide(color: colorScheme.outline),
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          DataCell(
+            Text(
+              designation.id.toString(),
+              style: TextStyle(color: colorScheme.onSurface),
+            ),
+          ),
+          DataCell(
+            Text(
+              designation.name,
+              style: TextStyle(color: colorScheme.onSurface),
+            ),
+          ),
+          DataCell(
+            Text(
+              designation.description,
+              style: TextStyle(color: colorScheme.onSurface),
+            ),
+          ),
+          DataCell(
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                OutlinedButton(
+                  onPressed: () => onEditDesignation(designation),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: colorScheme.onSurface,
+                    side: BorderSide(color: colorScheme.outline),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 6,
+                    ),
+                  ),
+                  child: const Text('Edit'),
                 ),
-                child: const Text('Edit'),
-              ),
-              const SizedBox(width: 8),
-              OutlinedButton(
-                onPressed: () => onViewDesignation(designation),
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: colorScheme.primary,
-                  side: BorderSide(color: colorScheme.outline),
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                const SizedBox(width: 8),
+                OutlinedButton(
+                  onPressed: () => onViewDesignation(designation),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: colorScheme.primary,
+                    side: BorderSide(color: colorScheme.outline),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 6,
+                    ),
+                  ),
+                  child: const Text('View'),
                 ),
-                child: const Text('View'),
-              ),
-              const SizedBox(width: 8),
-              OutlinedButton(
-                onPressed: () => deleteDesignation(designation),
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: colorScheme.error,
-                  side: BorderSide(color: colorScheme.outline),
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                const SizedBox(width: 8),
+                OutlinedButton(
+                  onPressed: () => deleteDesignation(designation),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: colorScheme.error,
+                    side: BorderSide(color: colorScheme.outline),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 6,
+                    ),
+                  ),
+                  child: const Text('Delete'),
                 ),
-                child: const Text('Delete'),
-              ),
-            ],
-          )),
+              ],
+            ),
+          ),
         ],
       );
     }).toList();
@@ -436,10 +257,7 @@ class _DesignationTableViewState extends State<DesignationTableView> {
                     ),
                     const SizedBox(height: 16),
                     Expanded(
-                      child: CustomTable(
-                        columns: columns,
-                        rows: rows,
-                      ),
+                      child: CustomTable(columns: columns, rows: rows),
                     ),
                     _paginationBar(context),
                   ],
@@ -488,17 +306,25 @@ class _DesignationTableViewState extends State<DesignationTableView> {
             children: [
               IconButton(
                 icon: const Icon(Icons.arrow_back),
-                onPressed: currentPage > 0 ? () => gotoPage(currentPage - 1) : null,
+                onPressed: currentPage > 0
+                    ? () => gotoPage(currentPage - 1)
+                    : null,
               ),
               for (int i = startWindow; i < endWindow; i++)
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 2),
                   child: ElevatedButton(
                     style: ElevatedButton.styleFrom(
-                      backgroundColor:
-                      i == currentPage ? colorScheme.primary : colorScheme.surfaceContainer,
-                      foregroundColor: i == currentPage ? Colors.white : colorScheme.onSurface,
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                      backgroundColor: i == currentPage
+                          ? colorScheme.primary
+                          : colorScheme.surfaceContainer,
+                      foregroundColor: i == currentPage
+                          ? Colors.white
+                          : colorScheme.onSurface,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 10,
+                      ),
                       minimumSize: const Size(40, 40),
                     ),
                     onPressed: () => gotoPage(i),
@@ -507,7 +333,9 @@ class _DesignationTableViewState extends State<DesignationTableView> {
                 ),
               IconButton(
                 icon: const Icon(Icons.arrow_forward),
-                onPressed: currentPage < totalPages - 1 ? () => gotoPage(currentPage + 1) : null,
+                onPressed: currentPage < totalPages - 1
+                    ? () => gotoPage(currentPage + 1)
+                    : null,
               ),
               const SizedBox(width: 20),
               DropdownButton<int>(

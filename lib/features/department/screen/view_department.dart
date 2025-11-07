@@ -98,21 +98,6 @@ class _ViewDepartmentPageState extends State<ViewDepartmentPage> {
 
             const SizedBox(height: 24),
 
-            // Breadcrumb
-            Row(
-              children: [
-                const Icon(Icons.dashboard_outlined, size: 16),
-                const SizedBox(width: 4),
-                Text('Dashboard', style: TextStyle(color: Colors.grey[600], fontSize: 14)),
-                Text(' / ', style: TextStyle(color: Colors.grey[600])),
-                Text('Departments', style: TextStyle(color: Colors.grey[600], fontSize: 14)),
-                Text(' / ', style: TextStyle(color: Colors.grey[600])),
-                Text('View ${widget.department.name}', style: const TextStyle(fontSize: 14)),
-              ],
-            ),
-
-            const SizedBox(height: 24),
-
             // Department Information Section (Read-only)
             Container(
               decoration: BoxDecoration(
@@ -151,33 +136,7 @@ class _ViewDepartmentPageState extends State<ViewDepartmentPage> {
                 ],
               ),
             ),
-
-            const SizedBox(height: 24),
-
-            // Action Button
-            Row(
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                ElevatedButton.icon(
-                  onPressed: () => Navigator.of(context).pop(),
-                  icon: const Icon(Icons.arrow_back, size: 18),
-                  label: const Text('Back to Departments'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.blue[600],
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 24,
-                      vertical: 16,
-                    ),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    elevation: 0,
-                  ),
-                ),
-              ],
-            ),
-          ],
+            ],
         ),
       ),
     );

@@ -6,9 +6,7 @@ import 'package:ppv_components/common_widgets/custom_table.dart';
 import 'package:ppv_components/features/department/model/department_model.dart';
 import 'package:ppv_components/features/department/screen/create_department.dart';
 import 'package:ppv_components/features/department/screen/view_department.dart';
-import 'package:ppv_components/features/department/widgets/add_department.dart';
-
-import '../screen/edit_department.dart';
+import 'package:ppv_components/features/department/screen/edit_department.dart';
 
 class DepartmentTableView extends StatefulWidget {
   final List<Department> departmentData;
@@ -70,13 +68,11 @@ class _DepartmentTableViewState extends State<DepartmentTableView> {
     });
   }
 
-  //Navigate to AddDepartmentPage
+  // Navigate to CreateDepartmentScreen
   Future<void> onAddDepartment() async {
     final result = await Navigator.push(
       context,
-      MaterialPageRoute(
-        builder: (context) => const AddDepartmentPage(),
-      ),
+      MaterialPageRoute(builder: (context) => const CreateDepartmentScreen()),
     );
 
     if (result != null && result is Department) {
@@ -100,7 +96,7 @@ class _DepartmentTableViewState extends State<DepartmentTableView> {
     }
   }
 
-  // Navigate to ViewDepartmentDetailsPage
+  // Navigate to ViewDepartmentPage
   Future<void> onViewDepartment(Department department) async {
     await Navigator.push(
       context,
@@ -134,86 +130,94 @@ class _DepartmentTableViewState extends State<DepartmentTableView> {
     }
   }
 
-  Widget _buildInputField(BuildContext context, String label, TextEditingController controller,
-      {int maxLines = 1}) {
-    final theme = Theme.of(context);
-    return TextFormField(
-      controller: controller,
-      maxLines: maxLines,
-      decoration: InputDecoration(
-        labelText: label,
-        labelStyle: TextStyle(color: theme.colorScheme.onSurface),
-        filled: true,
-        fillColor: theme.colorScheme.surfaceContainer,
-        enabledBorder: OutlineInputBorder(
-          borderSide: BorderSide(color: theme.colorScheme.outline),
-          borderRadius: BorderRadius.circular(12),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderSide: BorderSide(color: theme.colorScheme.primary),
-          borderRadius: BorderRadius.circular(12),
-        ),
-      ),
-      validator: (val) {
-        if (val == null || val.isEmpty) {
-          return 'Please enter $label';
-        }
-        return null;
-      },
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
 
     final columns = [
-      DataColumn(label: Text('ID', style: TextStyle(color: colorScheme.onSurface))),
-      DataColumn(label: Text('Name', style: TextStyle(color: colorScheme.onSurface))),
-      DataColumn(label: Text('Description', style: TextStyle(color: colorScheme.onSurface))),
-      DataColumn(label: Text('Actions', style: TextStyle(color: colorScheme.onSurface))),
+      DataColumn(
+        label: Text('ID', style: TextStyle(color: colorScheme.onSurface)),
+      ),
+      DataColumn(
+        label: Text('Name', style: TextStyle(color: colorScheme.onSurface)),
+      ),
+      DataColumn(
+        label: Text(
+          'Description',
+          style: TextStyle(color: colorScheme.onSurface),
+        ),
+      ),
+      DataColumn(
+        label: Text('Actions', style: TextStyle(color: colorScheme.onSurface)),
+      ),
     ];
 
     final rows = paginatedDepartments.map((department) {
       return DataRow(
         cells: [
-          DataCell(Text(department.id.toString(), style: TextStyle(color: colorScheme.onSurface))),
-          DataCell(Text(department.name, style: TextStyle(color: colorScheme.onSurface))),
-          DataCell(Text(department.description, style: TextStyle(color: colorScheme.onSurface))),
-          DataCell(Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              OutlinedButton(
-                onPressed: () => onEditDepartment(department),
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: colorScheme.onSurface,
-                  side: BorderSide(color: colorScheme.outline),
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          DataCell(
+            Text(
+              department.id.toString(),
+              style: TextStyle(color: colorScheme.onSurface),
+            ),
+          ),
+          DataCell(
+            Text(
+              department.name,
+              style: TextStyle(color: colorScheme.onSurface),
+            ),
+          ),
+          DataCell(
+            Text(
+              department.description,
+              style: TextStyle(color: colorScheme.onSurface),
+            ),
+          ),
+          DataCell(
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                OutlinedButton(
+                  onPressed: () => onEditDepartment(department),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: colorScheme.onSurface,
+                    side: BorderSide(color: colorScheme.outline),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 6,
+                    ),
+                  ),
+                  child: const Text('Edit'),
                 ),
-                child: const Text('Edit'),
-              ),
-              const SizedBox(width: 8),
-              OutlinedButton(
-                onPressed: () => onViewDepartment(department),
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: colorScheme.primary,
-                  side: BorderSide(color: colorScheme.outline),
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                const SizedBox(width: 8),
+                OutlinedButton(
+                  onPressed: () => onViewDepartment(department),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: colorScheme.primary,
+                    side: BorderSide(color: colorScheme.outline),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 6,
+                    ),
+                  ),
+                  child: const Text('View'),
                 ),
-                child: const Text('View'),
-              ),
-              const SizedBox(width: 8),
-              OutlinedButton(
-                onPressed: () => deleteDepartment(department),
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: colorScheme.error,
-                  side: BorderSide(color: colorScheme.outline),
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                const SizedBox(width: 8),
+                OutlinedButton(
+                  onPressed: () => deleteDepartment(department),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: colorScheme.error,
+                    side: BorderSide(color: colorScheme.outline),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 6,
+                    ),
+                  ),
+                  child: const Text('Delete'),
                 ),
-                child: const Text('Delete'),
-              ),
-            ],
-          )),
+              ],
+            ),
+          ),
         ],
       );
     }).toList();
@@ -246,18 +250,15 @@ class _DepartmentTableViewState extends State<DepartmentTableView> {
                             fontWeight: FontWeight.bold,
                           ),
                         ),
-                        // PrimaryButton(
-                        //   label: 'Create Department',
-                        //   onPressed: onAddDepartment,
-                        // )
+                        PrimaryButton(
+                          label: 'Add Department',
+                          onPressed: onAddDepartment,
+                        ),
                       ],
                     ),
                     const SizedBox(height: 16),
                     Expanded(
-                      child: CustomTable(
-                        columns: columns,
-                        rows: rows,
-                      ),
+                      child: CustomTable(columns: columns, rows: rows),
                     ),
                     _paginationBar(context),
                   ],
@@ -306,17 +307,25 @@ class _DepartmentTableViewState extends State<DepartmentTableView> {
             children: [
               IconButton(
                 icon: const Icon(Icons.arrow_back),
-                onPressed: currentPage > 0 ? () => gotoPage(currentPage - 1) : null,
+                onPressed: currentPage > 0
+                    ? () => gotoPage(currentPage - 1)
+                    : null,
               ),
               for (int i = startWindow; i < endWindow; i++)
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 2),
                   child: ElevatedButton(
                     style: ElevatedButton.styleFrom(
-                      backgroundColor:
-                      i == currentPage ? colorScheme.primary : colorScheme.surfaceContainer,
-                      foregroundColor: i == currentPage ? Colors.white : colorScheme.onSurface,
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                      backgroundColor: i == currentPage
+                          ? colorScheme.primary
+                          : colorScheme.surfaceContainer,
+                      foregroundColor: i == currentPage
+                          ? Colors.white
+                          : colorScheme.onSurface,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 10,
+                      ),
                       minimumSize: const Size(40, 40),
                     ),
                     onPressed: () => gotoPage(i),
@@ -325,7 +334,9 @@ class _DepartmentTableViewState extends State<DepartmentTableView> {
                 ),
               IconButton(
                 icon: const Icon(Icons.arrow_forward),
-                onPressed: currentPage < totalPages - 1 ? () => gotoPage(currentPage + 1) : null,
+                onPressed: currentPage < totalPages - 1
+                    ? () => gotoPage(currentPage + 1)
+                    : null,
               ),
               const SizedBox(width: 20),
               DropdownButton<int>(

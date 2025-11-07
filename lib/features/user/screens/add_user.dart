@@ -965,7 +965,6 @@ class _CreateUserScreenState extends State<CreateUserScreen> {
     );
   }
 }
-
 // Custom TextInputFormatter for uppercase
 class UpperCaseTextFormatter extends TextInputFormatter {
   @override

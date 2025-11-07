@@ -4,7 +4,9 @@ import 'package:ppv_components/app/layout.dart';
 
 // Import only the pages that actually exist in your project
 import 'package:ppv_components/features/activity/screen/activity_main_page.dart';
+import 'package:ppv_components/features/department/screen/create_department.dart';
 import 'package:ppv_components/features/department/screen/department_main_page.dart';
+import 'package:ppv_components/features/designation/screen/create_designation.dart';
 import 'package:ppv_components/features/designation/screen/designation_main_page.dart';
 import 'package:ppv_components/features/payment_notes/screen/payment_notes_main_page.dart';
 import 'package:ppv_components/features/reimbursement/screens/reimbursement_main_page.dart';
@@ -46,7 +48,7 @@ class PlaceholderPage extends StatelessWidget {
 }
 
 final GoRouter router = GoRouter(
-  initialLocation: '/users/create',
+  initialLocation: '/designations/create',
   routes: [
     ShellRoute(
       builder: (context, state, child) => LayoutPage(child: child),
@@ -179,7 +181,7 @@ final GoRouter router = GoRouter(
         ),
         GoRoute(
           path: '/department/create',
-          builder: (context, state) => const PlaceholderPage(title: 'Create Department'),
+          builder: (context, state) => const CreateDepartmentScreen(),
         ),
 
         // Designations
@@ -189,7 +191,7 @@ final GoRouter router = GoRouter(
         ),
         GoRoute(
           path: '/designations/create',
-          builder: (context, state) => const PlaceholderPage(title: 'Create Designation'),
+          builder: (context, state) => const CreateDesignationScreen(),
         ),
 
         // Vendor Management

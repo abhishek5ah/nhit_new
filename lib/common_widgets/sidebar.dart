@@ -82,7 +82,7 @@ class _SidebarState extends State<Sidebar> with SingleTickerProviderStateMixin {
         ]),
         _SidebarItem(Icons.badge, "Designations", "", subItems: [
           _SubItem("All Designation", "/designations"),
-          _SubItem("All Users", "/designations/create"),
+          _SubItem("Create Designation", "/designations/create"),
         ]),
         _SidebarItem(Icons.store, "Vendor Management", "", subItems: [
           _SubItem("All Vendors", "/vendors"),

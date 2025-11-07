@@ -1,15 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:ppv_components/features/department/model/department_model.dart';
+import 'package:ppv_components/features/designation/model/designation_model.dart';
 
-class CreateDepartmentScreen extends StatefulWidget {
-  const CreateDepartmentScreen({super.key});
+class EditDesignationScreen extends StatefulWidget {
+  final Designation designation;
+
+  const EditDesignationScreen({
+    super.key,
+    required this.designation,
+  });
 
   @override
-  State<CreateDepartmentScreen> createState() => _CreateDepartmentScreenState();
+  State<EditDesignationScreen> createState() => _EditDesignationScreenState();
 }
 
-class _CreateDepartmentScreenState extends State<CreateDepartmentScreen> {
+class _EditDesignationScreenState extends State<EditDesignationScreen> {
   final _formKey = GlobalKey<FormState>();
   late TextEditingController _nameController;
   late TextEditingController _descriptionController;
@@ -17,8 +22,8 @@ class _CreateDepartmentScreenState extends State<CreateDepartmentScreen> {
   @override
   void initState() {
     super.initState();
-    _nameController = TextEditingController();
-    _descriptionController = TextEditingController();
+    _nameController = TextEditingController(text: widget.designation.name);
+    _descriptionController = TextEditingController(text: widget.designation.description);
   }
 
   @override
@@ -37,26 +42,22 @@ class _CreateDepartmentScreenState extends State<CreateDepartmentScreen> {
 
   void _submitForm() {
     if (_formKey.currentState!.validate()) {
-      // Create the Department object
-      final newDepartment = Department(
-        id: DateTime.now().millisecondsSinceEpoch,
+      final updatedDesignation = widget.designation.copyWith(
         name: _nameController.text.trim(),
         description: _descriptionController.text.trim(),
       );
 
-      // Show success message
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Department created successfully!'),
+          content: Text('Designation updated successfully!'),
           backgroundColor: Colors.green,
           duration: Duration(seconds: 2),
         ),
       );
 
-      // Navigate back
       Future.delayed(const Duration(milliseconds: 500), () {
         if (mounted) {
-          _handleNavigation(newDepartment);
+          _handleNavigation(updatedDesignation);
         }
       });
     }
@@ -66,14 +67,11 @@ class _CreateDepartmentScreenState extends State<CreateDepartmentScreen> {
     _handleNavigation(null);
   }
 
-  // Universal navigation handler that works with both Navigator.push and GoRouter
-  void _handleNavigation(Department? result) {
-    // Try to pop if possible (Navigator.push case)
+  void _handleNavigation(Designation? result) {
     if (Navigator.of(context).canPop()) {
       Navigator.of(context).pop(result);
     } else {
-      // Fallback to GoRouter navigation (direct route case)
-      context.go('/department');
+      context.go('/designation');
     }
   }
 
@@ -90,7 +88,6 @@ class _CreateDepartmentScreenState extends State<CreateDepartmentScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Header Section
             Container(
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
@@ -109,12 +106,12 @@ class _CreateDepartmentScreenState extends State<CreateDepartmentScreen> {
                         width: 48,
                         height: 48,
                         decoration: BoxDecoration(
-                          color: colorScheme.primary,
+                          color: Colors.orange[600],
                           borderRadius: BorderRadius.circular(12),
                         ),
-                        child: Icon(
-                          Icons.add_business_outlined,
-                          color: colorScheme.onPrimary.withValues(alpha: 0.9),
+                        child: const Icon(
+                          Icons.edit_outlined,
+                          color: Colors.white,
                           size: 24,
                         ),
                       ),
@@ -123,7 +120,7 @@ class _CreateDepartmentScreenState extends State<CreateDepartmentScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'Create Department',
+                            'Edit Designation',
                             style: textTheme.titleLarge?.copyWith(
                               fontWeight: FontWeight.bold,
                               color: colorScheme.onSurface,
@@ -131,7 +128,7 @@ class _CreateDepartmentScreenState extends State<CreateDepartmentScreen> {
                           ),
                           const SizedBox(height: 4),
                           Text(
-                            'Add a new department to the system',
+                            'Update designation information',
                             style: textTheme.bodyMedium?.copyWith(
                               color: colorScheme.onSurface.withValues(alpha: 0.6),
                             ),
@@ -146,30 +143,28 @@ class _CreateDepartmentScreenState extends State<CreateDepartmentScreen> {
 
             const SizedBox(height: 32),
 
-            // Form Content
             Form(
               key: _formKey,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Department Information Section
                   _buildSectionCard(
                     icon: Icons.info_outline,
-                    title: 'Department Information',
+                    title: 'Designation Information',
                     children: [
                       _buildTextField(
                         controller: _nameController,
-                        label: 'Department Name',
-                        hintText: 'Enter department name',
+                        label: 'Designation Name',
+                        hintText: 'Enter designation name',
                         isRequired: true,
                         validator: (value) =>
-                            _validateRequired(value, 'Department name'),
+                            _validateRequired(value, 'Designation name'),
                       ),
                       const SizedBox(height: 16),
                       _buildTextField(
                         controller: _descriptionController,
                         label: 'Description',
-                        hintText: 'Enter department description',
+                        hintText: 'Enter designation description',
                         isRequired: true,
                         validator: (value) {
                           if (value == null || value.isEmpty) {
@@ -187,7 +182,6 @@ class _CreateDepartmentScreenState extends State<CreateDepartmentScreen> {
 
                   const SizedBox(height: 32),
 
-                  // Action Buttons
                   Row(
                     mainAxisAlignment: MainAxisAlignment.end,
                     children: [
@@ -217,7 +211,7 @@ class _CreateDepartmentScreenState extends State<CreateDepartmentScreen> {
                       ElevatedButton(
                         onPressed: _submitForm,
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.green[600],
+                          backgroundColor: Colors.orange[600],
                           foregroundColor: Colors.white,
                           padding: const EdgeInsets.symmetric(
                             horizontal: 24,
@@ -229,7 +223,7 @@ class _CreateDepartmentScreenState extends State<CreateDepartmentScreen> {
                           elevation: 0,
                         ),
                         child: Text(
-                          'Create Department',
+                          'Update Designation',
                           style: textTheme.bodyMedium?.copyWith(
                             color: Colors.white,
                             fontWeight: FontWeight.w600,
@@ -269,11 +263,7 @@ class _CreateDepartmentScreenState extends State<CreateDepartmentScreen> {
         children: [
           Row(
             children: [
-              Icon(
-                icon,
-                size: 20,
-                color: colorScheme.primary,
-              ),
+              Icon(icon, size: 20, color: colorScheme.primary),
               const SizedBox(width: 8),
               Text(
                 title,
