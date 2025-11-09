@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:ppv_components/common_widgets/button/secondary_button.dart';
 import 'package:ppv_components/features/user/model/user_model.dart';
 
 class ViewUserDetailsPage extends StatefulWidget {
@@ -77,22 +78,16 @@ class _ViewUserDetailsPageState extends State<ViewUserDetailsPage> {
                       ),
                     ],
                   ),
+
                   Row(
                     children: [
-                      OutlinedButton.icon(
+                      SecondaryButton(
                         onPressed: () => Navigator.pop(context),
-                        icon: const Icon(Icons.arrow_back, size: 18),
-                        label: const Text('Back to Users'),
-                        style: OutlinedButton.styleFrom(
-                          foregroundColor: colorScheme.onSurface,
-                          side: BorderSide(
-                            color: colorScheme.outline.withValues(alpha: 0.5),
-                          ),
-                        ),
+                        label: 'Back to Users',
+                        icon: Icons.arrow_back,
                       ),
                     ],
-                  ),
-                ],
+                  ),                ],
               ),
             ),
 

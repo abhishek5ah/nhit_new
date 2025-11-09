@@ -2,6 +2,8 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:ppv_components/common_widgets/button/primary_button.dart';
+import 'package:ppv_components/common_widgets/button/secondary_button.dart';
 import 'package:ppv_components/features/user/model/user_model.dart';
 import 'package:ppv_components/common_widgets/dropdown.dart';
 
@@ -361,20 +363,13 @@ class _EditUserPageState extends State<EditUserPage> {
                   ),
                   Row(
                     children: [
-                      OutlinedButton.icon(
+                      SecondaryButton(
                         onPressed: () => Navigator.pop(context),
-                        icon: const Icon(Icons.arrow_back, size: 18),
-                        label: const Text('Back to Users'),
-                        style: OutlinedButton.styleFrom(
-                          foregroundColor: colorScheme.onSurface,
-                          side: BorderSide(
-                            color: colorScheme.outline.withValues(alpha: 0.5),
-                          ),
-                        ),
+                        label: 'Back to Users',
+                        icon: Icons.arrow_back,
                       ),
                     ],
-                  ),
-                ],
+                  ),                ],
               ),
             ),
 
@@ -784,45 +779,19 @@ class _EditUserPageState extends State<EditUserPage> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.end,
                     children: [
-                      OutlinedButton.icon(
+                      SecondaryButton(
                         onPressed: () => Navigator.of(context).pop(),
-                        icon: const Icon(Icons.close, size: 18),
-                        label: const Text('Cancel'),
-                        style: OutlinedButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 24,
-                            vertical: 16,
-                          ),
-                          side: BorderSide(
-                            color: colorScheme.outline.withValues(alpha: 0.5),
-                          ),
-                          foregroundColor: colorScheme.onSurface,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                        ),
+                        label: 'Cancel',
+                        icon: Icons.close,
                       ),
                       const SizedBox(width: 12),
-                      ElevatedButton.icon(
+                      PrimaryButton(
                         onPressed: _submitForm,
-                        icon: const Icon(Icons.check, size: 18),
-                        label: const Text('Update User'),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.green[600],
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 24,
-                            vertical: 16,
-                          ),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          elevation: 0,
-                        ),
+                        label: 'Update User',
+                        icon: Icons.check,
                       ),
                     ],
-                  ),
-                ],
+                  ),                ],
               ),
             ),
           ],

@@ -3,6 +3,8 @@ import 'package:ppv_components/common_widgets/button/outlined_button.dart';
 import 'package:ppv_components/common_widgets/button/toggle_button.dart';
 import 'package:ppv_components/common_widgets/custom_table.dart';
 import 'package:ppv_components/features/vendor/models/vendor_model.dart';
+import 'package:ppv_components/features/vendor/screen/edit_vendor.dart';
+import 'package:ppv_components/features/vendor/screen/view_vendor.dart';
 import 'package:ppv_components/features/vendor/widgets/vendor_grid.dart';
 
 class VendorTableView extends StatefulWidget {
@@ -36,7 +38,10 @@ class _VendorTableViewState extends State<VendorTableView> {
   @override
   void didUpdateWidget(covariant VendorTableView oldWidget) {
     super.didUpdateWidget(oldWidget);
-    _updatePagination();
+    if (widget.vendorData != oldWidget.vendorData) {
+      currentPage = 0;
+      _updatePagination();
+    }
   }
 
   void _updatePagination() {
@@ -47,7 +52,10 @@ class _VendorTableViewState extends State<VendorTableView> {
       final totalPages = (widget.vendorData.length / rowsPerPage).ceil();
       if (currentPage >= totalPages && totalPages > 0) {
         currentPage = totalPages - 1;
-        paginatedVendors = widget.vendorData.sublist(start, end);
+        paginatedVendors = widget.vendorData.sublist(
+            currentPage * rowsPerPage,
+            (currentPage * rowsPerPage + rowsPerPage)
+                .clamp(0, widget.vendorData.length));
       }
     });
   }
@@ -87,255 +95,31 @@ class _VendorTableViewState extends State<VendorTableView> {
     );
     if (shouldDelete == true) {
       widget.onDelete(vendor);
-      _updatePagination();
     }
   }
 
   Future<void> onEditVendor(Vendor vendor) async {
-    final formKey = GlobalKey<FormState>();
-    final nameController = TextEditingController(text: vendor.name);
-    final codeController = TextEditingController(text: vendor.code);
-    final emailController = TextEditingController(text: vendor.email);
-    final mobileController = TextEditingController(text: vendor.mobile);
-    final beneficiaryController = TextEditingController(
-      text: vendor.beneficiaryName,
-    );
-    final statusController = TextEditingController(text: vendor.status);
-
-    final result = await showDialog<bool>(
-      context: context,
-      builder: (ctx) {
-        final colorScheme = Theme.of(ctx).colorScheme;
-        return Dialog(
-          child: Container(
-            width: MediaQuery.of(ctx).size.width * 0.4,
-            padding: const EdgeInsets.all(24),
-            decoration: BoxDecoration(
-              border: Border.all(color: colorScheme.outline, width: 0.5),
-              borderRadius: BorderRadius.circular(20),
-              color: colorScheme.surface,
-            ),
-            child: StatefulBuilder(
-              builder: (context, setState) => SingleChildScrollView(
-                child: Form(
-                  key: formKey,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            "Edit Vendor",
-                            style: TextStyle(
-                              fontSize: 22,
-                              fontWeight: FontWeight.bold,
-                              color: colorScheme.onSurface,
-                            ),
-                          ),
-                          IconButton(
-                            onPressed: () => Navigator.of(ctx).pop(),
-                            icon: Icon(
-                              Icons.close,
-                              color: colorScheme.onSurface,
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 20),
-                      _buildInputField(ctx, "Name", nameController),
-                      const SizedBox(height: 16),
-                      _buildInputField(ctx, "Code", codeController),
-                      const SizedBox(height: 16),
-                      _buildInputField(ctx, "Email", emailController),
-                      const SizedBox(height: 16),
-                      _buildInputField(ctx, "Mobile", mobileController),
-                      const SizedBox(height: 16),
-                      _buildInputField(
-                        ctx,
-                        "Beneficiary Name",
-                        beneficiaryController,
-                      ),
-                      const SizedBox(height: 16),
-                      _buildInputField(ctx, "Status", statusController),
-                      const SizedBox(height: 30),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.end,
-                        children: [
-                          TextButton(
-                            onPressed: () => Navigator.of(ctx).pop(false),
-                            child: const Text("Cancel"),
-                          ),
-                          const SizedBox(width: 12),
-                          ElevatedButton(
-                            onPressed: () {
-                              if (formKey.currentState?.validate() ?? false) {
-                                Navigator.of(ctx).pop(true);
-                              }
-                            },
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: colorScheme.primary,
-                              foregroundColor: colorScheme.onPrimary,
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 24,
-                                vertical: 12,
-                              ),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                            ),
-                            child: const Text("Save"),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-          ),
-        );
-      },
-      barrierDismissible: false,
+    final result = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => EditVendorScreen(vendor: vendor),
+      ),
     );
 
-    if (result == true) {
-      final updatedVendor = vendor.copyWith(
-        name: nameController.text,
-        code: codeController.text,
-        email: emailController.text,
-        mobile: mobileController.text,
-        beneficiaryName: beneficiaryController.text,
-        status: statusController.text,
-      );
-      widget.onEdit(updatedVendor);
-      _updatePagination();
+    if (result != null) {
+      // Handle the result if needed
+      setState(() {
+        // Refresh your vendor list
+        _updatePagination();
+      });
     }
   }
 
-  Widget _buildInputField(
-    BuildContext context,
-    String label,
-    TextEditingController controller,
-  ) {
-    final theme = Theme.of(context);
-    return TextFormField(
-      controller: controller,
-      decoration: InputDecoration(
-        labelText: label,
-        labelStyle: TextStyle(color: theme.colorScheme.onSurface),
-        filled: true,
-        fillColor: theme.colorScheme.surfaceContainer,
-        enabledBorder: OutlineInputBorder(
-          borderSide: BorderSide(color: theme.colorScheme.outline),
-          borderRadius: BorderRadius.circular(12),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderSide: BorderSide(color: theme.colorScheme.primary),
-          borderRadius: BorderRadius.circular(12),
-        ),
-      ),
-      validator: (val) {
-        if (val == null || val.isEmpty) {
-          return 'Please enter $label';
-        }
-        return null;
-      },
-    );
-  }
-
   Future<void> onViewVendor(Vendor vendor) async {
-    await showDialog(
-      context: context,
-      builder: (ctx) {
-        final colorScheme = Theme.of(ctx).colorScheme;
-        return Dialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20),
-          ),
-          backgroundColor: colorScheme.surface,
-          child: Container(
-            width: MediaQuery.of(ctx).size.width * 0.4,
-            padding: const EdgeInsets.all(24),
-            decoration: BoxDecoration(
-              border: Border.all(color: colorScheme.outline, width: 0.5),
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      "Vendor Details",
-                      style: TextStyle(
-                        fontSize: 22,
-                        fontWeight: FontWeight.bold,
-                        color: colorScheme.onSurface,
-                      ),
-                    ),
-                    IconButton(
-                      onPressed: () => Navigator.of(ctx).pop(),
-                      icon: Icon(Icons.close, color: colorScheme.onSurface),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 20),
-                _buildDetail(ctx, "ID", vendor.id.toString()),
-                _buildDetail(ctx, "Code", vendor.code),
-                _buildDetail(ctx, "Name", vendor.name),
-                _buildDetail(ctx, "Email", vendor.email),
-                _buildDetail(ctx, "Mobile", vendor.mobile),
-                _buildDetail(ctx, "Beneficiary Name", vendor.beneficiaryName),
-                _buildDetail(ctx, "Status", vendor.status),
-                const SizedBox(height: 24),
-                Align(
-                  alignment: Alignment.centerRight,
-                  child: ElevatedButton(
-                    onPressed: () => Navigator.of(ctx).pop(),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: colorScheme.primary,
-                      foregroundColor: colorScheme.onPrimary,
-                    ),
-                    child: const Text("Close"),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        );
-      },
-    );
-  }
-
-  Widget _buildDetail(BuildContext ctx, String label, String value) {
-    final colorScheme = Theme.of(ctx).colorScheme;
-    return Container(
-      margin: const EdgeInsets.symmetric(vertical: 6),
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      decoration: BoxDecoration(
-        color: colorScheme.surfaceContainer,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: colorScheme.outline, width: 0.5),
-      ),
-      child: Row(
-        children: [
-          SizedBox(
-            width: 140,
-            child: Text(
-              label,
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                color: colorScheme.primary,
-              ),
-            ),
-          ),
-          Expanded(
-            child: Text(value, style: TextStyle(color: colorScheme.onSurface)),
-          ),
-        ],
+    await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => ViewVendorScreen(vendor: vendor),
       ),
     );
   }
@@ -375,6 +159,14 @@ class _VendorTableViewState extends State<VendorTableView> {
     ];
 
     final rows = paginatedVendors.map((vendor) {
+      // Find the primary bank account, or fall back to the first one.
+      final primaryAccount = vendor.bankAccounts.isNotEmpty
+          ? vendor.bankAccounts.firstWhere(
+            (acc) => acc.isPrimary,
+        orElse: () => vendor.bankAccounts.first,
+      )
+          : null;
+
       return DataRow(
         cells: [
           DataCell(
@@ -397,7 +189,7 @@ class _VendorTableViewState extends State<VendorTableView> {
           ),
           DataCell(
             Text(
-              vendor.beneficiaryName,
+              primaryAccount?.beneficiaryName ?? 'N/A',
               style: TextStyle(color: colorScheme.onSurface),
             ),
           ),
@@ -493,34 +285,34 @@ class _VendorTableViewState extends State<VendorTableView> {
                     Expanded(
                       child: toggleIndex == 0
                           ? Column(
-                              children: [
-                                Expanded(
-                                  child: CustomTable(
-                                    columns: columns,
-                                    rows: rows,
-                                  ),
-                                ),
-                                _paginationBar(context),
-                              ],
-                            )
-                          : VendorGridView(
-                              vendorList: widget.vendorData,
-                              rowsPerPage: rowsPerPage,
-                              currentPage: currentPage,
-                              onPageChanged: (page) {
-                                setState(() {
-                                  currentPage = page;
-                                  _updatePagination();
-                                });
-                              },
-                              onRowsPerPageChanged: (rows) {
-                                setState(() {
-                                  rowsPerPage = rows ?? rowsPerPage;
-                                  currentPage = 0;
-                                  _updatePagination();
-                                });
-                              },
+                        children: [
+                          Expanded(
+                            child: CustomTable(
+                              columns: columns,
+                              rows: rows,
                             ),
+                          ),
+                          _paginationBar(context),
+                        ],
+                      )
+                          : VendorGridView(
+                        vendorList: widget.vendorData,
+                        rowsPerPage: rowsPerPage,
+                        currentPage: currentPage,
+                        onPageChanged: (page) {
+                          setState(() {
+                            currentPage = page;
+                            _updatePagination();
+                          });
+                        },
+                        onRowsPerPageChanged: (rows) {
+                          setState(() {
+                            rowsPerPage = rows ?? rowsPerPage;
+                            currentPage = 0;
+                            _updatePagination();
+                          });
+                        },
+                      ),
                     ),
                   ],
                 ),

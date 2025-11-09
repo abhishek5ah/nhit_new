@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:ppv_components/features/department/model/department_model.dart';
+import 'package:ppv_components/common_widgets/button/primary_button.dart';
+import 'package:ppv_components/common_widgets/button/secondary_button.dart';
 
 class CreateDepartmentScreen extends StatefulWidget {
   const CreateDepartmentScreen({super.key});
@@ -187,54 +189,18 @@ class _CreateDepartmentScreenState extends State<CreateDepartmentScreen> {
 
                   const SizedBox(height: 32),
 
-                  // Action Buttons
+                  // Action Buttons using Custom Buttons
                   Row(
                     mainAxisAlignment: MainAxisAlignment.end,
                     children: [
-                      OutlinedButton(
+                      SecondaryButton(
                         onPressed: _handleCancel,
-                        style: OutlinedButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 24,
-                            vertical: 16,
-                          ),
-                          side: BorderSide(
-                            color: colorScheme.outline.withValues(alpha: 0.5),
-                          ),
-                          foregroundColor: colorScheme.onSurface,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                        ),
-                        child: Text(
-                          'Cancel',
-                          style: textTheme.bodyMedium?.copyWith(
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
+                        label: 'Cancel',
                       ),
                       const SizedBox(width: 12),
-                      ElevatedButton(
+                      PrimaryButton(
                         onPressed: _submitForm,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.green[600],
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 24,
-                            vertical: 16,
-                          ),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          elevation: 0,
-                        ),
-                        child: Text(
-                          'Create Department',
-                          style: textTheme.bodyMedium?.copyWith(
-                            color: Colors.white,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
+                        label: 'Create Department',
                       ),
                     ],
                   ),

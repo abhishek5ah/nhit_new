@@ -1,5 +1,7 @@
 // lib/screens/edit_role_screen.dart
 import 'package:flutter/material.dart';
+import 'package:ppv_components/common_widgets/button/primary_button.dart';
+import 'package:ppv_components/common_widgets/button/secondary_button.dart';
 
 class EditRoleScreen extends StatefulWidget {
   final String roleId;
@@ -662,48 +664,21 @@ class _EditRoleScreenState extends State<EditRoleScreen> {
             const SizedBox(height: 24),
 
             // Action Buttons
+
             Row(
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
-                OutlinedButton.icon(
+                SecondaryButton(
                   onPressed: () => Navigator.of(context).pop(),
-                  icon: const Icon(Icons.close, size: 18),
-                  label: const Text('Cancel'),
-                  style: OutlinedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 24,
-                      vertical: 16,
-                    ),
-                    side: BorderSide(
-                      color: colorScheme.outline.withValues(alpha: 0.5),
-                    ),
-                    foregroundColor: colorScheme.onSurface,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                  ),
+                  label: 'Cancel',
                 ),
                 const SizedBox(width: 12),
-                ElevatedButton.icon(
+                PrimaryButton(
                   onPressed: _updateRole,
-                  icon: const Icon(Icons.check, size: 18),
-                  label: const Text('Update Role'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.orange[600],
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 24,
-                      vertical: 16,
-                    ),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    elevation: 0,
-                  ),
+                  label: 'Create Role',
                 ),
               ],
-            ),
-          ],
+            ),                  ],
         ),
       ),
     );

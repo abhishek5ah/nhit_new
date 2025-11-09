@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:ppv_components/common_widgets/tabs.dart';
 import 'package:ppv_components/features/vendor/data/vendor_mockdb.dart';
 import 'package:ppv_components/features/vendor/models/vendor_model.dart';
-import 'package:ppv_components/features/vendor/widgets/add_vendor_form.dart';
 import 'package:ppv_components/features/vendor/widgets/vendor_header.dart';
 import 'package:ppv_components/features/vendor/widgets/vendor_table.dart';
 
@@ -14,10 +12,9 @@ class VendorMainPage extends StatefulWidget {
 }
 
 class _VendorMainPageState extends State<VendorMainPage> {
-  int tabIndex = 0;
   String searchQuery = '';
   late List<Vendor> filteredVendors;
-  List<Vendor> allVendors = List<Vendor>.from(vendorData);
+  final List<Vendor> allVendors = List<Vendor>.from(vendorData);
 
   @override
   void initState() {
@@ -28,16 +25,16 @@ class _VendorMainPageState extends State<VendorMainPage> {
   void updateSearch(String query) {
     setState(() {
       searchQuery = query.toLowerCase();
-      filteredVendors = allVendors.where((vendor) {
-        final name = vendor.name.toLowerCase();
-        final code = vendor.code.toLowerCase();
-        final email = vendor.email.toLowerCase();
-        final status = vendor.status.toLowerCase();
-        return name.contains(searchQuery) ||
-            code.contains(searchQuery) ||
-            email.contains(searchQuery) ||
-            status.contains(searchQuery);
-      }).toList();
+      if (searchQuery.isEmpty) {
+        filteredVendors = List<Vendor>.from(allVendors);
+      } else {
+        filteredVendors = allVendors.where((vendor) {
+          return vendor.name.toLowerCase().contains(searchQuery) ||
+              vendor.code.toLowerCase().contains(searchQuery) ||
+              vendor.email.toLowerCase().contains(searchQuery) ||
+              vendor.status.toLowerCase().contains(searchQuery);
+        }).toList();
+      }
     });
   }
 
@@ -48,11 +45,11 @@ class _VendorMainPageState extends State<VendorMainPage> {
     });
   }
 
-  void onEditVendor(Vendor vendor) {
-    final index = allVendors.indexWhere((v) => v.id == vendor.id);
+  void onEditVendor(Vendor updatedVendor) {
+    final index = allVendors.indexWhere((v) => v.id == updatedVendor.id);
     if (index != -1) {
       setState(() {
-        allVendors[index] = vendor;
+        allVendors[index] = updatedVendor;
         updateSearch(searchQuery);
       });
     }
@@ -68,29 +65,20 @@ class _VendorMainPageState extends State<VendorMainPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Padding(
-              padding: const EdgeInsets.only(left: 12, bottom: 12, right: 12),
+            const Padding(
+              padding: EdgeInsets.only(left: 12, bottom: 12, right: 12),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  VendorHeader(tabIndex: tabIndex),
-                  const SizedBox(height: 12),
+                  VendorHeader(tabIndex: 0),
+                  SizedBox(height: 12),
                 ],
               ),
             ),
             Padding(
               padding: const EdgeInsets.only(right: 12),
               child: Row(
-                crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
-                  Padding(
-                    padding: const EdgeInsets.only(left: 12),
-                    child: TabsBar(
-                      tabs: const ['Vendor', 'Add Vendor'],
-                      selectedIndex: tabIndex,
-                      onChanged: (idx) => setState(() => tabIndex = idx),
-                    ),
-                  ),
                   const Spacer(),
                   SizedBox(
                     width: 250,
@@ -115,15 +103,12 @@ class _VendorMainPageState extends State<VendorMainPage> {
               ),
             ),
             const SizedBox(height: 12),
-
             Expanded(
-              child: tabIndex == 0
-                  ? VendorTableView(
+              child: VendorTableView(
                 vendorData: filteredVendors,
                 onDelete: onDeleteVendor,
                 onEdit: onEditVendor,
-              )
-                  : const AddVendorPage(),
+              ),
             ),
           ],
         ),

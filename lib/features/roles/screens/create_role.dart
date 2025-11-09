@@ -1,5 +1,7 @@
 // lib/screens/create_role_screen.dart
 import 'package:flutter/material.dart';
+import 'package:ppv_components/common_widgets/button/primary_button.dart';
+import 'package:ppv_components/common_widgets/button/secondary_button.dart';
 
 class CreateRoleScreen extends StatefulWidget {
   const CreateRoleScreen({super.key});
@@ -628,54 +630,17 @@ class _CreateRoleScreenState extends State<CreateRoleScreen> {
             Row(
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
-                OutlinedButton(
+                SecondaryButton(
                   onPressed: () => Navigator.of(context).pop(),
-                  style: OutlinedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 24,
-                      vertical: 16,
-                    ),
-                    side: BorderSide(
-                      color: colorScheme.outline.withValues(alpha: 0.5),
-                    ),
-                    foregroundColor: colorScheme.onSurface,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                  ),
-                  child: Text(
-                    'Cancel',
-                    style: textTheme.bodyMedium?.copyWith(
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
+                  label: 'Cancel',
                 ),
                 const SizedBox(width: 12),
-                ElevatedButton(
+                PrimaryButton(
                   onPressed: _createRole,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.green[600],
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 24,
-                      vertical: 16,
-                    ),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    elevation: 0,
-                  ),
-                  child: Text(
-                    'Create Role',
-                    style: textTheme.bodyMedium?.copyWith(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
+                  label: 'Create User',
                 ),
               ],
-            ),
-          ],
+            ),          ],
         ),
       ),
     );

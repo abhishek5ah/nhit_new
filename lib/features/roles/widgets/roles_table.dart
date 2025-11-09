@@ -3,7 +3,7 @@ import 'package:ppv_components/common_widgets/badge.dart';
 import 'package:ppv_components/common_widgets/button/primary_button.dart';
 import 'package:ppv_components/common_widgets/custom_table.dart';
 import 'package:ppv_components/features/roles/model/roles_model.dart';
-import 'package:ppv_components/features/roles/screens/view_page.dart';
+import 'package:ppv_components/features/roles/screens/view_role.dart';
 import 'package:ppv_components/features/roles/widgets/roles_grid.dart';
 import 'package:ppv_components/features/roles/screens/edit_role.dart';
 import 'package:ppv_components/features/roles/screens/create_role.dart';

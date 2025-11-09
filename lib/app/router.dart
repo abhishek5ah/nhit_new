@@ -15,6 +15,7 @@ import 'package:ppv_components/features/roles/screens/roles_main_page.dart';
 import 'package:ppv_components/features/user/screens/add_user.dart';
 import 'package:ppv_components/features/user/screens/user_main_page.dart';
 import 'package:ppv_components/features/vendor/screen/vendor_main_page.dart';
+import 'package:ppv_components/features/vendor/widgets/add_vendor_form.dart';
 
 // Placeholder widget for pages that don't exist yet
 class PlaceholderPage extends StatelessWidget {
@@ -48,7 +49,7 @@ class PlaceholderPage extends StatelessWidget {
 }
 
 final GoRouter router = GoRouter(
-  initialLocation: '/designations/create',
+  initialLocation: '/vendors',
   routes: [
     ShellRoute(
       builder: (context, state, child) => LayoutPage(child: child),
@@ -201,7 +202,7 @@ final GoRouter router = GoRouter(
         ),
         GoRoute(
           path: '/vendors/create',
-          builder: (context, state) => const PlaceholderPage(title: 'Create Vendor'),
+          builder: (context, state) => const CreateVendorScreen(),
         ),
 
         // Organization Management

@@ -3,7 +3,7 @@ import 'package:ppv_components/common_widgets/button/toggle_button.dart';
 import 'package:ppv_components/common_widgets/custom_table.dart';
 import 'package:ppv_components/features/user/model/user_model.dart';
 import 'package:ppv_components/features/user/screens/edit_user.dart';
-import 'package:ppv_components/features/user/screens/user_view_page.dart';
+import 'package:ppv_components/features/user/screens/view_user.dart';
 import 'package:ppv_components/features/user/widgets/user_grid.dart';
 
 const List<String> availableRoles = [
