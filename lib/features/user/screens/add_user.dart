@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:go_router/go_router.dart';
 import 'package:ppv_components/common_widgets/button/primary_button.dart';
 import 'package:ppv_components/common_widgets/button/secondary_button.dart';
 import 'package:ppv_components/core/utils/input_formatters.dart';
@@ -710,7 +711,7 @@ class _CreateUserScreenState extends State<CreateUserScreen> {
                     mainAxisAlignment: MainAxisAlignment.end,
                     children: [
                       SecondaryButton(
-                        onPressed: () => Navigator.of(context).pop(),
+                        onPressed: () => context.go('/users'),
                         label: 'Cancel',
                       ),
                       const SizedBox(width: 12),

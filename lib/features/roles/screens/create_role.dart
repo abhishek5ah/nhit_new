@@ -1,5 +1,5 @@
-// lib/screens/create_role_screen.dart
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:ppv_components/common_widgets/button/primary_button.dart';
 import 'package:ppv_components/common_widgets/button/secondary_button.dart';
 
@@ -17,7 +17,7 @@ class _CreateRoleScreenState extends State<CreateRoleScreen> {
   @override
   void initState() {
     super.initState();
-    // Initialize all permissions with false
+    // Initialize all permissions with a 'false' value
     for (var permission in _allPermissions) {
       _permissions[permission] = false;
     }
@@ -29,7 +29,7 @@ class _CreateRoleScreenState extends State<CreateRoleScreen> {
     super.dispose();
   }
 
-  // All permissions
+  // A comprehensive list of all available permissions in the system.
   final List<String> _allPermissions = [
     'manage-users',
     'manage-roles',
@@ -291,12 +291,10 @@ class _CreateRoleScreenState extends State<CreateRoleScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            'Please enter role name',
-            style: TextStyle(
-              color: colorScheme.onPrimary,
-            ),
+            'Please enter a role name',
+            style: TextStyle(color: colorScheme.onError),
           ),
-          backgroundColor: colorScheme.primary,
+          backgroundColor: colorScheme.error,
         ),
       );
       return;
@@ -312,31 +310,30 @@ class _CreateRoleScreenState extends State<CreateRoleScreen> {
         SnackBar(
           content: Text(
             'Please select at least one permission',
-            style: TextStyle(
-              color: colorScheme.onPrimary,
-            ),
+            style: TextStyle(color: colorScheme.onError),
           ),
-          backgroundColor: colorScheme.primary,
+          backgroundColor: colorScheme.error,
         ),
       );
       return;
     }
 
-    // TODO: Implement your API call here
+    // Placeholder for your API call logic
     print('Role Name: ${_roleNameController.text}');
     print('Selected Permissions: $selectedPermissions');
 
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(
-          'Role created with ${selectedPermissions.length} permissions',
-          style: TextStyle(
-            color: colorScheme.onPrimary,
-          ),
+          'Role "${_roleNameController.text}" created successfully!',
+          style: TextStyle(color: colorScheme.onPrimary),
         ),
-        backgroundColor: colorScheme.primary,
+        backgroundColor: Colors.green, // Explicitly using green for success
       ),
     );
+
+    // Optionally, navigate back after successful creation
+    // Navigator.of(context).pop();
   }
 
   @override
@@ -358,48 +355,40 @@ class _CreateRoleScreenState extends State<CreateRoleScreen> {
               decoration: BoxDecoration(
                 color: colorScheme.surfaceContainer,
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(
-                  color: colorScheme.outline,
-                  width: 0.5,
-                ),
+                border: Border.all(color: colorScheme.outline.withOpacity(0.5)),
               ),
               child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Row(
+                  Container(
+                    width: 48,
+                    height: 48,
+                    decoration: BoxDecoration(
+                      color: colorScheme.primary,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Icon(
+                      Icons.add_moderator_outlined,
+                      color: colorScheme.onPrimary,
+                      size: 24,
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Container(
-                        width: 48,
-                        height: 48,
-                        decoration: BoxDecoration(
-                          color: colorScheme.primary,
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Icon(
-                          Icons.add_circle_outline,
-                          color: colorScheme.onPrimary.withValues(alpha: 0.9),
-                          size: 24,
+                      Text(
+                        'Create Role',
+                        style: textTheme.titleLarge?.copyWith(
+                          fontWeight: FontWeight.bold,
+                          color: colorScheme.onSurface,
                         ),
                       ),
-                      const SizedBox(width: 16),
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Create Role',
-                            style: textTheme.titleLarge?.copyWith(
-                              fontWeight: FontWeight.bold,
-                              color: colorScheme.onSurface,
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            'Fill in the details to create a new role with permissions',
-                            style: textTheme.bodyMedium?.copyWith(
-                              color: colorScheme.onSurface.withValues(alpha: 0.6),
-                            ),
-                          ),
-                        ],
+                      const SizedBox(height: 4),
+                      Text(
+                        'Define a new role and assign permissions',
+                        style: textTheme.bodyMedium?.copyWith(
+                          color: colorScheme.onSurface.withOpacity(0.6),
+                        ),
                       ),
                     ],
                   ),
@@ -412,9 +401,7 @@ class _CreateRoleScreenState extends State<CreateRoleScreen> {
             // Role Information Section
             Container(
               decoration: BoxDecoration(
-                border: Border.all(
-                  color: colorScheme.outline.withValues(alpha: 0.5),
-                ),
+                border: Border.all(color: colorScheme.outline.withOpacity(0.5)),
                 borderRadius: BorderRadius.circular(8),
               ),
               padding: const EdgeInsets.all(24),
@@ -462,25 +449,28 @@ class _CreateRoleScreenState extends State<CreateRoleScreen> {
                   TextField(
                     controller: _roleNameController,
                     decoration: InputDecoration(
-                      hintText: 'Enter role name',
+                      hintText: 'Enter role name (e.g., "Finance Manager")',
                       hintStyle: TextStyle(
-                        color: colorScheme.onSurface.withValues(alpha: 0.4),
+                        color: colorScheme.onSurface.withOpacity(0.4),
                       ),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(8),
                         borderSide: BorderSide(
-                          color: colorScheme.outline.withValues(alpha: 0.5),
+                          color: colorScheme.outline.withOpacity(0.5),
                         ),
                       ),
                       enabledBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(8),
                         borderSide: BorderSide(
-                          color: colorScheme.outline.withValues(alpha: 0.5),
+                          color: colorScheme.outline.withOpacity(0.5),
                         ),
                       ),
                       focusedBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(8),
-                        borderSide: BorderSide(color: colorScheme.primary),
+                        borderSide: BorderSide(
+                          color: colorScheme.primary,
+                          width: 2,
+                        ),
                       ),
                       contentPadding: const EdgeInsets.symmetric(
                         horizontal: 16,
@@ -497,9 +487,7 @@ class _CreateRoleScreenState extends State<CreateRoleScreen> {
             // Permissions Section
             Container(
               decoration: BoxDecoration(
-                border: Border.all(
-                  color: colorScheme.outline.withValues(alpha: 0.5),
-                ),
+                border: Border.all(color: colorScheme.outline.withOpacity(0.5)),
                 borderRadius: BorderRadius.circular(8),
               ),
               padding: const EdgeInsets.all(24),
@@ -538,55 +526,18 @@ class _CreateRoleScreenState extends State<CreateRoleScreen> {
                           ),
                         ],
                       ),
-                      TextButton(
-                        onPressed: () {
-                          // Show dialog to select/deselect all
-                          showDialog(
-                            context: context,
-                            builder: (dialogContext) => AlertDialog(
-                              backgroundColor: colorScheme.surface,
-                              title: Text(
-                                'Manage Permissions',
-                                style: TextStyle(color: colorScheme.onSurface),
-                              ),
-                              content: Column(
-                                mainAxisSize: MainAxisSize.min,
-                                crossAxisAlignment: CrossAxisAlignment.stretch,
-                                children: [
-                                  ElevatedButton(
-                                    onPressed: () {
-                                      _selectAllPermissions();
-                                      Navigator.pop(dialogContext);
-                                    },
-                                    style: ElevatedButton.styleFrom(
-                                      backgroundColor: colorScheme.primary,
-                                      foregroundColor: colorScheme.onPrimary,
-                                    ),
-                                    child: const Text('Select All'),
-                                  ),
-                                  const SizedBox(height: 8),
-                                  OutlinedButton(
-                                    onPressed: () {
-                                      _deselectAllPermissions();
-                                      Navigator.pop(dialogContext);
-                                    },
-                                    style: OutlinedButton.styleFrom(
-                                      side: BorderSide(
-                                        color: colorScheme.outline,
-                                      ),
-                                      foregroundColor: colorScheme.onSurface,
-                                    ),
-                                    child: const Text('Deselect All'),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          );
-                        },
-                        child: Text(
-                          'What are these permissions mean?',
-                          style: TextStyle(color: colorScheme.primary),
-                        ),
+                      Row(
+                        children: [
+                          TextButton(
+                            onPressed: _selectAllPermissions,
+                            child: const Text('Select All'),
+                          ),
+                          const SizedBox(width: 8),
+                          TextButton(
+                            onPressed: _deselectAllPermissions,
+                            child: const Text('Deselect All'),
+                          ),
+                        ],
                       ),
                     ],
                   ),
@@ -631,16 +582,14 @@ class _CreateRoleScreenState extends State<CreateRoleScreen> {
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
                 SecondaryButton(
-                  onPressed: () => Navigator.of(context).pop(),
-                  label: 'Cancel',
+                  onPressed: () => context.go('/roles'),
+                  label: 'Cancel btn',
                 ),
                 const SizedBox(width: 12),
-                PrimaryButton(
-                  onPressed: _createRole,
-                  label: 'Create User',
-                ),
+                PrimaryButton(onPressed: _createRole, label: 'Create Role'),
               ],
-            ),          ],
+            ),
+          ],
         ),
       ),
     );
@@ -672,10 +621,7 @@ class _CreateRoleScreenState extends State<CreateRoleScreen> {
               },
               activeColor: colorScheme.primary,
               checkColor: colorScheme.onPrimary,
-              side: BorderSide(
-                color: colorScheme.outline,
-                width: 1.5,
-              ),
+              side: BorderSide(color: colorScheme.outline, width: 1.5),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(4),
               ),

@@ -72,13 +72,11 @@ class _RoleMainPageState extends State<RoleMainPage> {
                 ],
               ),
             ),
-            // Removed the TabsBar and related code here
             Padding(
               padding: const EdgeInsets.only(right: 12),
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
-                  // Removed the TabsBar widget
                   const Spacer(),
                   SizedBox(
                     width: 250,

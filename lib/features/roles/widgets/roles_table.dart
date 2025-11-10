@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:ppv_components/common_widgets/badge.dart';
 import 'package:ppv_components/common_widgets/button/primary_button.dart';
 import 'package:ppv_components/common_widgets/custom_table.dart';
@@ -40,7 +41,6 @@ class _RoleTableViewState extends State<RoleTableView> {
   @override
   void didUpdateWidget(covariant RoleTableView oldWidget) {
     super.didUpdateWidget(oldWidget);
-    // When the input data changes, we might need to reset the view
     if (widget.roleData.length != oldWidget.roleData.length) {
       currentPage = 0;
     }
@@ -48,26 +48,21 @@ class _RoleTableViewState extends State<RoleTableView> {
   }
 
   void _updatePagination() {
-    final start = currentPage * rowsPerPage;
-    // Recalculate total pages in case rowsPerPage or roleData changed
     final totalPages = (widget.roleData.length / rowsPerPage).ceil();
-
-    // Ensure currentPage is not out of bounds
     if (currentPage >= totalPages && totalPages > 0) {
       currentPage = totalPages - 1;
     }
-
-    final end = (currentPage * rowsPerPage + rowsPerPage).clamp(0, widget.roleData.length);
+    final start = (currentPage * rowsPerPage).clamp(0, widget.roleData.length);
+    final end = (start + rowsPerPage).clamp(0, widget.roleData.length);
     setState(() {
       paginatedRoles = widget.roleData.sublist(start, end);
     });
   }
 
-
   void changeRowsPerPage(int? value) {
     setState(() {
       rowsPerPage = value ?? 10;
-      currentPage = 0; // Reset to the first page
+      currentPage = 0;
       _updatePagination();
     });
   }
@@ -101,7 +96,6 @@ class _RoleTableViewState extends State<RoleTableView> {
     );
     if (shouldDelete == true) {
       widget.onDelete(role);
-      // No need to call _updatePagination here if didUpdateWidget handles it
     }
   }
 
@@ -123,16 +117,13 @@ class _RoleTableViewState extends State<RoleTableView> {
   }
 
   Future<void> onCreateRole() async {
-    final result = await Navigator.push(
-      context,
-      MaterialPageRoute(builder: (context) => const CreateRoleScreen()),
-    );
+    final result = await context.push<Role>('/roles/create');
 
-    if (result != null && result is Role) {
-      // Assuming a new role should be handled by the parent, similar to onEdit
+    if (result != null) {
       widget.onEdit(result);
     }
   }
+
 
   Future<void> onViewRole(Role role) async {
     await Navigator.push(
@@ -184,7 +175,7 @@ class _RoleTableViewState extends State<RoleTableView> {
           type: ChipType.status,
           statusKey: perm,
           statusColorFunc: (_) => colorScheme.primary,
-              textColor: colorScheme.onPrimary,
+          textColor: colorScheme.onPrimary,
         ),
       )
           .toList();
@@ -215,7 +206,6 @@ class _RoleTableViewState extends State<RoleTableView> {
             Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                // View Icon Button
                 IconButton(
                   onPressed: () => onViewRole(role),
                   icon: const Icon(Icons.visibility_outlined),
@@ -223,11 +213,10 @@ class _RoleTableViewState extends State<RoleTableView> {
                   iconSize: 20,
                   tooltip: 'View',
                   style: IconButton.styleFrom(
-                    backgroundColor: colorScheme.primary.withValues(alpha: 0.1),
+                    backgroundColor: colorScheme.primary.withOpacity(0.1),
                   ),
                 ),
                 const SizedBox(width: 4),
-                // Edit Icon Button
                 IconButton(
                   onPressed: () => onEditRole(role),
                   icon: const Icon(Icons.edit_outlined),
@@ -235,11 +224,10 @@ class _RoleTableViewState extends State<RoleTableView> {
                   iconSize: 20,
                   tooltip: 'Edit',
                   style: IconButton.styleFrom(
-                    backgroundColor: colorScheme.tertiary.withValues(alpha: 0.1),
+                    backgroundColor: colorScheme.tertiary.withOpacity(0.1),
                   ),
                 ),
                 const SizedBox(width: 4),
-                // Delete Icon Button
                 IconButton(
                   onPressed: () => deleteRole(role),
                   icon: const Icon(Icons.delete_outline),
@@ -247,7 +235,7 @@ class _RoleTableViewState extends State<RoleTableView> {
                   iconSize: 20,
                   tooltip: 'Delete',
                   style: IconButton.styleFrom(
-                    backgroundColor: colorScheme.error.withValues(alpha: 0.1),
+                    backgroundColor: colorScheme.error.withOpacity(0.1),
                   ),
                 ),
               ],

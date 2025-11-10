@@ -89,7 +89,7 @@ class Navbar extends StatelessWidget {
                       .join()
                       .toUpperCase(),
                   style: TextStyle(
-                    color: colorScheme.surface,
+                    color: colorScheme.onPrimary,
                     fontSize: 14,
                     fontWeight: FontWeight.bold,
                   ),

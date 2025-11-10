@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:ppv_components/app/layout.dart';
-
-// Import only the pages that actually exist in your project
 import 'package:ppv_components/features/activity/screen/activity_main_page.dart';
 import 'package:ppv_components/features/activity/screen/login_history_main_page.dart';
 import 'package:ppv_components/features/department/screen/create_department.dart';
@@ -52,7 +50,7 @@ class PlaceholderPage extends StatelessWidget {
 }
 
 final GoRouter router = GoRouter(
-  initialLocation: '/payment-notes',
+  initialLocation: '/roles/create',
   routes: [
     ShellRoute(
       builder: (context, state, child) => LayoutPage(child: child),

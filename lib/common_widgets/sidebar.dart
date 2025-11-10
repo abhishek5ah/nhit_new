@@ -20,18 +20,19 @@ class _SidebarState extends State<Sidebar> with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> widthAnim;
 
+  // Updated categories list with icons for each sub-item
   final List<_SidebarCategory> categories = [
     _SidebarCategory(
       heading: "EXPENSE MANAGEMENT",
       items: [
         _SidebarItem(Icons.receipt_long, "Expense Approval Notes", "", subItems: [
-          _SubItem("All Notes", "/expense-notes/note"),
-          _SubItem("Create Note", "/expense-note/create"),
+          _SubItem("All Notes", "/expense-notes/note", Icons.list_alt),
+          _SubItem("Create Note", "/expense-note/create", Icons.add_box_outlined),
         ]),
         _SidebarItem(Icons.money, "Payment Notes", "", subItems: [
-          _SubItem("Create Payment Note", "/payment-notes/create"),
-          _SubItem("All Payment Notes", "/payment-notes"),
-          _SubItem("Draft Notes", "/drafts"),
+          _SubItem("Create Payment Note", "/payment-notes/create", Icons.post_add),
+          _SubItem("All Payment Notes", "/payment-notes", Icons.credit_card),
+          _SubItem("Draft Notes", "/drafts", Icons.drafts_outlined),
         ]),
       ],
     ),
@@ -39,27 +40,27 @@ class _SidebarState extends State<Sidebar> with SingleTickerProviderStateMixin {
       heading: "APPROVAL RULES",
       items: [
         _SidebarItem(Icons.rule, "Approval Rules Management", "", subItems: [
-          _SubItem("Rules Dashboard", "/approval-rules"),
-          _SubItem("Expense Note Rules", "/approval-rules/green_note"),
-          _SubItem("Create Expense Rules", "/approval-rules/green_note/create"),
-          _SubItem("Payment Note Rules", "/approval-rules/payment_note"),
-          _SubItem("Create Payment Rules", "/approval-rules/payment_note/create"),
-          _SubItem("Reimbursement Rules", "/approval-rules/reimbursement_note"),
-          _SubItem("Create Reimbursement Rules", "/approval-rules/reimbursement_note/create"),
-          _SubItem("Bank Letter", "/approval-rules/bank_letter"),
-          _SubItem("Create Bank Letter Rule", "/approval-rules/bank_letter/create"),
+          _SubItem("Rules Dashboard", "/approval-rules", Icons.dashboard_outlined),
+          _SubItem("Expense Note Rules", "/approval-rules/green_note", Icons.receipt_outlined),
+          _SubItem("Create Expense Rules", "/approval-rules/green_note/create", Icons.add_task),
+          _SubItem("Payment Note Rules", "/approval-rules/payment_note", Icons.payment_outlined),
+          _SubItem("Create Payment Rules", "/approval-rules/payment_note/create", Icons.playlist_add_check),
+          _SubItem("Reimbursement Rules", "/approval-rules/reimbursement_note", Icons.card_travel),
+          _SubItem("Create Reimbursement Rules", "/approval-rules/reimbursement_note/create", Icons.luggage),
+          _SubItem("Bank Letter", "/approval-rules/bank_letter", Icons.mark_as_unread),
+          _SubItem("Create Bank Letter Rule", "/approval-rules/bank_letter/create", Icons.note_add),
         ]),
         _SidebarItem(Icons.account_balance, "Escrow Banking System", "", subItems: [
-          _SubItem("Escrow Accounts", "/escrow-accounts"),
-          _SubItem("Create Account", "/escrow-accounts/create"),
-          _SubItem("Fund Transfers", "/escrow/account-transfers"),
-          _SubItem("New Transfer", "/escrow/create"),
-          _SubItem("Bank Letter", "/escrow/bank-letter"),
-          _SubItem("Create Letter", "/escrow/bank-letter/create"),
+          _SubItem("Escrow Accounts", "/escrow-accounts", Icons.account_balance_wallet_outlined),
+          _SubItem("Create Account", "/escrow-accounts/create", Icons.add_card),
+          _SubItem("Fund Transfers", "/escrow/account-transfers", Icons.swap_horiz),
+          _SubItem("New Transfer", "/escrow/create", Icons.add_road),
+          _SubItem("Bank Letter", "/escrow/bank-letter", Icons.mail_outline),
+          _SubItem("Create Letter", "/escrow/bank-letter/create", Icons.create_outlined),
         ]),
         _SidebarItem(Icons.receipt, "Travel & Reimbursement", "", subItems: [
-          _SubItem("Create Request", "/reimbursement-note/create"),
-          _SubItem("All Reimbursements", "/reimbursement-note"),
+          _SubItem("Create Request", "/reimbursement-note/create", Icons.add_location_alt_outlined),
+          _SubItem("All Reimbursements", "/reimbursement-note", Icons.flight_takeoff),
         ]),
       ],
     ),
@@ -67,45 +68,41 @@ class _SidebarState extends State<Sidebar> with SingleTickerProviderStateMixin {
       heading: "MANAGEMENT",
       items: [
         _SidebarItem(Icons.people, "User Management", "", subItems: [
-          _SubItem("All Users", "/users"),
-          _SubItem("Add New User", "/users/create"),
-
+          _SubItem("All Users", "/users", Icons.people_outline),
+          _SubItem("Add New User", "/users/create", Icons.person_add_alt),
         ]),
         _SidebarItem(Icons.shield, "Role Management", "", subItems: [
-          _SubItem("All Roles", "/roles"),
-          _SubItem("Create Role", "/roles/create"),
+          _SubItem("All Roles", "/roles", Icons.security),
+          _SubItem("Create Role", "/roles/create", Icons.add_moderator),
         ]),
         _SidebarItem(Icons.account_tree, "Departments", "", subItems: [
-          _SubItem("All Department", "/department"),
-          _SubItem("Create Department", "/department/create"),
-
+          _SubItem("All Departments", "/department", Icons.corporate_fare),
+          _SubItem("Create Department", "/department/create", Icons.add_business_outlined),
         ]),
         _SidebarItem(Icons.badge, "Designations", "", subItems: [
-          _SubItem("All Designation", "/designations"),
-          _SubItem("Create Designation", "/designations/create"),
+          _SubItem("All Designations", "/designations", Icons.badge_outlined),
+          _SubItem("Create Designation", "/designations/create", Icons.library_add),
         ]),
         _SidebarItem(Icons.store, "Vendor Management", "", subItems: [
-          _SubItem("All Vendors", "/vendors"),
-          _SubItem("Add Vendors", "/vendors/create"),
+          _SubItem("All Vendors", "/vendors", Icons.store_mall_directory_outlined),
+          _SubItem("Add Vendors", "/vendors/create", Icons.add_shopping_cart),
         ]),
         _SidebarItem(Icons.store, "Organization Management", "", subItems: [
-          _SubItem("All Organizations", "/organizations"),
-          _SubItem("Create Organization", "/organizations/create"),
+          _SubItem("All Organizations", "/organizations", Icons.domain),
+          _SubItem("Create Organization", "/organizations/create", Icons.location_city),
         ]),
       ],
     ),
     _SidebarCategory(
       heading: "ACTIVITY & REPORTS",
       items: [
-        _SidebarItem(Icons.people, "Activity", "", subItems: [
-          _SubItem("Activity Logs", "/activity"),
-          _SubItem("Login History", "/login-history"),
+        _SidebarItem(Icons.history, "Activity", "", subItems: [
+          _SubItem("Activity Logs", "/activity", Icons.plagiarism_outlined),
+          _SubItem("Login History", "/login-history", Icons.login),
         ]),
-      ]
+      ],
     ),
   ];
-
-
 
   @override
   void initState() {
@@ -173,7 +170,6 @@ class _SidebarState extends State<Sidebar> with SingleTickerProviderStateMixin {
           setState(() {
             selectedOrgIndex = index;
           });
-          // Add org switch navigation here if needed
         },
         borderRadius: BorderRadius.circular(5),
         child: Container(
@@ -337,7 +333,7 @@ class _SidebarState extends State<Sidebar> with SingleTickerProviderStateMixin {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: isActive ? colors.surfaceContainerHighest.withAlpha(80) : Colors.transparent,
+        color: isActive ? colors.surfaceContainerHighest.withValues(alpha: 0.5) : Colors.transparent,
         borderRadius: BorderRadius.circular(10),
       ),
       child: ExpansionTile(
@@ -348,7 +344,7 @@ class _SidebarState extends State<Sidebar> with SingleTickerProviderStateMixin {
           color: colors.onSurfaceVariant,
           size: 20,
         )
-            : null,
+            : const SizedBox.shrink(),
         initiallyExpanded: isExpandedItem,
         leading: Icon(item.icon, color: colors.onSurfaceVariant),
         textColor: isExpanded ? colors.onSurface : Colors.transparent,
@@ -363,27 +359,29 @@ class _SidebarState extends State<Sidebar> with SingleTickerProviderStateMixin {
           ),
         )
             : const SizedBox.shrink(),
-        childrenPadding: const EdgeInsets.only(left: 56, bottom: 8),
+        childrenPadding: const EdgeInsets.only(left: 30, bottom: 8, right: 16),
         children: isExpanded && item.subItems.isNotEmpty
             ? item.subItems
             .map((_SubItem subItem) => ListTile(
-          contentPadding: EdgeInsets.zero,
-          horizontalTitleGap: 0,
-          minLeadingWidth: 20,
-          leading: Icon(Icons.circle, size: 8, color: subItem.route == selectedSubRoute ? colors.primary : colors.onSurfaceVariant),
-          title: InkWell(
-            onTap: () {
-              _navigate(subItem.route);
-            },
-            child: Text(
-              subItem.label,
-              style: TextStyle(
-                color: subItem.route == selectedSubRoute ? colors.primary : colors.onSurface,
-                fontSize: 14,
-                fontWeight: subItem.route == selectedSubRoute ? FontWeight.bold : FontWeight.normal,
-              ),
+          contentPadding: const EdgeInsets.symmetric(horizontal: 16),
+          horizontalTitleGap: 8,
+          dense: true,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+          tileColor: subItem.route == selectedSubRoute ? colors.primary.withValues(alpha: 0.1) : Colors.transparent,
+          leading: Icon(subItem.icon, // Use the icon from the subItem
+              size: 18,
+              color: subItem.route == selectedSubRoute ? colors.primary : colors.onSurfaceVariant),
+          title: Text(
+            subItem.label,
+            style: TextStyle(
+              color: subItem.route == selectedSubRoute ? colors.primary : colors.onSurface,
+              fontSize: 14,
+              fontWeight: subItem.route == selectedSubRoute ? FontWeight.bold : FontWeight.normal,
             ),
           ),
+          onTap: () {
+            _navigate(subItem.route);
+          },
         ))
             .toList()
             : [],
@@ -406,8 +404,10 @@ class _SidebarItem {
   _SidebarItem(this.icon, this.label, this.route, {this.subItems = const []});
 }
 
+// Updated _SubItem class to include an icon
 class _SubItem {
   final String label;
   final String route;
-  _SubItem(this.label, this.route);
+  final IconData icon;
+  _SubItem(this.label, this.route, this.icon);
 }
