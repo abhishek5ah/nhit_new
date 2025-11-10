@@ -52,7 +52,7 @@ class PlaceholderPage extends StatelessWidget {
 }
 
 final GoRouter router = GoRouter(
-  initialLocation: '/organizations',
+  initialLocation: '/payment-notes',
   routes: [
     ShellRoute(
       builder: (context, state, child) => LayoutPage(child: child),

@@ -123,7 +123,6 @@ class _CreateOrganizationScreenState extends State<CreateOrganizationScreen> {
         createdBy: 'Super Admin',
         createdDate: 'Nov 10, 2025',
         description: _descriptionController.text.trim(),
-        badgeColor: Colors.blue[700],
       );
 
       OrganizationMockDB.add(newOrganization);

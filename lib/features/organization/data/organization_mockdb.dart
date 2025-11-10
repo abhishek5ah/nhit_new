@@ -11,7 +11,6 @@ class OrganizationMockDB {
       createdBy: 'Super Admin',
       createdDate: 'Nov 03, 2025',
       description: 'Southern region projects',
-      badgeColor: Colors.blue[700],
     ),
     Organization(
       id: 2,
@@ -21,7 +20,6 @@ class OrganizationMockDB {
       createdBy: 'Super Admin',
       createdDate: 'Nov 03, 2025',
       description: 'Eastern region projects',
-      badgeColor: Colors.blue[700],
     ),
     Organization(
       id: 3,
@@ -31,7 +29,6 @@ class OrganizationMockDB {
       createdBy: 'Super Admin',
       createdDate: 'Nov 03, 2025',
       description: 'Western region projects',
-      badgeColor: Colors.blue[700],
     ),
     Organization(
       id: 4,
@@ -41,7 +38,6 @@ class OrganizationMockDB {
       createdBy: 'Super Admin',
       createdDate: 'Oct 22, 2025',
       description: 'Default organization for existing users and data',
-      badgeColor: Colors.grey[700],
     ),
   ];
 

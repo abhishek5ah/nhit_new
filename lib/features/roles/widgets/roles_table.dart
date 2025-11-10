@@ -184,6 +184,7 @@ class _RoleTableViewState extends State<RoleTableView> {
           type: ChipType.status,
           statusKey: perm,
           statusColorFunc: (_) => colorScheme.primary,
+              textColor: colorScheme.onPrimary,
         ),
       )
           .toList();

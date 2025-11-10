@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:ppv_components/common_widgets/button/toggle_button.dart';
+import 'package:ppv_components/common_widgets/custom_pagination.dart';
 import 'package:ppv_components/common_widgets/custom_table.dart';
 import 'package:ppv_components/features/payment_notes/model/payment_notes_model.dart';
 import 'package:ppv_components/features/payment_notes/screen/payment_note_detail_page.dart';
@@ -34,6 +35,9 @@ class _PaymentTableViewState extends State<PaymentTableView> {
   @override
   void didUpdateWidget(covariant PaymentTableView oldWidget) {
     super.didUpdateWidget(oldWidget);
+    if (widget.paymentData != oldWidget.paymentData) {
+      currentPage = 0;
+    }
     _updatePagination();
   }
 
@@ -41,12 +45,15 @@ class _PaymentTableViewState extends State<PaymentTableView> {
     final start = currentPage * rowsPerPage;
     final end = (start + rowsPerPage).clamp(0, widget.paymentData.length);
     setState(() {
-      paginatedPayments = widget.paymentData.sublist(start, end);
       final totalPages = (widget.paymentData.length / rowsPerPage).ceil();
       if (currentPage >= totalPages && totalPages > 0) {
         currentPage = totalPages - 1;
-        paginatedPayments = widget.paymentData.sublist(start, end);
       }
+      paginatedPayments = widget.paymentData.sublist(
+        (currentPage * rowsPerPage).clamp(0, widget.paymentData.length),
+        (currentPage * rowsPerPage + rowsPerPage)
+            .clamp(0, widget.paymentData.length),
+      );
     });
   }
 
@@ -87,106 +94,7 @@ class _PaymentTableViewState extends State<PaymentTableView> {
     );
     if (shouldDelete == true) {
       widget.onDelete(payment);
-      _updatePagination();
     }
-  }
-
-  Future<void> onViewPayment(PaymentNote payment) async {
-    await showDialog(
-      context: context,
-      builder: (ctx) {
-        final colorScheme = Theme.of(ctx).colorScheme;
-
-        return Dialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20),
-          ),
-          backgroundColor: colorScheme.surface,
-          child: Container(
-            width: MediaQuery.of(ctx).size.width * 0.4,
-            padding: const EdgeInsets.all(24),
-            decoration: BoxDecoration(
-              border: Border.all(color: colorScheme.outline, width: 0.5),
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      "Payment Details",
-                      style: TextStyle(
-                        fontSize: 22,
-                        fontWeight: FontWeight.bold,
-                        color: colorScheme.onSurface,
-                      ),
-                    ),
-                    IconButton(
-                      onPressed: () => Navigator.of(ctx).pop(),
-                      icon: Icon(Icons.close, color: colorScheme.onSurface),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 20),
-                _buildDetail(ctx, "S.No", payment.sno.toString()),
-                _buildDetail(ctx, "Project Name", payment.projectName),
-                _buildDetail(ctx, "Vendor Name", payment.vendorName),
-                _buildDetail(ctx, "Invoice Value", payment.invoiceValue),
-                _buildDetail(ctx, "Date", payment.date),
-                _buildDetail(ctx, "Status", payment.status),
-                _buildDetail(ctx, "Next Approver", payment.nextApprover),
-                const SizedBox(height: 24),
-                Align(
-                  alignment: Alignment.centerRight,
-                  child: ElevatedButton(
-                    onPressed: () => Navigator.of(ctx).pop(),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: colorScheme.primary,
-                      foregroundColor: colorScheme.onPrimary,
-                    ),
-                    child: const Text("Close"),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        );
-      },
-    );
-  }
-
-  Widget _buildDetail(BuildContext ctx, String label, String value) {
-    final colorScheme = Theme.of(ctx).colorScheme;
-
-    return Container(
-      margin: const EdgeInsets.symmetric(vertical: 6),
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      decoration: BoxDecoration(
-        color: colorScheme.surfaceContainer,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: colorScheme.outline, width: 0.5),
-      ),
-      child: Row(
-        children: [
-          SizedBox(
-            width: 120,
-            child: Text(
-              label,
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                color: colorScheme.primary,
-              ),
-            ),
-          ),
-          Expanded(
-            child: Text(value, style: TextStyle(color: colorScheme.onSurface)),
-          ),
-        ],
-      ),
-    );
   }
 
   @override
@@ -289,7 +197,9 @@ class _PaymentTableViewState extends State<PaymentTableView> {
             Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                OutlinedButton(
+                IconButton(
+                  icon: const Icon(Icons.visibility_outlined),
+                  tooltip: 'View Payment',
                   onPressed: () {
                     Navigator.of(context).push(
                       MaterialPageRoute(
@@ -297,21 +207,12 @@ class _PaymentTableViewState extends State<PaymentTableView> {
                       ),
                     );
                   },
-                  child: const Text('View'),
                 ),
-
                 const SizedBox(width: 8),
-                OutlinedButton(
+                IconButton(
+                  icon: Icon(Icons.delete_outline, color: colorScheme.error),
+                  tooltip: 'Delete Payment',
                   onPressed: () => deletePayment(payment),
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: colorScheme.error,
-                    side: BorderSide(color: colorScheme.outline),
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 6,
-                    ),
-                  ),
-                  child: const Text('Delete'),
                 ),
               ],
             ),
@@ -380,7 +281,13 @@ class _PaymentTableViewState extends State<PaymentTableView> {
                               rows: rows,
                             ),
                           ),
-                          _paginationBar(context),
+                          CustomPaginationBar(
+                            totalItems: widget.paymentData.length,
+                            rowsPerPage: rowsPerPage,
+                            currentPage: currentPage,
+                            onPageChanged: gotoPage,
+                            onRowsPerPageChanged: changeRowsPerPage,
+                          ),
                         ],
                       )
                           : PaymentGrid(
@@ -401,93 +308,6 @@ class _PaymentTableViewState extends State<PaymentTableView> {
             ),
           ],
         ),
-      ),
-    );
-  }
-
-  Widget _paginationBar(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-
-    final totalPages = (widget.paymentData.length / rowsPerPage).ceil();
-    final start = currentPage * rowsPerPage;
-    final end = (start + rowsPerPage).clamp(0, widget.paymentData.length);
-
-    int windowSize = 3;
-    int startWindow = 0;
-    int endWindow = totalPages;
-
-    if (totalPages > windowSize) {
-      if (currentPage <= 1) {
-        startWindow = 0;
-        endWindow = windowSize;
-      } else if (currentPage >= totalPages - 2) {
-        startWindow = totalPages - windowSize;
-        endWindow = totalPages;
-      } else {
-        startWindow = currentPage - 1;
-        endWindow = currentPage + 2;
-      }
-    }
-
-    return Padding(
-      padding: const EdgeInsets.only(top: 12, bottom: 10),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(
-            "Showing ${widget.paymentData.isEmpty ? 0 : start + 1} to $end of ${widget.paymentData.length} entries",
-            style: Theme.of(context).textTheme.bodySmall,
-          ),
-          Row(
-            children: [
-              IconButton(
-                icon: const Icon(Icons.arrow_back),
-                onPressed: currentPage > 0
-                    ? () => gotoPage(currentPage - 1)
-                    : null,
-              ),
-              for (int i = startWindow; i < endWindow; i++)
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 2),
-                  child: ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: i == currentPage
-                          ? colorScheme.primary
-                          : colorScheme.surfaceContainer,
-                      foregroundColor: i == currentPage
-                          ? Colors.white
-                          : colorScheme.onSurface,
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 10,
-                      ),
-                      minimumSize: const Size(40, 40),
-                    ),
-                    onPressed: () => gotoPage(i),
-                    child: Text('${i + 1}'),
-                  ),
-                ),
-              IconButton(
-                icon: const Icon(Icons.arrow_forward),
-                onPressed: currentPage < totalPages - 1
-                    ? () => gotoPage(currentPage + 1)
-                    : null,
-              ),
-              const SizedBox(width: 20),
-              DropdownButton<int>(
-                value: rowsPerPage,
-                items: [5, 10, 20, 50]
-                    .map((e) => DropdownMenuItem(value: e, child: Text('$e')))
-                    .toList(),
-                onChanged: changeRowsPerPage,
-                style: Theme.of(context).textTheme.bodyMedium,
-                underline: const SizedBox(),
-              ),
-              const SizedBox(width: 8),
-              Text("page", style: Theme.of(context).textTheme.bodySmall),
-            ],
-          ),
-        ],
       ),
     );
   }

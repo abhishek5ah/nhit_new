@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:ppv_components/common_widgets/badge.dart';
 import 'package:ppv_components/common_widgets/button/primary_button.dart';
-import 'package:ppv_components/common_widgets/custom_table.dart'; // ✅ Added your custom table
+import 'package:ppv_components/common_widgets/custom_table.dart';
 import 'package:ppv_components/features/organization/model/organization_model.dart';
 import 'package:ppv_components/features/organization/data/organization_mockdb.dart';
 import 'package:ppv_components/features/organization/screens/create_organization.dart';
@@ -158,8 +158,7 @@ class _OrganizationMainPageState extends State<OrganizationMainPage> {
                           Text(
                             'Manage your organizations',
                             style: theme.textTheme.bodyMedium?.copyWith(
-                              color:
-                              colorScheme.onSurface.withValues(alpha: 0.6),
+                              color: colorScheme.onSurface.withValues(alpha: 0.6),
                             ),
                           ),
                         ],
@@ -192,9 +191,16 @@ class _OrganizationMainPageState extends State<OrganizationMainPage> {
                 ],
                 rows: organizations.map((org) {
                   final nameParts = org.name.split(' ');
-                  String badgeText = nameParts.length >= 2
+                  final badgeText = nameParts.length >= 2
                       ? nameParts[0][0] + nameParts[1][0]
                       : org.name.substring(0, 2);
+
+                  // Truncate the description
+                  String displayDescription = org.description ?? '';
+                  if (displayDescription.length > 70) {
+                    displayDescription =
+                    '${displayDescription.substring(0, 70)}...';
+                  }
 
                   return DataRow(
                     cells: [
@@ -205,7 +211,7 @@ class _OrganizationMainPageState extends State<OrganizationMainPage> {
                             width: 40,
                             height: 40,
                             decoration: BoxDecoration(
-                              color: org.badgeColor ?? colorScheme.primary,
+                              color: colorScheme.primary.withValues(alpha: 0.7),
                               borderRadius: BorderRadius.circular(8),
                             ),
                             child: Center(
@@ -222,6 +228,7 @@ class _OrganizationMainPageState extends State<OrganizationMainPage> {
                           Flexible(
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
+                              mainAxisAlignment: MainAxisAlignment.center,
                               children: [
                                 Text(
                                   org.name,
@@ -231,14 +238,14 @@ class _OrganizationMainPageState extends State<OrganizationMainPage> {
                                   ),
                                   overflow: TextOverflow.ellipsis,
                                 ),
-                                if (org.description != null)
+                                if (org.description != null &&
+                                    org.description!.isNotEmpty)
                                   Text(
-                                    org.description!,
+                                    displayDescription, // Use truncated description
                                     style: theme.textTheme.bodySmall?.copyWith(
-                                      color: colorScheme.onSurface
-                                          .withValues(alpha: 0.6),
+                                      color:
+                                      colorScheme.onSurface.withValues(alpha: 0.6),
                                     ),
-                                    overflow: TextOverflow.ellipsis,
                                   ),
                               ],
                             ),
@@ -289,63 +296,66 @@ class _OrganizationMainPageState extends State<OrganizationMainPage> {
                       ),
 
                       // Action buttons
-// Action buttons
                       DataCell(
                         Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            // View
                             IconButton(
-                              icon: const Icon(Icons.visibility_outlined, size: 20),
+                              icon: const Icon(Icons.visibility_outlined,
+                                  size: 20),
                               color: colorScheme.primary,
                               tooltip: 'View',
                               onPressed: () => _viewOrganization(org),
                               style: IconButton.styleFrom(
-                                backgroundColor: colorScheme.primary.withValues(alpha: 0.1),
+                                backgroundColor:
+                                colorScheme.primary.withValues(alpha: 0.1),
                               ),
                             ),
                             const SizedBox(width: 4),
-                            // Edit
                             IconButton(
                               icon: const Icon(Icons.edit_outlined, size: 20),
                               color: colorScheme.tertiary,
                               tooltip: 'Edit',
                               onPressed: () => _editOrganization(org),
                               style: IconButton.styleFrom(
-                                backgroundColor: colorScheme.tertiary.withValues(alpha: 0.1),
+                                backgroundColor:
+                                colorScheme.tertiary.withValues(alpha: 0.1),
                               ),
                             ),
                             const SizedBox(width: 4),
-                            // Settings
                             IconButton(
-                              icon: const Icon(Icons.settings_outlined, size: 20),
+                              icon: const Icon(Icons.settings_outlined,
+                                  size: 20),
                               color: colorScheme.onSurface.withValues(alpha: 0.6),
                               tooltip: 'Settings',
                               onPressed: () {},
                               style: IconButton.styleFrom(
-                                backgroundColor: colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+                                backgroundColor: colorScheme
+                                    .surfaceContainerHighest
+                                    .withValues(alpha: 0.5),
                               ),
                             ),
                             const SizedBox(width: 4),
-                            // Duplicate
                             IconButton(
-                              icon: const Icon(Icons.content_copy_outlined, size: 20),
+                              icon: const Icon(Icons.content_copy_outlined,
+                                  size: 20),
                               color: colorScheme.secondary,
                               tooltip: 'Duplicate',
                               onPressed: () {},
                               style: IconButton.styleFrom(
-                                backgroundColor: colorScheme.secondary.withValues(alpha: 0.1),
+                                backgroundColor:
+                                colorScheme.secondary.withValues(alpha: 0.1),
                               ),
                             ),
                             const SizedBox(width: 4),
-                            // Delete
                             IconButton(
                               icon: const Icon(Icons.delete_outline, size: 20),
                               color: colorScheme.error,
                               tooltip: 'Delete',
                               onPressed: () => _deleteOrganization(org),
                               style: IconButton.styleFrom(
-                                backgroundColor: colorScheme.error.withValues(alpha: 0.1),
+                                backgroundColor:
+                                colorScheme.error.withValues(alpha: 0.1),
                               ),
                             ),
                           ],
