@@ -9,6 +9,9 @@ class BadgeChip extends StatelessWidget {
   final Color Function(String)? statusColorFunc;
   final VoidCallback? onRemove;
 
+  final Color? backgroundColor;
+  final Color? textColor;
+
   const BadgeChip({
     super.key,
     required this.label,
@@ -16,28 +19,28 @@ class BadgeChip extends StatelessWidget {
     this.statusKey,
     this.statusColorFunc,
     this.onRemove,
+    this.backgroundColor,
+    this.textColor,
   });
 
   @override
   Widget build(BuildContext context) {
-    final bgColor = _backgroundColor(context);
-    final textColor = Colors.white;
-
-    final labelWidget = Text(
-      label,
-      style: const TextStyle(
-        color: Colors.white,
-        fontSize: 12,
-        fontWeight: FontWeight.w500,
-        height: 1.3,
-      ),
-      overflow: TextOverflow.ellipsis,
-      textAlign: TextAlign.center,
-    );
+    final bgColor = _resolveBackgroundColor(context);
+    final txtColor = textColor ?? Theme.of(context).colorScheme.onSurface;
 
     return Chip(
       materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-      label: labelWidget,
+      label: Text(
+        label,
+        style: TextStyle(
+          color: txtColor,
+          fontSize: 12,
+          fontWeight: FontWeight.w500,
+          height: 1.3,
+        ),
+        overflow: TextOverflow.ellipsis,
+        textAlign: TextAlign.center,
+      ),
       backgroundColor: bgColor,
       padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
       shape: RoundedRectangleBorder(
@@ -48,14 +51,20 @@ class BadgeChip extends StatelessWidget {
       deleteIcon: type == ChipType.removable
           ? const Icon(Icons.close, size: 16)
           : null,
-      deleteIconColor: textColor,
+      deleteIconColor: txtColor,
     );
   }
 
-  Color _backgroundColor(BuildContext context) {
+  Color _resolveBackgroundColor(BuildContext context) {
+    // Priority 1: Explicit backgroundColor passed
+    if (backgroundColor != null) return backgroundColor!;
+
+    // Priority 2: Dynamic color function based on statusKey
     if (statusColorFunc != null && statusKey != null) {
       return statusColorFunc!(statusKey!);
     }
-    return Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha:0.4);
+
+    // Priority 3: Theme fallback
+    return Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.4);
   }
 }

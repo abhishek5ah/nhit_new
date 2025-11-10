@@ -9,6 +9,8 @@ import 'package:ppv_components/features/department/screen/create_department.dart
 import 'package:ppv_components/features/department/screen/department_main_page.dart';
 import 'package:ppv_components/features/designation/screen/create_designation.dart';
 import 'package:ppv_components/features/designation/screen/designation_main_page.dart';
+import 'package:ppv_components/features/organization/screens/create_organization.dart';
+import 'package:ppv_components/features/organization/screens/organization_main_page.dart';
 import 'package:ppv_components/features/payment_notes/screen/payment_notes_main_page.dart';
 import 'package:ppv_components/features/reimbursement/screens/reimbursement_main_page.dart';
 import 'package:ppv_components/features/roles/screens/create_role.dart';
@@ -50,7 +52,7 @@ class PlaceholderPage extends StatelessWidget {
 }
 
 final GoRouter router = GoRouter(
-  initialLocation: '/vendors',
+  initialLocation: '/organizations',
   routes: [
     ShellRoute(
       builder: (context, state, child) => LayoutPage(child: child),
@@ -209,11 +211,11 @@ final GoRouter router = GoRouter(
         // Organization Management
         GoRoute(
           path: '/organizations',
-          builder: (context, state) => const PlaceholderPage(title: 'All Organizations'),
+          builder: (context, state) => const OrganizationMainPage(),
         ),
         GoRoute(
-          path: '/organization/create',
-          builder: (context, state) => const PlaceholderPage(title: 'Create Organization'),
+          path: '/organizations/create',
+          builder: (context, state) => const CreateOrganizationScreen(),
         ),
 
         // ACTIVITY & REPORTS

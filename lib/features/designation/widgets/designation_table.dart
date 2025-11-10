@@ -138,45 +138,55 @@ class _DesignationTableViewState extends State<DesignationTableView> {
     ];
 
     final rows = paginatedDesignations.map((designation) {
-      return DataRow(cells: [
-        DataCell(Text(designation.id.toString(), style: TextStyle(color: colorScheme.onSurface))),
-        DataCell(Text(designation.name, style: TextStyle(color: colorScheme.onSurface))),
-        DataCell(Text(designation.description, style: TextStyle(color: colorScheme.onSurface))),
-        DataCell(Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            OutlinedButton(
-              onPressed: () => onEditDesignation(designation),
-              style: OutlinedButton.styleFrom(
-                foregroundColor: colorScheme.onSurface,
-                side: BorderSide(color: colorScheme.outline),
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-              ),
-              child: const Text('Edit'),
+      return DataRow(
+        cells: [
+          DataCell(Text(designation.id.toString(), style: TextStyle(color: colorScheme.onSurface))),
+          DataCell(Text(designation.name, style: TextStyle(color: colorScheme.onSurface))),
+          DataCell(Text(designation.description, style: TextStyle(color: colorScheme.onSurface))),
+          DataCell(
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // View Icon Button
+                IconButton(
+                  onPressed: () => onViewDesignation(designation),
+                  icon: const Icon(Icons.visibility_outlined),
+                  color: colorScheme.primary,
+                  iconSize: 20,
+                  tooltip: 'View',
+                  style: IconButton.styleFrom(
+                    backgroundColor: colorScheme.primary.withValues(alpha: 0.1),
+                  ),
+                ),
+                const SizedBox(width: 4),
+                // Edit Icon Button
+                IconButton(
+                  onPressed: () => onEditDesignation(designation),
+                  icon: const Icon(Icons.edit_outlined),
+                  color: colorScheme.tertiary,
+                  iconSize: 20,
+                  tooltip: 'Edit',
+                  style: IconButton.styleFrom(
+                    backgroundColor: colorScheme.tertiary.withValues(alpha: 0.1),
+                  ),
+                ),
+                const SizedBox(width: 4),
+                // Delete Icon Button
+                IconButton(
+                  onPressed: () => deleteDesignation(designation),
+                  icon: const Icon(Icons.delete_outline),
+                  color: colorScheme.error,
+                  iconSize: 20,
+                  tooltip: 'Delete',
+                  style: IconButton.styleFrom(
+                    backgroundColor: colorScheme.error.withValues(alpha: 0.1),
+                  ),
+                ),
+              ],
             ),
-            const SizedBox(width: 8),
-            OutlinedButton(
-              onPressed: () => onViewDesignation(designation),
-              style: OutlinedButton.styleFrom(
-                foregroundColor: colorScheme.primary,
-                side: BorderSide(color: colorScheme.outline),
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-              ),
-              child: const Text('View'),
-            ),
-            const SizedBox(width: 8),
-            OutlinedButton(
-              onPressed: () => deleteDesignation(designation),
-              style: OutlinedButton.styleFrom(
-                foregroundColor: colorScheme.error,
-                side: BorderSide(color: colorScheme.outline),
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-              ),
-              child: const Text('Delete'),
-            ),
-          ],
-        )),
-      ]);
+          ),
+        ],
+      );
     }).toList();
 
     return Scaffold(

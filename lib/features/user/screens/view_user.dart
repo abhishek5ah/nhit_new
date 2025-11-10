@@ -90,22 +90,6 @@ class _ViewUserDetailsPageState extends State<ViewUserDetailsPage> {
                   ),                ],
               ),
             ),
-
-            const SizedBox(height: 24),
-
-            // Breadcrumb
-            Row(
-              children: [
-                const Icon(Icons.dashboard_outlined, size: 16),
-                const SizedBox(width: 4),
-                Text('Dashboard', style: TextStyle(color: Colors.grey[600], fontSize: 14)),
-                Text(' / ', style: TextStyle(color: Colors.grey[600])),
-                Text('Users', style: TextStyle(color: Colors.grey[600], fontSize: 14)),
-                Text(' / ', style: TextStyle(color: Colors.grey[600])),
-                Text('View ${widget.user.name}', style: const TextStyle(fontSize: 14)),
-              ],
-            ),
-
             const SizedBox(height: 24),
 
             // User Information Section (Read-only)

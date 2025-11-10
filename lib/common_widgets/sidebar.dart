@@ -90,7 +90,7 @@ class _SidebarState extends State<Sidebar> with SingleTickerProviderStateMixin {
         ]),
         _SidebarItem(Icons.store, "Organization Management", "", subItems: [
           _SubItem("All Organizations", "/organizations"),
-          _SubItem("Create Organization", "/organization/create"),
+          _SubItem("Create Organization", "/organizations/create"),
         ]),
       ],
     ),

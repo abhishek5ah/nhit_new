@@ -214,43 +214,40 @@ class _RoleTableViewState extends State<RoleTableView> {
             Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                OutlinedButton(
-                  onPressed: () => onEditRole(role),
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: colorScheme.onSurface,
-                    side: BorderSide(color: colorScheme.outline),
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 6,
-                    ),
-                  ),
-                  child: const Text('Edit'),
-                ),
-                const SizedBox(width: 8),
-                OutlinedButton(
+                // View Icon Button
+                IconButton(
                   onPressed: () => onViewRole(role),
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: colorScheme.primary,
-                    side: BorderSide(color: colorScheme.outline),
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 6,
-                    ),
+                  icon: const Icon(Icons.visibility_outlined),
+                  color: colorScheme.primary,
+                  iconSize: 20,
+                  tooltip: 'View',
+                  style: IconButton.styleFrom(
+                    backgroundColor: colorScheme.primary.withValues(alpha: 0.1),
                   ),
-                  child: const Text('View'),
                 ),
-                const SizedBox(width: 8),
-                OutlinedButton(
-                  onPressed: () => deleteRole(role),
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: colorScheme.error,
-                    side: BorderSide(color: colorScheme.outline),
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 6,
-                    ),
+                const SizedBox(width: 4),
+                // Edit Icon Button
+                IconButton(
+                  onPressed: () => onEditRole(role),
+                  icon: const Icon(Icons.edit_outlined),
+                  color: colorScheme.tertiary,
+                  iconSize: 20,
+                  tooltip: 'Edit',
+                  style: IconButton.styleFrom(
+                    backgroundColor: colorScheme.tertiary.withValues(alpha: 0.1),
                   ),
-                  child: const Text('Delete'),
+                ),
+                const SizedBox(width: 4),
+                // Delete Icon Button
+                IconButton(
+                  onPressed: () => deleteRole(role),
+                  icon: const Icon(Icons.delete_outline),
+                  color: colorScheme.error,
+                  iconSize: 20,
+                  tooltip: 'Delete',
+                  style: IconButton.styleFrom(
+                    backgroundColor: colorScheme.error.withValues(alpha: 0.1),
+                  ),
                 ),
               ],
             ),

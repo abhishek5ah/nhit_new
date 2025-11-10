@@ -137,49 +137,59 @@ class _VendorTableViewState extends State<VendorTableView> {
           ? vendor.bankAccounts.firstWhere((acc) => acc.isPrimary, orElse: () => vendor.bankAccounts.first)
           : null;
 
-      return DataRow(cells: [
-        DataCell(Text(vendor.id.toString(), style: TextStyle(color: colorScheme.onSurface))),
-        DataCell(Text(vendor.code, style: TextStyle(color: colorScheme.onSurface))),
-        DataCell(Text(vendor.name, style: TextStyle(color: colorScheme.onSurface))),
-        DataCell(Text(vendor.email, style: TextStyle(color: colorScheme.onSurface))),
-        DataCell(Text(vendor.mobile, style: TextStyle(color: colorScheme.onSurface))),
-        DataCell(Text(primaryAccount?.beneficiaryName ?? 'N/A', style: TextStyle(color: colorScheme.onSurface))),
-        DataCell(Text(vendor.status, style: TextStyle(color: colorScheme.onSurface))),
-        DataCell(Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            OutlinedButton(
-              onPressed: () => onEditVendor(vendor),
-              style: OutlinedButton.styleFrom(
-                foregroundColor: colorScheme.onSurface,
-                side: BorderSide(color: colorScheme.outline),
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-              ),
-              child: const Text('Edit'),
+      return DataRow(
+        cells: [
+          DataCell(Text(vendor.id.toString(), style: TextStyle(color: colorScheme.onSurface))),
+          DataCell(Text(vendor.code, style: TextStyle(color: colorScheme.onSurface))),
+          DataCell(Text(vendor.name, style: TextStyle(color: colorScheme.onSurface))),
+          DataCell(Text(vendor.email, style: TextStyle(color: colorScheme.onSurface))),
+          DataCell(Text(vendor.mobile, style: TextStyle(color: colorScheme.onSurface))),
+          DataCell(Text(primaryAccount?.beneficiaryName ?? 'N/A', style: TextStyle(color: colorScheme.onSurface))),
+          DataCell(Text(vendor.status, style: TextStyle(color: colorScheme.onSurface))),
+          DataCell(
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // View Icon Button
+                IconButton(
+                  onPressed: () => onViewVendor(vendor),
+                  icon: const Icon(Icons.visibility_outlined),
+                  color: colorScheme.primary,
+                  iconSize: 20,
+                  tooltip: 'View',
+                  style: IconButton.styleFrom(
+                    backgroundColor: colorScheme.primary.withValues(alpha: 0.1),
+                  ),
+                ),
+                const SizedBox(width: 4),
+                // Edit Icon Button
+                IconButton(
+                  onPressed: () => onEditVendor(vendor),
+                  icon: const Icon(Icons.edit_outlined),
+                  color: colorScheme.tertiary,
+                  iconSize: 20,
+                  tooltip: 'Edit',
+                  style: IconButton.styleFrom(
+                    backgroundColor: colorScheme.tertiary.withValues(alpha: 0.1),
+                  ),
+                ),
+                const SizedBox(width: 4),
+                // Delete Icon Button
+                IconButton(
+                  onPressed: () => deleteVendor(vendor),
+                  icon: const Icon(Icons.delete_outline),
+                  color: colorScheme.error,
+                  iconSize: 20,
+                  tooltip: 'Delete',
+                  style: IconButton.styleFrom(
+                    backgroundColor: colorScheme.error.withValues(alpha: 0.1),
+                  ),
+                ),
+              ],
             ),
-            const SizedBox(width: 8),
-            OutlinedButton(
-              onPressed: () => onViewVendor(vendor),
-              style: OutlinedButton.styleFrom(
-                foregroundColor: colorScheme.primary,
-                side: BorderSide(color: colorScheme.outline),
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-              ),
-              child: const Text('View'),
-            ),
-            const SizedBox(width: 8),
-            OutlinedButton(
-              onPressed: () => deleteVendor(vendor),
-              style: OutlinedButton.styleFrom(
-                foregroundColor: colorScheme.error,
-                side: BorderSide(color: colorScheme.outline),
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-              ),
-              child: const Text('Delete'),
-            ),
-          ],
-        )),
-      ]);
+          ),
+        ],
+      );
     }).toList();
 
     return Scaffold(
