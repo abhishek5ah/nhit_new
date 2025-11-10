@@ -4,6 +4,7 @@ import 'package:ppv_components/app/layout.dart';
 
 // Import only the pages that actually exist in your project
 import 'package:ppv_components/features/activity/screen/activity_main_page.dart';
+import 'package:ppv_components/features/activity/screen/login_history_main_page.dart';
 import 'package:ppv_components/features/department/screen/create_department.dart';
 import 'package:ppv_components/features/department/screen/department_main_page.dart';
 import 'package:ppv_components/features/designation/screen/create_designation.dart';
@@ -223,7 +224,7 @@ final GoRouter router = GoRouter(
         ),
         GoRoute(
           path: '/login-history',
-          builder: (context, state) => const PlaceholderPage(title: 'Login History'),
+          builder: (context, state) => const LoginHistoryMainPage(),
         ),
       ],
     ),

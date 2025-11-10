@@ -1,8 +1,7 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:ppv_components/common_widgets/button/primary_button.dart';
 import 'package:ppv_components/common_widgets/custom_table.dart';
+import 'package:ppv_components/common_widgets/custom_pagination.dart';
 import 'package:ppv_components/features/department/model/department_model.dart';
 import 'package:ppv_components/features/department/screen/create_department.dart';
 import 'package:ppv_components/features/department/screen/view_department.dart';
@@ -48,9 +47,7 @@ class _DepartmentTableViewState extends State<DepartmentTableView> {
     }
     final start = currentPage * rowsPerPage;
     final end = (start + rowsPerPage).clamp(0, widget.departmentData.length);
-    setState(() {
-      paginatedDepartments = widget.departmentData.sublist(start, end);
-    });
+    paginatedDepartments = widget.departmentData.sublist(start, end);
   }
 
   void changeRowsPerPage(int? value) {
@@ -68,7 +65,6 @@ class _DepartmentTableViewState extends State<DepartmentTableView> {
     });
   }
 
-  // Navigate to CreateDepartmentScreen
   Future<void> onAddDepartment() async {
     final result = await Navigator.push(
       context,
@@ -81,7 +77,6 @@ class _DepartmentTableViewState extends State<DepartmentTableView> {
     }
   }
 
-  // Navigate to EditDepartmentPage
   Future<void> onEditDepartment(Department department) async {
     final result = await Navigator.push(
       context,
@@ -96,7 +91,6 @@ class _DepartmentTableViewState extends State<DepartmentTableView> {
     }
   }
 
-  // Navigate to ViewDepartmentPage
   Future<void> onViewDepartment(Department department) async {
     await Navigator.push(
       context,
@@ -135,89 +129,52 @@ class _DepartmentTableViewState extends State<DepartmentTableView> {
     final colorScheme = Theme.of(context).colorScheme;
 
     final columns = [
-      DataColumn(
-        label: Text('ID', style: TextStyle(color: colorScheme.onSurface)),
-      ),
-      DataColumn(
-        label: Text('Name', style: TextStyle(color: colorScheme.onSurface)),
-      ),
-      DataColumn(
-        label: Text(
-          'Description',
-          style: TextStyle(color: colorScheme.onSurface),
-        ),
-      ),
-      DataColumn(
-        label: Text('Actions', style: TextStyle(color: colorScheme.onSurface)),
-      ),
+      DataColumn(label: Text('ID', style: TextStyle(color: colorScheme.onSurface))),
+      DataColumn(label: Text('Name', style: TextStyle(color: colorScheme.onSurface))),
+      DataColumn(label: Text('Description', style: TextStyle(color: colorScheme.onSurface))),
+      DataColumn(label: Text('Actions', style: TextStyle(color: colorScheme.onSurface))),
     ];
 
     final rows = paginatedDepartments.map((department) {
       return DataRow(
         cells: [
-          DataCell(
-            Text(
-              department.id.toString(),
-              style: TextStyle(color: colorScheme.onSurface),
-            ),
-          ),
-          DataCell(
-            Text(
-              department.name,
-              style: TextStyle(color: colorScheme.onSurface),
-            ),
-          ),
-          DataCell(
-            Text(
-              department.description,
-              style: TextStyle(color: colorScheme.onSurface),
-            ),
-          ),
-          DataCell(
-            Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                OutlinedButton(
-                  onPressed: () => onEditDepartment(department),
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: colorScheme.onSurface,
-                    side: BorderSide(color: colorScheme.outline),
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 6,
-                    ),
-                  ),
-                  child: const Text('Edit'),
+          DataCell(Text(department.id.toString(), style: TextStyle(color: colorScheme.onSurface))),
+          DataCell(Text(department.name, style: TextStyle(color: colorScheme.onSurface))),
+          DataCell(Text(department.description, style: TextStyle(color: colorScheme.onSurface))),
+          DataCell(Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              OutlinedButton(
+                onPressed: () => onEditDepartment(department),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: colorScheme.onSurface,
+                  side: BorderSide(color: colorScheme.outline),
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                 ),
-                const SizedBox(width: 8),
-                OutlinedButton(
-                  onPressed: () => onViewDepartment(department),
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: colorScheme.primary,
-                    side: BorderSide(color: colorScheme.outline),
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 6,
-                    ),
-                  ),
-                  child: const Text('View'),
+                child: const Text('Edit'),
+              ),
+              const SizedBox(width: 8),
+              OutlinedButton(
+                onPressed: () => onViewDepartment(department),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: colorScheme.primary,
+                  side: BorderSide(color: colorScheme.outline),
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                 ),
-                const SizedBox(width: 8),
-                OutlinedButton(
-                  onPressed: () => deleteDepartment(department),
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: colorScheme.error,
-                    side: BorderSide(color: colorScheme.outline),
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 6,
-                    ),
-                  ),
-                  child: const Text('Delete'),
+                child: const Text('View'),
+              ),
+              const SizedBox(width: 8),
+              OutlinedButton(
+                onPressed: () => deleteDepartment(department),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: colorScheme.error,
+                  side: BorderSide(color: colorScheme.outline),
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                 ),
-              ],
-            ),
-          ),
+                child: const Text('Delete'),
+              ),
+            ],
+          )),
         ],
       );
     }).toList();
@@ -257,102 +214,21 @@ class _DepartmentTableViewState extends State<DepartmentTableView> {
                       ],
                     ),
                     const SizedBox(height: 16),
-                    Expanded(
-                      child: CustomTable(columns: columns, rows: rows),
+                    Expanded(child: CustomTable(columns: columns, rows: rows)),
+                    // Use the reusable pagination widget here:
+                    CustomPaginationBar(
+                      totalItems: widget.departmentData.length,
+                      currentPage: currentPage,
+                      rowsPerPage: rowsPerPage,
+                      onPageChanged: gotoPage,
+                      onRowsPerPageChanged: changeRowsPerPage,
                     ),
-                    _paginationBar(context),
                   ],
                 ),
               ),
             ),
           ],
         ),
-      ),
-    );
-  }
-
-  Widget _paginationBar(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final totalPages = (widget.departmentData.length / rowsPerPage).ceil();
-    final start = currentPage * rowsPerPage;
-    final end = (start + rowsPerPage).clamp(0, widget.departmentData.length);
-
-    int windowSize = 3;
-    int startWindow = 0;
-    int endWindow = totalPages;
-
-    if (totalPages > windowSize) {
-      if (currentPage <= 1) {
-        startWindow = 0;
-        endWindow = windowSize;
-      } else if (currentPage >= totalPages - 2) {
-        startWindow = totalPages - windowSize;
-        endWindow = totalPages;
-      } else {
-        startWindow = currentPage - 1;
-        endWindow = currentPage + 2;
-      }
-    }
-
-    return Padding(
-      padding: const EdgeInsets.only(top: 12, bottom: 10),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(
-            "Showing ${widget.departmentData.isEmpty ? 0 : start + 1} to $end of ${widget.departmentData.length} entries",
-            style: Theme.of(context).textTheme.bodySmall,
-          ),
-          Row(
-            children: [
-              IconButton(
-                icon: const Icon(Icons.arrow_back),
-                onPressed: currentPage > 0
-                    ? () => gotoPage(currentPage - 1)
-                    : null,
-              ),
-              for (int i = startWindow; i < endWindow; i++)
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 2),
-                  child: ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: i == currentPage
-                          ? colorScheme.primary
-                          : colorScheme.surfaceContainer,
-                      foregroundColor: i == currentPage
-                          ? Colors.white
-                          : colorScheme.onSurface,
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 10,
-                      ),
-                      minimumSize: const Size(40, 40),
-                    ),
-                    onPressed: () => gotoPage(i),
-                    child: Text('${i + 1}'),
-                  ),
-                ),
-              IconButton(
-                icon: const Icon(Icons.arrow_forward),
-                onPressed: currentPage < totalPages - 1
-                    ? () => gotoPage(currentPage + 1)
-                    : null,
-              ),
-              const SizedBox(width: 20),
-              DropdownButton<int>(
-                value: rowsPerPage,
-                items: [5, 10, 20, 50]
-                    .map((e) => DropdownMenuItem(value: e, child: Text('$e')))
-                    .toList(),
-                onChanged: changeRowsPerPage,
-                style: Theme.of(context).textTheme.bodyMedium,
-                underline: const SizedBox(),
-              ),
-              const SizedBox(width: 8),
-              Text("page", style: Theme.of(context).textTheme.bodySmall),
-            ],
-          ),
-        ],
       ),
     );
   }

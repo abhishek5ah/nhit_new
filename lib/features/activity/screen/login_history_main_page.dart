@@ -1,25 +1,27 @@
 import 'package:flutter/material.dart';
-import 'package:ppv_components/features/activity/data/activity_logs_mockdb.dart';
-import 'package:ppv_components/features/activity/model/activity_logs_model.dart';
-import 'package:ppv_components/features/activity/widgets/activity_header.dart';
-import 'package:ppv_components/features/activity/widgets/activity_logs_table.dart';
+import 'package:ppv_components/features/activity/data/user_login_mockdb.dart';
+import 'package:ppv_components/features/activity/model/user_login_history.dart';
+import 'package:ppv_components/features/activity/widgets/login_header.dart';
+import 'package:ppv_components/features/activity/widgets/user_login_table.dart';
 
-class ActivityMainPage extends StatefulWidget {
-  const ActivityMainPage({super.key});
+class LoginHistoryMainPage extends StatefulWidget {
+  const LoginHistoryMainPage({super.key});
 
   @override
-  State<ActivityMainPage> createState() => _ActivityMainPageState();
+  State<LoginHistoryMainPage> createState() => _LoginHistoryMainPageState();
 }
 
-class _ActivityMainPageState extends State<ActivityMainPage> {
+class _LoginHistoryMainPageState extends State<LoginHistoryMainPage> {
+  //Create the controller as a final variable.
   final TextEditingController _searchController = TextEditingController();
-  late List<ActivityLog> filteredActivityLogs;
-  final List<ActivityLog> allActivityLogs = List<ActivityLog>.from(activityLogs);
+  late List<UserLoginHistory> filteredLoginLogs;
+  final List<UserLoginHistory> allLoginLogs =
+  List<UserLoginHistory>.from(userLoginHistoryData);
 
   @override
   void initState() {
     super.initState();
-    filteredActivityLogs = List<ActivityLog>.from(allActivityLogs);
+    filteredLoginLogs = List<UserLoginHistory>.from(allLoginLogs);
   }
 
   // Dispose of the controller when the widget is removed.
@@ -29,13 +31,15 @@ class _ActivityMainPageState extends State<ActivityMainPage> {
     super.dispose();
   }
 
-  void updateActivitySearch(String query) {
+  void updateLoginSearch(String query) {
     setState(() {
       final searchQuery = query.toLowerCase();
-      filteredActivityLogs = allActivityLogs.where((log) {
-        return log.name.toLowerCase().contains(searchQuery) ||
-            log.description.toLowerCase().contains(searchQuery) ||
-            log.timeAgo.toLowerCase().contains(searchQuery) ||
+      filteredLoginLogs = allLoginLogs.where((log) {
+        return log.user.toLowerCase().contains(searchQuery) ||
+            log.loginIp.toLowerCase().contains(searchQuery) ||
+            log.userAgent.toLowerCase().contains(searchQuery) ||
+            log.loginAt.toLowerCase().contains(searchQuery) ||
+            log.createdAt.toLowerCase().contains(searchQuery) ||
             log.id.toString().contains(searchQuery);
       }).toList();
     });
@@ -53,7 +57,7 @@ class _ActivityMainPageState extends State<ActivityMainPage> {
           decoration: InputDecoration(
             contentPadding:
             const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
-            hintText: 'Search activity logs',
+            hintText: 'Search login logs',
             prefixIcon: const Icon(Icons.search),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(20),
@@ -64,7 +68,7 @@ class _ActivityMainPageState extends State<ActivityMainPage> {
             ),
             isDense: true,
           ),
-          onChanged: updateActivitySearch,
+          onChanged: updateLoginSearch,
         ),
       );
     }
@@ -78,7 +82,7 @@ class _ActivityMainPageState extends State<ActivityMainPage> {
           children: [
             const Padding(
               padding: EdgeInsets.only(left: 12, right: 12, bottom: 12),
-              child: ActivityHeader(tabIndex: 0),
+              child: UserLoginHeader(tabIndex: 0),
             ),
             Padding(
               padding: const EdgeInsets.only(right: 12),
@@ -91,8 +95,8 @@ class _ActivityMainPageState extends State<ActivityMainPage> {
             ),
             const SizedBox(height: 12),
             Expanded(
-              child: ActivityTableView(
-                activityData: filteredActivityLogs,
+              child: UserLoginTableView(
+                loginData: filteredLoginLogs,
               ),
             ),
           ],

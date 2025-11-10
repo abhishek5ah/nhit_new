@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:ppv_components/common_widgets/custom_table.dart';
+import 'package:ppv_components/common_widgets/custom_pagination.dart';
 import 'package:ppv_components/features/activity/model/activity_logs_model.dart';
 
 class ActivityTableView extends StatefulWidget {
@@ -28,20 +29,21 @@ class _ActivityTableViewState extends State<ActivityTableView> {
   @override
   void didUpdateWidget(covariant ActivityTableView oldWidget) {
     super.didUpdateWidget(oldWidget);
-    _updatePagination();
+    if (widget.activityData != oldWidget.activityData) {
+      currentPage = 0;
+      _updatePagination();
+    }
   }
 
   void _updatePagination() {
+    final totalPages = (widget.activityData.length / rowsPerPage).ceil();
+    if (currentPage >= totalPages && totalPages > 0) {
+      currentPage = totalPages - 1;
+    }
     final start = currentPage * rowsPerPage;
     final end = (start + rowsPerPage).clamp(0, widget.activityData.length);
-    setState(() {
-      paginatedLogs = widget.activityData.sublist(start, end);
-      final totalPages = (widget.activityData.length / rowsPerPage).ceil();
-      if (currentPage >= totalPages && totalPages > 0) {
-        currentPage = totalPages - 1;
-        paginatedLogs = widget.activityData.sublist(start, end);
-      }
-    });
+
+    paginatedLogs = widget.activityData.sublist(start, end);
   }
 
   void changeRowsPerPage(int? value) {
@@ -62,7 +64,6 @@ class _ActivityTableViewState extends State<ActivityTableView> {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-
     final columns = [
       DataColumn(label: Text('ID', style: TextStyle(color: colorScheme.onSurface))),
       DataColumn(label: Text('Name', style: TextStyle(color: colorScheme.onSurface))),
@@ -113,89 +114,30 @@ class _ActivityTableViewState extends State<ActivityTableView> {
                         rows: rows,
                       ),
                     ),
-                    _paginationBar(context),
+                    CustomPaginationBar(
+                      totalItems: widget.activityData.length,
+                      currentPage: currentPage,
+                      rowsPerPage: rowsPerPage,
+                      onPageChanged: (page) {
+                        setState(() {
+                          currentPage = page;
+                          _updatePagination();
+                        });
+                      },
+                      onRowsPerPageChanged: (value) {
+                        setState(() {
+                          rowsPerPage = value ?? 10;
+                          currentPage = 0;
+                          _updatePagination();
+                        });
+                      },
+                    ),
                   ],
                 ),
               ),
             ),
           ],
         ),
-      ),
-    );
-  }
-
-  Widget _paginationBar(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final totalPages = (widget.activityData.length / rowsPerPage).ceil();
-    final start = currentPage * rowsPerPage;
-    final end = (start + rowsPerPage).clamp(0, widget.activityData.length);
-
-    int windowSize = 3;
-    int startWindow = 0;
-    int endWindow = totalPages;
-
-    if (totalPages > windowSize) {
-      if (currentPage <= 1) {
-        startWindow = 0;
-        endWindow = windowSize;
-      } else if (currentPage >= totalPages - 2) {
-        startWindow = totalPages - windowSize;
-        endWindow = totalPages;
-      } else {
-        startWindow = currentPage - 1;
-        endWindow = currentPage + 2;
-      }
-    }
-
-    return Padding(
-      padding: const EdgeInsets.only(top: 12, bottom: 10),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(
-            "Showing ${widget.activityData.isEmpty ? 0 : start + 1} to $end of ${widget.activityData.length} entries",
-            style: Theme.of(context).textTheme.bodySmall,
-          ),
-          Row(
-            children: [
-              IconButton(
-                icon: const Icon(Icons.arrow_back),
-                onPressed: currentPage > 0 ? () => gotoPage(currentPage - 1) : null,
-              ),
-              for (int i = startWindow; i < endWindow; i++)
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 2),
-                  child: ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor:
-                      i == currentPage ? colorScheme.primary : colorScheme.surfaceContainer,
-                      foregroundColor: i == currentPage ? Colors.white : colorScheme.onSurface,
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                      minimumSize: const Size(40, 40),
-                    ),
-                    onPressed: () => gotoPage(i),
-                    child: Text('${i + 1}'),
-                  ),
-                ),
-              IconButton(
-                icon: const Icon(Icons.arrow_forward),
-                onPressed: currentPage < totalPages - 1 ? () => gotoPage(currentPage + 1) : null,
-              ),
-              const SizedBox(width: 20),
-              DropdownButton<int>(
-                value: rowsPerPage,
-                items: [5, 10, 20, 50]
-                    .map((e) => DropdownMenuItem(value: e, child: Text('$e')))
-                    .toList(),
-                onChanged: changeRowsPerPage,
-                style: Theme.of(context).textTheme.bodyMedium,
-                underline: const SizedBox(),
-              ),
-              const SizedBox(width: 8),
-              Text("page", style: Theme.of(context).textTheme.bodySmall),
-            ],
-          ),
-        ],
       ),
     );
   }

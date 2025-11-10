@@ -29,7 +29,7 @@ class _CreateRoleScreenState extends State<CreateRoleScreen> {
     super.dispose();
   }
 
-  // All permissions from the image
+  // All permissions
   final List<String> _allPermissions = [
     'manage-users',
     'manage-roles',

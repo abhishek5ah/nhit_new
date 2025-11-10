@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:ppv_components/common_widgets/badge.dart';
 import 'package:ppv_components/common_widgets/button/primary_button.dart';
 import 'package:ppv_components/common_widgets/custom_table.dart';
+import 'package:ppv_components/common_widgets/custom_pagination.dart';
 import 'package:ppv_components/features/roles/model/roles_model.dart';
 import 'package:ppv_components/features/roles/screens/view_role.dart';
 import 'package:ppv_components/features/roles/widgets/roles_grid.dart';
@@ -39,26 +40,34 @@ class _RoleTableViewState extends State<RoleTableView> {
   @override
   void didUpdateWidget(covariant RoleTableView oldWidget) {
     super.didUpdateWidget(oldWidget);
+    // When the input data changes, we might need to reset the view
+    if (widget.roleData.length != oldWidget.roleData.length) {
+      currentPage = 0;
+    }
     _updatePagination();
   }
 
   void _updatePagination() {
     final start = currentPage * rowsPerPage;
-    final end = (start + rowsPerPage).clamp(0, widget.roleData.length);
+    // Recalculate total pages in case rowsPerPage or roleData changed
+    final totalPages = (widget.roleData.length / rowsPerPage).ceil();
+
+    // Ensure currentPage is not out of bounds
+    if (currentPage >= totalPages && totalPages > 0) {
+      currentPage = totalPages - 1;
+    }
+
+    final end = (currentPage * rowsPerPage + rowsPerPage).clamp(0, widget.roleData.length);
     setState(() {
       paginatedRoles = widget.roleData.sublist(start, end);
-      final totalPages = (widget.roleData.length / rowsPerPage).ceil();
-      if (currentPage >= totalPages && totalPages > 0) {
-        currentPage = totalPages - 1;
-        paginatedRoles = widget.roleData.sublist(start, end);
-      }
     });
   }
+
 
   void changeRowsPerPage(int? value) {
     setState(() {
       rowsPerPage = value ?? 10;
-      currentPage = 0;
+      currentPage = 0; // Reset to the first page
       _updatePagination();
     });
   }
@@ -92,11 +101,10 @@ class _RoleTableViewState extends State<RoleTableView> {
     );
     if (shouldDelete == true) {
       widget.onDelete(role);
-      _updatePagination();
+      // No need to call _updatePagination here if didUpdateWidget handles it
     }
   }
 
-  // Navigate to EditRoleScreen
   Future<void> onEditRole(Role role) async {
     final result = await Navigator.push(
       context,
@@ -109,28 +117,23 @@ class _RoleTableViewState extends State<RoleTableView> {
       ),
     );
 
-    // If result is returned (updated role), call the onEdit callback
     if (result != null && result is Role) {
       widget.onEdit(result);
-      _updatePagination();
     }
   }
 
-  // Navigate to CreateRoleScreen
   Future<void> onCreateRole() async {
     final result = await Navigator.push(
       context,
       MaterialPageRoute(builder: (context) => const CreateRoleScreen()),
     );
 
-    // If result is returned (new role), call the onEdit callback
     if (result != null && result is Role) {
+      // Assuming a new role should be handled by the parent, similar to onEdit
       widget.onEdit(result);
-      _updatePagination();
     }
   }
 
-  // Navigate to ViewRoleScreen
   Future<void> onViewRole(Role role) async {
     await Navigator.push(
       context,
@@ -177,12 +180,12 @@ class _RoleTableViewState extends State<RoleTableView> {
       final List<Widget> permissionBadges = limitedPermissions
           .map(
             (perm) => BadgeChip(
-              label: perm,
-              type: ChipType.status,
-              statusKey: perm,
-              statusColorFunc: (_) => colorScheme.primary,
-            ),
-          )
+          label: perm,
+          type: ChipType.status,
+          statusKey: perm,
+          statusColorFunc: (_) => colorScheme.primary,
+        ),
+      )
           .toList();
 
       if (additionalCount > 0) {
@@ -298,34 +301,40 @@ class _RoleTableViewState extends State<RoleTableView> {
                     Expanded(
                       child: toggleIndex == 0
                           ? Column(
-                              children: [
-                                Expanded(
-                                  child: CustomTable(
-                                    columns: columns,
-                                    rows: rows,
-                                  ),
-                                ),
-                                _paginationBar(context),
-                              ],
-                            )
-                          : RolesGridView(
-                              roleList: widget.roleData,
-                              rowsPerPage: rowsPerPage,
-                              currentPage: currentPage,
-                              onPageChanged: (page) {
-                                setState(() {
-                                  currentPage = page;
-                                  _updatePagination();
-                                });
-                              },
-                              onRowsPerPageChanged: (rows) {
-                                setState(() {
-                                  rowsPerPage = rows ?? rowsPerPage;
-                                  currentPage = 0;
-                                  _updatePagination();
-                                });
-                              },
+                        children: [
+                          Expanded(
+                            child: CustomTable(
+                              columns: columns,
+                              rows: rows,
                             ),
+                          ),
+                          CustomPaginationBar(
+                            totalItems: widget.roleData.length,
+                            currentPage: currentPage,
+                            rowsPerPage: rowsPerPage,
+                            onPageChanged: gotoPage,
+                            onRowsPerPageChanged: changeRowsPerPage,
+                          ),
+                        ],
+                      )
+                          : RolesGridView(
+                        roleList: widget.roleData,
+                        rowsPerPage: rowsPerPage,
+                        currentPage: currentPage,
+                        onPageChanged: (page) {
+                          setState(() {
+                            currentPage = page;
+                            _updatePagination();
+                          });
+                        },
+                        onRowsPerPageChanged: (rows) {
+                          setState(() {
+                            rowsPerPage = rows ?? rowsPerPage;
+                            currentPage = 0;
+                            _updatePagination();
+                          });
+                        },
+                      ),
                     ),
                   ],
                 ),
@@ -333,93 +342,6 @@ class _RoleTableViewState extends State<RoleTableView> {
             ),
           ],
         ),
-      ),
-    );
-  }
-
-  Widget _paginationBar(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-
-    final totalPages = (widget.roleData.length / rowsPerPage).ceil();
-    final start = currentPage * rowsPerPage;
-    final end = (start + rowsPerPage).clamp(0, widget.roleData.length);
-
-    int windowSize = 3;
-    int startWindow = 0;
-    int endWindow = totalPages;
-
-    if (totalPages > windowSize) {
-      if (currentPage <= 1) {
-        startWindow = 0;
-        endWindow = windowSize;
-      } else if (currentPage >= totalPages - 2) {
-        startWindow = totalPages - windowSize;
-        endWindow = totalPages;
-      } else {
-        startWindow = currentPage - 1;
-        endWindow = currentPage + 2;
-      }
-    }
-
-    return Padding(
-      padding: const EdgeInsets.only(top: 12, bottom: 10),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(
-            "Showing ${widget.roleData.isEmpty ? 0 : start + 1} to $end of ${widget.roleData.length} entries",
-            style: Theme.of(context).textTheme.bodySmall,
-          ),
-          Row(
-            children: [
-              IconButton(
-                icon: const Icon(Icons.arrow_back),
-                onPressed: currentPage > 0
-                    ? () => gotoPage(currentPage - 1)
-                    : null,
-              ),
-              for (int i = startWindow; i < endWindow; i++)
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 2),
-                  child: ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: i == currentPage
-                          ? colorScheme.primary
-                          : colorScheme.surfaceContainer,
-                      foregroundColor: i == currentPage
-                          ? Colors.white
-                          : colorScheme.onSurface,
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 10,
-                      ),
-                      minimumSize: const Size(40, 40),
-                    ),
-                    onPressed: () => gotoPage(i),
-                    child: Text('${i + 1}'),
-                  ),
-                ),
-              IconButton(
-                icon: const Icon(Icons.arrow_forward),
-                onPressed: currentPage < totalPages - 1
-                    ? () => gotoPage(currentPage + 1)
-                    : null,
-              ),
-              const SizedBox(width: 20),
-              DropdownButton<int>(
-                value: rowsPerPage,
-                items: [5, 10, 20, 50]
-                    .map((e) => DropdownMenuItem(value: e, child: Text('$e')))
-                    .toList(),
-                onChanged: changeRowsPerPage,
-                style: Theme.of(context).textTheme.bodyMedium,
-                underline: const SizedBox(),
-              ),
-              const SizedBox(width: 8),
-              Text("page", style: Theme.of(context).textTheme.bodySmall),
-            ],
-          ),
-        ],
       ),
     );
   }
