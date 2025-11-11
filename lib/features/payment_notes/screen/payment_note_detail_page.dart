@@ -96,7 +96,10 @@ class _PaymentNoteDetailPageState extends State<PaymentNoteDetailPage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const PaymentDetailPageHeader(tabIndex: 0),
+                  PaymentDetailPageHeader(
+                    title: 'View Payment Note',
+                    subtitle: 'Check the payment note',
+                  ),
                   const SizedBox(height: 16),
                   Container(
                     decoration: BoxDecoration(

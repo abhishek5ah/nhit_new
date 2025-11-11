@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:ppv_components/common_widgets/badge.dart';
 import 'package:ppv_components/common_widgets/button/primary_button.dart';
@@ -106,6 +107,67 @@ class _OrganizationMainPageState extends State<OrganizationMainPage> {
     }
   }
 
+  Widget _buildOrganizationLogo(Organization org, ColorScheme colorScheme) {
+    // If logo path exists and file exists, show the image
+    if (org.logoPath != null && org.logoPath!.isNotEmpty) {
+      final logoFile = File(org.logoPath!);
+      if (logoFile.existsSync()) {
+        return Container(
+          width: 40,
+          height: 40,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(
+              color: colorScheme.outline.withValues(alpha: 0.2),
+              width: 1,
+            ),
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(8),
+            child: Image.file(
+              logoFile,
+              width: 40,
+              height: 40,
+              fit: BoxFit.cover,
+              errorBuilder: (context, error, stackTrace) {
+                // If image fails to load, show initials badge
+                return _buildInitialsBadge(org, colorScheme);
+              },
+            ),
+          ),
+        );
+      }
+    }
+
+    // If no logo, show initials badge
+    return _buildInitialsBadge(org, colorScheme);
+  }
+
+  Widget _buildInitialsBadge(Organization org, ColorScheme colorScheme) {
+    final nameParts = org.name.split(' ');
+    final badgeText = nameParts.length >= 2
+        ? nameParts[0][0] + nameParts[1][0]
+        : org.name.substring(0, 2);
+
+    return Container(
+      width: 40,
+      height: 40,
+      decoration: BoxDecoration(
+        color: colorScheme.primary.withValues(alpha: 0.7),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Center(
+        child: Text(
+          badgeText.toUpperCase(),
+          style: TextStyle(
+            color: colorScheme.onPrimary,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -190,11 +252,6 @@ class _OrganizationMainPageState extends State<OrganizationMainPage> {
                   DataColumn(label: Text('ACTIONS')),
                 ],
                 rows: organizations.map((org) {
-                  final nameParts = org.name.split(' ');
-                  final badgeText = nameParts.length >= 2
-                      ? nameParts[0][0] + nameParts[1][0]
-                      : org.name.substring(0, 2);
-
                   // Truncate the description
                   String displayDescription = org.description ?? '';
                   if (displayDescription.length > 70) {
@@ -204,26 +261,10 @@ class _OrganizationMainPageState extends State<OrganizationMainPage> {
 
                   return DataRow(
                     cells: [
-                      // Organization name + badge
+                      // Organization name + logo/badge
                       DataCell(Row(
                         children: [
-                          Container(
-                            width: 40,
-                            height: 40,
-                            decoration: BoxDecoration(
-                              color: colorScheme.primary.withValues(alpha: 0.7),
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: Center(
-                              child: Text(
-                                badgeText.toUpperCase(),
-                                style: TextStyle(
-                                  color: colorScheme.onPrimary,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ),
-                          ),
+                          _buildOrganizationLogo(org, colorScheme),
                           const SizedBox(width: 12),
                           Flexible(
                             child: Column(
@@ -241,7 +282,7 @@ class _OrganizationMainPageState extends State<OrganizationMainPage> {
                                 if (org.description != null &&
                                     org.description!.isNotEmpty)
                                   Text(
-                                    displayDescription, // Use truncated description
+                                    displayDescription,
                                     style: theme.textTheme.bodySmall?.copyWith(
                                       color:
                                       colorScheme.onSurface.withValues(alpha: 0.6),

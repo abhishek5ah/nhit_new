@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:ppv_components/common_widgets/button/toggle_button.dart';
+import 'package:ppv_components/common_widgets/button/outlined_button.dart';
 import 'package:ppv_components/common_widgets/custom_pagination.dart';
 import 'package:ppv_components/common_widgets/custom_table.dart';
 import 'package:ppv_components/features/payment_notes/model/payment_notes_model.dart';
@@ -24,12 +25,24 @@ class _PaymentTableViewState extends State<PaymentTableView> {
   int toggleIndex = 0;
   int rowsPerPage = 10;
   int currentPage = 0;
+  String searchQuery = '';
+  String? statusFilter;
+
+  late List<PaymentNote> filteredPayments;
   late List<PaymentNote> paginatedPayments;
+  final TextEditingController _searchController = TextEditingController();
 
   @override
   void initState() {
     super.initState();
+    filteredPayments = widget.paymentData;
     _updatePagination();
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
   }
 
   @override
@@ -37,24 +50,131 @@ class _PaymentTableViewState extends State<PaymentTableView> {
     super.didUpdateWidget(oldWidget);
     if (widget.paymentData != oldWidget.paymentData) {
       currentPage = 0;
+      _applyFilters();
     }
     _updatePagination();
   }
 
   void _updatePagination() {
     final start = currentPage * rowsPerPage;
-    final end = (start + rowsPerPage).clamp(0, widget.paymentData.length);
+    final end = (start + rowsPerPage).clamp(0, filteredPayments.length);
     setState(() {
-      final totalPages = (widget.paymentData.length / rowsPerPage).ceil();
+      final totalPages = (filteredPayments.length / rowsPerPage).ceil();
       if (currentPage >= totalPages && totalPages > 0) {
         currentPage = totalPages - 1;
       }
-      paginatedPayments = widget.paymentData.sublist(
-        (currentPage * rowsPerPage).clamp(0, widget.paymentData.length),
-        (currentPage * rowsPerPage + rowsPerPage)
-            .clamp(0, widget.paymentData.length),
+      paginatedPayments = filteredPayments.sublist(
+        (currentPage * rowsPerPage).clamp(0, filteredPayments.length),
+        (currentPage * rowsPerPage + rowsPerPage).clamp(0, filteredPayments.length),
       );
     });
+  }
+
+  void _applyFilters() {
+    setState(() {
+      filteredPayments = widget.paymentData.where((payment) {
+        // Search filter
+        final matchesSearch = searchQuery.isEmpty ||
+            payment.sno.toString().contains(searchQuery) ||
+            payment.projectName.toLowerCase().contains(searchQuery.toLowerCase()) ||
+            payment.vendorName.toLowerCase().contains(searchQuery.toLowerCase()) ||
+            payment.invoiceValue.toLowerCase().contains(searchQuery.toLowerCase()) ||
+            payment.status.toLowerCase().contains(searchQuery.toLowerCase()) ||
+            payment.nextApprover.toLowerCase().contains(searchQuery.toLowerCase());
+
+        // Status filter
+        final matchesStatus = statusFilter == null ||
+            statusFilter == 'All' ||
+            payment.status == statusFilter;
+
+        return matchesSearch && matchesStatus;
+      }).toList();
+    });
+  }
+
+  void updateSearch(String query) {
+    setState(() {
+      searchQuery = query;
+      _applyFilters();
+      currentPage = 0;
+      _updatePagination();
+    });
+  }
+
+  void _refreshData() {
+    setState(() {
+      statusFilter = null;
+      searchQuery = '';
+      _searchController.clear();
+      filteredPayments = widget.paymentData;
+      currentPage = 0;
+      _updatePagination();
+    });
+  }
+
+  void _showFilterDialog() {
+    // Get unique statuses from payment data
+    final uniqueStatuses = widget.paymentData
+        .map((p) => p.status)
+        .toSet()
+        .toList()
+      ..sort();
+
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Filter Payments'),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                ListTile(
+                  title: const Text('All'),
+                  leading: Radio<String?>(
+                    value: null,
+                    groupValue: statusFilter,
+                    onChanged: (value) {
+                      setState(() {
+                        statusFilter = value;
+                      });
+                      Navigator.pop(context);
+                      _applyFilters();
+                      currentPage = 0;
+                      _updatePagination();
+                    },
+                  ),
+                ),
+                ...uniqueStatuses.map((status) {
+                  return ListTile(
+                    title: Text(status),
+                    leading: Radio<String>(
+                      value: status,
+                      groupValue: statusFilter,
+                      onChanged: (value) {
+                        setState(() {
+                          statusFilter = value;
+                        });
+                        Navigator.pop(context);
+                        _applyFilters();
+                        currentPage = 0;
+                        _updatePagination();
+                      },
+                    ),
+                  );
+                }),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancel'),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   void changeRowsPerPage(int? value) {
@@ -87,6 +207,7 @@ class _PaymentTableViewState extends State<PaymentTableView> {
           ),
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(true),
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
             child: const Text('Delete'),
           ),
         ],
@@ -100,6 +221,7 @@ class _PaymentTableViewState extends State<PaymentTableView> {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
+    final theme = Theme.of(context);
 
     final columns = [
       DataColumn(
@@ -238,60 +360,150 @@ class _PaymentTableViewState extends State<PaymentTableView> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    // Header with title, Filter, Refresh, and Toggle in same row
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
+                        // Title section on left
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Payments',
+                                style: TextStyle(
+                                  color: colorScheme.onSurface,
+                                  fontSize: 26,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                'Manage your payments',
+                                style: TextStyle(
+                                  color: colorScheme.onSurface.withValues(alpha: 0.6),
+                                  fontSize: 16,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+
+                        // Buttons section on right
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
                           children: [
-                            Text(
-                              'Payments',
-                              style: TextStyle(
-                                color: colorScheme.onSurface,
-                                fontSize: 26,
-                                fontWeight: FontWeight.bold,
-                              ),
+                            OutlineButton(
+                              onPressed: _showFilterDialog,
+                              icon: Icons.filter_list,
+                              label: statusFilter == null ? 'Filter' : 'Filter: $statusFilter',
                             ),
-                            const SizedBox(height: 4),
-                            Text(
-                              'Manage your payments',
-                              style: TextStyle(
-                                color: colorScheme.onSurface.withAlpha(153),
-                                fontSize: 16,
-                              ),
+                            const SizedBox(width: 8),
+                            OutlineButton(
+                              onPressed: _refreshData,
+                              icon: Icons.refresh,
+                              label: 'Refresh',
+                            ),
+                            const SizedBox(width: 12),
+                            ToggleBtn(
+                              labels: const ['Table', 'Grid'],
+                              selectedIndex: toggleIndex,
+                              onChanged: (index) =>
+                                  setState(() => toggleIndex = index),
                             ),
                           ],
-                        ),
-                        ToggleBtn(
-                          labels: const ['Table', 'Grid'],
-                          selectedIndex: toggleIndex,
-                          onChanged: (index) =>
-                              setState(() => toggleIndex = index),
                         ),
                       ],
                     ),
                     const SizedBox(height: 16),
+
+                    // Display active filters
+                    if (statusFilter != null || searchQuery.isNotEmpty) ...[
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: [
+                          if (statusFilter != null)
+                            Chip(
+                              label: Text('Status: $statusFilter'),
+                              onDeleted: () {
+                                setState(() {
+                                  statusFilter = null;
+                                  _applyFilters();
+                                  currentPage = 0;
+                                  _updatePagination();
+                                });
+                              },
+                              deleteIcon: const Icon(Icons.close, size: 18),
+                              backgroundColor: colorScheme.primaryContainer,
+                            ),
+                          if (searchQuery.isNotEmpty)
+                            Chip(
+                              label: Text('Search: "$searchQuery"'),
+                              onDeleted: () {
+                                _searchController.clear();
+                                updateSearch('');
+                              },
+                              deleteIcon: const Icon(Icons.close, size: 18),
+                              backgroundColor: colorScheme.secondaryContainer,
+                            ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                    ],
+
+                    const SizedBox(height: 16),
+
+                    // Table or Grid View
                     Expanded(
                       child: toggleIndex == 0
                           ? Column(
                         children: [
                           Expanded(
-                            child: CustomTable(
+                            child: filteredPayments.isEmpty
+                                ? Center(
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(
+                                    Icons.inbox_outlined,
+                                    size: 64,
+                                    color: colorScheme.onSurface.withValues(alpha: 0.3),
+                                  ),
+                                  const SizedBox(height: 16),
+                                  Text(
+                                    'No payments found',
+                                    style: theme.textTheme.titleMedium?.copyWith(
+                                      color: colorScheme.onSurface.withValues(alpha: 0.5),
+                                    ),
+                                  ),
+                                  const SizedBox(height: 8),
+                                  Text(
+                                    'Try adjusting your filters',
+                                    style: theme.textTheme.bodySmall?.copyWith(
+                                      color: colorScheme.onSurface.withValues(alpha: 0.4),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            )
+                                : CustomTable(
                               columns: columns,
                               rows: rows,
                             ),
                           ),
-                          CustomPaginationBar(
-                            totalItems: widget.paymentData.length,
-                            rowsPerPage: rowsPerPage,
-                            currentPage: currentPage,
-                            onPageChanged: gotoPage,
-                            onRowsPerPageChanged: changeRowsPerPage,
-                          ),
+                          if (filteredPayments.isNotEmpty)
+                            CustomPaginationBar(
+                              totalItems: filteredPayments.length,
+                              rowsPerPage: rowsPerPage,
+                              currentPage: currentPage,
+                              onPageChanged: gotoPage,
+                              onRowsPerPageChanged: changeRowsPerPage,
+                            ),
                         ],
                       )
                           : PaymentGrid(
-                        paymentList: widget.paymentData,
+                        paymentList: filteredPayments,
                         rowsPerPage: rowsPerPage,
                         currentPage: currentPage,
                         onPageChanged: (page) =>

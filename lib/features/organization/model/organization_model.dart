@@ -7,6 +7,7 @@ class Organization {
   final String createdBy;
   final String createdDate;
   final String? description;
+  final String? logoPath;
 
   Organization({
     required this.id,
@@ -16,6 +17,7 @@ class Organization {
     required this.createdBy,
     required this.createdDate,
     this.description,
+    this.logoPath,
   });
 
   Organization copyWith({
@@ -26,6 +28,8 @@ class Organization {
     String? createdBy,
     String? createdDate,
     String? description,
+    String? logoPath,
+
   }) {
     return Organization(
       id: id ?? this.id,
@@ -35,6 +39,8 @@ class Organization {
       createdBy: createdBy ?? this.createdBy,
       createdDate: createdDate ?? this.createdDate,
       description: description ?? this.description,
+      logoPath: logoPath ?? this.logoPath,
+
     );
   }
 
@@ -47,6 +53,7 @@ class Organization {
       'createdBy': createdBy,
       'createdDate': createdDate,
       'description': description,
+      'logoPath': logoPath,
     };
   }
 
@@ -59,6 +66,7 @@ class Organization {
       createdBy: json['createdBy'],
       createdDate: json['createdDate'],
       description: json['description'],
+      logoPath: json['logoPath'],
     );
   }
 }

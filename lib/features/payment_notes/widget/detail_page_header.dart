@@ -1,26 +1,23 @@
 import 'package:flutter/material.dart';
 
 class PaymentDetailPageHeader extends StatelessWidget {
-  final int tabIndex;
+  final String title;
+  final String subtitle;
 
-  const PaymentDetailPageHeader({super.key, required this.tabIndex});
+  const PaymentDetailPageHeader({
+    super.key,
+    required this.title,
+    required this.subtitle,
+  });
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
-    final List<_HeaderData> headerData = [
-      _HeaderData(
-        title: 'View Payment Note',
-      ),
-    ];
-
-    final header = headerData[tabIndex];
-
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(16, 16, 0, 16),
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
       decoration: BoxDecoration(
         color: colorScheme.surface,
         borderRadius: BorderRadius.circular(16),
@@ -44,9 +41,17 @@ class PaymentDetailPageHeader extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  header.title,
+                  title,
                   style: theme.textTheme.headlineSmall?.copyWith(
                     fontWeight: FontWeight.bold,
+                    color: colorScheme.onSurface,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  subtitle,
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: colorScheme.onSurface.withValues(alpha: 0.6),
                   ),
                 ),
               ],
@@ -56,10 +61,4 @@ class PaymentDetailPageHeader extends StatelessWidget {
       ),
     );
   }
-}
-
-class _HeaderData {
-  final String title;
-
-  _HeaderData({required this.title});
 }

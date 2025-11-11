@@ -16,10 +16,6 @@ class PaymentHeader extends StatelessWidget {
         subtitle: 'Manage your payment notes here',
       ),
       _HeaderData(
-        title: 'Add Payment',
-        subtitle: 'Add a new payment note',
-      ),
-      _HeaderData(
         title: 'Approval Notes',
         subtitle: 'Manage your approver notes ',
       ),

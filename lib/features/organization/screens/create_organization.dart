@@ -1,10 +1,11 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:path/path.dart' as path;
 import 'package:ppv_components/features/organization/data/organization_mockdb.dart';
 import 'package:ppv_components/common_widgets/button/primary_button.dart';
 import 'package:ppv_components/common_widgets/button/secondary_button.dart';
-import 'package:ppv_components/common_widgets/dropdown.dart';
 import 'package:ppv_components/features/organization/model/organization_model.dart';
 
 class CreateOrganizationScreen extends StatefulWidget {
@@ -21,7 +22,6 @@ class _CreateOrganizationScreenState extends State<CreateOrganizationScreen> {
   late TextEditingController _codeController;
   late TextEditingController _descriptionController;
 
-  // Project controllers
   final List<TextEditingController> _projectControllers = [];
 
   String _selectedStatus = 'Active';
@@ -29,6 +29,7 @@ class _CreateOrganizationScreenState extends State<CreateOrganizationScreen> {
 
   File? _logoFile;
   String? _logoFileName;
+  String? _permanentLogoPath; // Add this to store permanent path
 
   @override
   void initState() {
@@ -56,7 +57,7 @@ class _CreateOrganizationScreenState extends State<CreateOrganizationScreen> {
     return null;
   }
 
-  // File picker for logo
+  // Updated file picker that saves to permanent location
   Future<void> _pickLogoFile() async {
     try {
       FilePickerResult? result = await FilePicker.platform.pickFiles(
@@ -65,7 +66,7 @@ class _CreateOrganizationScreenState extends State<CreateOrganizationScreen> {
         allowMultiple: false,
       );
 
-      if (result != null) {
+      if (result != null && result.files.single.path != null) {
         File file = File(result.files.single.path!);
         int fileSizeInBytes = await file.length();
         double fileSizeInMB = fileSizeInBytes / (1024 * 1024);
@@ -83,9 +84,29 @@ class _CreateOrganizationScreenState extends State<CreateOrganizationScreen> {
           return;
         }
 
+        // Copy file to permanent location
+        final Directory appDir = await getApplicationDocumentsDirectory();
+        final String organizationLogosDir = '${appDir.path}/organization_logos';
+
+        // Create directory if it doesn't exist
+        final Directory logosDirectory = Directory(organizationLogosDir);
+        if (!await logosDirectory.exists()) {
+          await logosDirectory.create(recursive: true);
+        }
+
+        // Create unique filename
+        final String timestamp = DateTime.now().millisecondsSinceEpoch.toString();
+        final String extension = path.extension(result.files.single.name);
+        final String newFileName = 'logo_$timestamp$extension';
+        final String permanentPath = '$organizationLogosDir/$newFileName';
+
+        // Copy file to permanent location
+        final File permanentFile = await file.copy(permanentPath);
+
         setState(() {
-          _logoFile = file;
+          _logoFile = permanentFile;
           _logoFileName = result.files.single.name;
+          _permanentLogoPath = permanentPath;
         });
       }
     } catch (e) {
@@ -123,6 +144,7 @@ class _CreateOrganizationScreenState extends State<CreateOrganizationScreen> {
         createdBy: 'Super Admin',
         createdDate: 'Nov 10, 2025',
         description: _descriptionController.text.trim(),
+        logoPath: _permanentLogoPath, // Use permanent path instead
       );
 
       OrganizationMockDB.add(newOrganization);
@@ -323,6 +345,7 @@ class _CreateOrganizationScreenState extends State<CreateOrganizationScreen> {
                                   setState(() {
                                     _logoFile = null;
                                     _logoFileName = null;
+                                    _permanentLogoPath = null;
                                   });
                                 },
                                 tooltip: 'Remove file',
@@ -341,6 +364,27 @@ class _CreateOrganizationScreenState extends State<CreateOrganizationScreen> {
                           fontSize: 12,
                         ),
                       ),
+                      // Preview the uploaded logo
+                      if (_logoFile != null) ...[
+                        const SizedBox(height: 12),
+                        Container(
+                          width: 100,
+                          height: 100,
+                          decoration: BoxDecoration(
+                            border: Border.all(
+                              color: colorScheme.outline.withValues(alpha: 0.3),
+                            ),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(8),
+                            child: Image.file(
+                              _logoFile!,
+                              fit: BoxFit.cover,
+                            ),
+                          ),
+                        ),
+                      ],
                     ],
                   ),
 
@@ -568,29 +612,6 @@ class _CreateOrganizationScreenState extends State<CreateOrganizationScreen> {
               ),
             ),
           ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildLabel(String label, bool isRequired) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-    final textTheme = theme.textTheme;
-
-    return RichText(
-      text: TextSpan(
-        text: label,
-        style: textTheme.bodyMedium?.copyWith(
-          fontWeight: FontWeight.w500,
-          color: colorScheme.onSurface,
-        ),
-        children: [
-          if (isRequired)
-            const TextSpan(
-              text: ' *',
-              style: TextStyle(color: Colors.red, fontSize: 14),
-            ),
         ],
       ),
     );

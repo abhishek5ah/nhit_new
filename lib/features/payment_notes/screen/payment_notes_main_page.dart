@@ -21,31 +21,31 @@ class _PaymentMainPageState extends State<PaymentMainPage> {
   late List<PaymentNote> filteredPayments;
   late List<ApproverRule> filteredApprovals;
   List<ApproverRule> allApprovals = List<ApproverRule>.from(approverRuleMockDB);
-
-
   List<PaymentNote> allPayments = List<PaymentNote>.from(paymentNoteData);
 
   @override
   void initState() {
     super.initState();
     filteredPayments = List<PaymentNote>.from(allPayments);
+    filteredApprovals = List<ApproverRule>.from(allApprovals);
   }
 
   void updateSearch(String query) {
     searchQuery = query.toLowerCase();
-    _filterPayments();
+    if (tabIndex == 0) {
+      _filterPayments();
+    } else if (tabIndex == 1) {
+      _filterApprovals();
+    }
   }
 
   void _filterPayments() {
     List<PaymentNote> filtered = allPayments.where((payment) {
-      final status = payment.status.toLowerCase().trim();
-      bool statusMatches = tabIndex == 0 || (tabIndex == 1 && status == 'sent for approval');
-
       bool searchMatches = payment.projectName.toLowerCase().contains(searchQuery) ||
           payment.vendorName.toLowerCase().contains(searchQuery) ||
-          status.contains(searchQuery);
+          payment.status.toLowerCase().contains(searchQuery);
 
-      return statusMatches && searchMatches;
+      return searchMatches;
     }).toList();
 
     setState(() {
@@ -63,10 +63,11 @@ class _PaymentMainPageState extends State<PaymentMainPage> {
   void onTabChanged(int idx) {
     setState(() {
       tabIndex = idx;
-      if (tabIndex == 2) {
-        _filterApprovals();
-      } else {
+      searchQuery = '';
+      if (tabIndex == 0) {
         _filterPayments();
+      } else if (tabIndex == 1) {
+        _filterApprovals();
       }
     });
   }
@@ -123,7 +124,7 @@ class _PaymentMainPageState extends State<PaymentMainPage> {
                   Padding(
                     padding: const EdgeInsets.only(left: 12),
                     child: TabsBar(
-                      tabs: const ['All', 'Pending', 'Approval Notes'],
+                      tabs: const ['All Payments', 'Approval Notes'],
                       selectedIndex: tabIndex,
                       onChanged: onTabChanged,
                     ),
@@ -135,7 +136,7 @@ class _PaymentMainPageState extends State<PaymentMainPage> {
                       decoration: InputDecoration(
                         contentPadding:
                         const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
-                        hintText: 'Search payments',
+                        hintText: tabIndex == 0 ? 'Search payments' : 'Search approvals',
                         prefixIcon: const Icon(Icons.search),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(20),
@@ -155,21 +156,15 @@ class _PaymentMainPageState extends State<PaymentMainPage> {
             const SizedBox(height: 12),
 
             Expanded(
-              child: () {
-                if (tabIndex == 0 || tabIndex == 1) {
-                  return PaymentTableView(
-                    paymentData: filteredPayments,
-                    onDelete: onDeletePayment,
-                  );
-                } else if (tabIndex == 2) {
-                  return ApprovalTableView(
-                    approvalData: filteredApprovals,
-                    onDelete: onDeleteApproval,
-                  );
-                } else {
-                  return const SizedBox.shrink();
-                }
-              }(),
+              child: tabIndex == 0
+                  ? PaymentTableView(
+                paymentData: filteredPayments,
+                onDelete: onDeletePayment,
+              )
+                  : ApprovalTableView(
+                approvalData: filteredApprovals,
+                onDelete: onDeleteApproval,
+              ),
             ),
           ],
         ),
