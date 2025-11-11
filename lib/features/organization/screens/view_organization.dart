@@ -1,7 +1,11 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:ppv_components/common_widgets/button/primary_button.dart';
 import 'package:ppv_components/common_widgets/button/secondary_button.dart';
+import 'package:ppv_components/common_widgets/button/outlined_button.dart';
 import 'package:ppv_components/features/organization/model/organization_model.dart';
+import 'package:ppv_components/features/organization/screens/edit_organization.dart';
 
 class ViewOrganizationScreen extends StatelessWidget {
   final Organization organization;
@@ -10,6 +14,61 @@ class ViewOrganizationScreen extends StatelessWidget {
     super.key,
     required this.organization,
   });
+
+  Widget _buildOrganizationLogo(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final nameParts = organization.name.split(' ');
+    final badgeText = nameParts.length >= 2
+        ? nameParts[0][0] + nameParts[1][0]
+        : organization.name.substring(0, 2.clamp(0, organization.name.length));
+
+    // If logo path exists, show the image
+    if (organization.logoPath != null && organization.logoPath!.isNotEmpty) {
+      final logoFile = File(organization.logoPath!);
+      if (logoFile.existsSync()) {
+        return Container(
+          width: 80,
+          height: 80,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: colorScheme.outline.withValues(alpha: 0.2),
+              width: 1,
+            ),
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(12),
+            child: Image.file(
+              logoFile,
+              width: 80,
+              height: 80,
+              fit: BoxFit.cover,
+            ),
+          ),
+        );
+      }
+    }
+
+    // Otherwise show initials badge
+    return Container(
+      width: 80,
+      height: 80,
+      decoration: BoxDecoration(
+        color: colorScheme.primary,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Center(
+        child: Text(
+          badgeText.toUpperCase(),
+          style: TextStyle(
+            color: colorScheme.onPrimary,
+            fontWeight: FontWeight.bold,
+            fontSize: 32,
+          ),
+        ),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -24,7 +83,7 @@ class ViewOrganizationScreen extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Header
+            // Header with Logo, Name, Code, Status, and Action Buttons
             Container(
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
@@ -35,109 +94,90 @@ class ViewOrganizationScreen extends StatelessWidget {
                 ),
               ),
               child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
+                  _buildOrganizationLogo(context),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          organization.name,
+                          style: textTheme.headlineSmall?.copyWith(
+                            fontWeight: FontWeight.bold,
+                            color: colorScheme.onSurface,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 6,
+                              ),
+                              decoration: BoxDecoration(
+                                color: colorScheme.primaryContainer,
+                                borderRadius: BorderRadius.circular(20),
+                              ),
+                              child: Text(
+                                organization.code.toUpperCase(),
+                                style: textTheme.bodySmall?.copyWith(
+                                  fontWeight: FontWeight.bold,
+                                  color: colorScheme.onPrimaryContainer,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 6,
+                              ),
+                              decoration: BoxDecoration(
+                                color: organization.status == 'Active'
+                                    ? Colors.green
+                                    : Colors.red,
+                                borderRadius: BorderRadius.circular(20),
+                              ),
+                              child: Text(
+                                organization.status,
+                                style: textTheme.bodySmall?.copyWith(
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
                   Row(
                     children: [
-                      Container(
-                        width: 48,
-                        height: 48,
-                        decoration: BoxDecoration(
-                          color: colorScheme.primary,
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Icon(
-                          Icons.visibility_outlined,
-                          color: colorScheme.onPrimary,
-                          size: 24,
-                        ),
-                      ),
-                      const SizedBox(width: 16),
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Organization Details',
-                            style: textTheme.titleLarge?.copyWith(
-                              fontWeight: FontWeight.bold,
-                              color: colorScheme.onSurface,
+                      PrimaryButton(
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => EditOrganizationScreen(
+                                organization: organization,
+                              ),
                             ),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            'View organization information',
-                            style: textTheme.bodyMedium?.copyWith(
-                              color:
-                              colorScheme.onSurface.withValues(alpha: 0.6),
-                            ),
-                          ),
-                        ],
+                          );
+                        },
+                        label: 'Edit',
+                        icon: Icons.edit_outlined,
                       ),
-                    ],
-                  ),
-                  SecondaryButton(
-                    onPressed: () => Navigator.pop(context),
-                    label: 'Back',
-                    icon: Icons.arrow_back,
-                  ),
-                ],
-              ),
-            ),
 
-            const SizedBox(height: 32),
 
-            // Organization Name and Code Box
-            Container(
-              padding: const EdgeInsets.all(24),
-              decoration: BoxDecoration(
-                border: Border.all(
-                  color: colorScheme.outline.withValues(alpha: 0.5),
-                ),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        organization.name,
-                        style: textTheme.headlineSmall?.copyWith(
-                          fontWeight: FontWeight.w700,
-                          color: colorScheme.onSurface,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        organization.code,
-                        style: textTheme.bodyLarge?.copyWith(
-                          color:
-                          colorScheme.onSurface.withValues(alpha: 0.6),
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
+                      const SizedBox(width: 8),
+
+                      SecondaryButton(label: 'Back',
+                        onPressed: () => Navigator.pop(context),
+                        icon: Icons.arrow_back,
+                      )
                     ],
-                  ),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 20,
-                      vertical: 10,
-                    ),
-                    decoration: BoxDecoration(
-                      color: organization.status == 'Active'
-                          ? Colors.green
-                          : Colors.red,
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Text(
-                      organization.status,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w600,
-                        fontSize: 14,
-                      ),
-                    ),
                   ),
                 ],
               ),
@@ -145,61 +185,27 @@ class ViewOrganizationScreen extends StatelessWidget {
 
             const SizedBox(height: 24),
 
-            // Details Section with Grid Layout
-            _buildSectionCard(
-              context: context,
-              icon: Icons.info_outline,
-              title: 'Organization Information',
-              child: Column(
-                children: [
-                  _buildDetailRow(
-                    context,
-                    'Organization Name',
-                    organization.name,
-                  ),
-                  const SizedBox(height: 20),
-                  _buildDetailRow(
-                    context,
-                    'Organization Code',
-                    organization.code,
-                  ),
-                  const SizedBox(height: 20),
-                  _buildDetailRow(
-                    context,
-                    'Description',
-                    organization.description ?? 'N/A',
-                  ),
-                  const SizedBox(height: 20),
-                  _buildDetailRow(
-                    context,
-                    'Status',
-                    organization.status,
-                  ),
-                  const SizedBox(height: 20),
-                  _buildDetailRow(
-                    context,
-                    'Created By',
-                    organization.createdBy,
-                  ),
-                  const SizedBox(height: 20),
-                  _buildDetailRow(
-                    context,
-                    'Created Date',
-                    organization.createdDate,
-                  ),
-                ],
-              ),
-            ),
-
-            const SizedBox(height: 32),
-
-            // Close Button
+            // Two Column Layout
             Row(
-              mainAxisAlignment: MainAxisAlignment.end,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                PrimaryButton(
-                  onPressed: () => Navigator.pop(context),
-                  label: 'Close',
+                // Left Column - Basic Information
+                Expanded(
+                  flex: 2,
+                  child: Column(
+                    children: [
+                      _buildInfoCard(context),
+                      const SizedBox(height: 24),
+                      _buildStatisticsCard(context),
+                    ],
+                  ),
+                ),
+
+                const SizedBox(width: 24),
+
+                // Right Column - Projects
+                Expanded(
+                  child: _buildProjectsCard(context),
                 ),
               ],
             ),
@@ -209,21 +215,18 @@ class ViewOrganizationScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildSectionCard({
-    required BuildContext context,
-    required IconData icon,
-    required String title,
-    required Widget child,
-  }) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final textTheme = Theme.of(context).textTheme;
+  Widget _buildInfoCard(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final textTheme = theme.textTheme;
 
     return Container(
       decoration: BoxDecoration(
+        color: colorScheme.surface,
+        borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: colorScheme.outline.withValues(alpha: 0.5),
+          color: colorScheme.outline.withValues(alpha: 0.2),
         ),
-        borderRadius: BorderRadius.circular(8),
       ),
       padding: const EdgeInsets.all(24),
       child: Column(
@@ -231,10 +234,10 @@ class ViewOrganizationScreen extends StatelessWidget {
         children: [
           Row(
             children: [
-              Icon(icon, size: 20, color: colorScheme.primary),
+              Icon(Icons.info_outline, size: 20, color: colorScheme.primary),
               const SizedBox(width: 8),
               Text(
-                title,
+                'Basic Information',
                 style: textTheme.titleMedium?.copyWith(
                   fontWeight: FontWeight.w600,
                   color: colorScheme.onSurface,
@@ -243,45 +246,300 @@ class ViewOrganizationScreen extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 24),
-          child,
+          _buildInfoRow(context, 'Organization Name:', organization.name),
+          _buildInfoRow(context, 'Code:', organization.code.toUpperCase()),
+          _buildInfoRow(context, 'Status:', organization.status),
+          _buildInfoRow(context, 'Created By:', organization.createdBy),
+          _buildInfoRow(context, 'Created At:', organization.createdDate),
+          _buildInfoRow(context, 'Last Updated:', organization.createdDate),
         ],
       ),
     );
   }
 
-  Widget _buildDetailRow(
-      BuildContext context,
-      String label,
-      String value,
-      ) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final textTheme = Theme.of(context).textTheme;
+  Widget _buildInfoRow(BuildContext context, String label, String value) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final textTheme = theme.textTheme;
 
-    return Row(
-      children: [
-        // Label column (fixed width for alignment)
-        SizedBox(
-          width: 150,
-          child: Text(
-            label,
-            style: textTheme.bodyMedium?.copyWith(
-              fontWeight: FontWeight.w500,
-              color: colorScheme.onSurface.withValues(alpha: 0.6),
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 140,
+            child: Text(
+              label,
+              style: textTheme.bodyMedium?.copyWith(
+                color: colorScheme.onSurface.withValues(alpha: 0.6),
+              ),
             ),
           ),
+          Expanded(
+            child: Text(
+              value,
+              style: textTheme.bodyMedium?.copyWith(
+                fontWeight: FontWeight.w600,
+                color: colorScheme.onSurface,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildProjectsCard(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final textTheme = theme.textTheme;
+
+    // Mock projects data - replace with actual data from organization
+    final List<String> projects = []; // Empty for now
+
+    return Container(
+      decoration: BoxDecoration(
+        color: colorScheme.surface,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: colorScheme.outline.withValues(alpha: 0.2),
         ),
-        const SizedBox(width: 24),
-        // Value column (flexible)
-        Expanded(
-          child: Text(
+      ),
+      padding: const EdgeInsets.all(24),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
+                children: [
+                  Icon(Icons.folder_outlined, size: 20, color: colorScheme.primary),
+                  const SizedBox(width: 8),
+                  Text(
+                    'Projects',
+                    style: textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w600,
+                      color: colorScheme.onSurface,
+                    ),
+                  ),
+                ],
+              ),
+              OutlineButton(
+                onPressed: () {
+                  // Navigate to manage projects
+                },
+                label: 'Manage',
+                icon: Icons.settings_outlined,
+              ),
+            ],
+          ),
+          const SizedBox(height: 24),
+
+          // Empty state or project list
+          if (projects.isEmpty)
+            Center(
+              child: Column(
+                children: [
+                  Icon(
+                    Icons.folder_off_outlined,
+                    size: 64,
+                    color: colorScheme.onSurface.withValues(alpha: 0.3),
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    'No projects configured',
+                    style: textTheme.bodyMedium?.copyWith(
+                      color: colorScheme.onSurface.withValues(alpha: 0.5),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  PrimaryButton(
+                    onPressed: () {
+                      // Add project action
+                    },
+                    label: 'Add Projects',
+                    icon: Icons.add,
+                  ),
+                ],
+              ),
+            )
+          else
+            ...projects.map((project) {
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 12),
+                child: Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(
+                      color: colorScheme.outline.withValues(alpha: 0.2),
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.folder_outlined,
+                        size: 20,
+                        color: colorScheme.primary,
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          project,
+                          style: textTheme.bodyMedium?.copyWith(
+                            color: colorScheme.onSurface,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            }).toList(),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStatisticsCard(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final textTheme = theme.textTheme;
+
+    return Container(
+      decoration: BoxDecoration(
+        color: colorScheme.surface,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: colorScheme.outline.withValues(alpha: 0.2),
+        ),
+      ),
+      padding: const EdgeInsets.all(24),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.bar_chart_outlined, size: 20, color: colorScheme.primary),
+              const SizedBox(width: 8),
+              Text(
+                'Statistics',
+                style: textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.w600,
+                  color: colorScheme.onSurface,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 24),
+
+          Row(
+            children: [
+              Expanded(
+                child: _buildStatItem(
+                  context: context,
+                  icon: Icons.people_outline,
+                  label: 'Users',
+                  value: '0',
+                  color: Colors.blue,
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: _buildStatItem(
+                  context: context,
+                  icon: Icons.folder_outlined,
+                  label: 'Projects',
+                  value: '0',
+                  color: Colors.cyan,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              Expanded(
+                child: _buildStatItem(
+                  context: context,
+                  icon: Icons.calendar_today_outlined,
+                  label: 'Days Active',
+                  value: '7',
+                  color: Colors.orange,
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: _buildStatItem(
+                  context: context,
+                  icon: Icons.check_circle_outline,
+                  label: 'Status',
+                  value: organization.status,
+                  color: organization.status == 'Active' ? Colors.green : Colors.red,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStatItem({
+    required BuildContext context,
+    required IconData icon,
+    required String label,
+    required String value,
+    required Color color,
+  }) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final textTheme = theme.textTheme;
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: colorScheme.outline.withValues(alpha: 0.2),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: color.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Icon(
+              icon,
+              size: 20,
+              color: color,
+            ),
+          ),
+          const SizedBox(height: 12),
+          Text(
             value,
-            style: textTheme.bodyMedium?.copyWith(
-              fontWeight: FontWeight.w600,
+            style: textTheme.headlineSmall?.copyWith(
+              fontWeight: FontWeight.bold,
               color: colorScheme.onSurface,
             ),
           ),
-        ),
-      ],
+          const SizedBox(height: 4),
+          Text(
+            label,
+            style: textTheme.bodySmall?.copyWith(
+              color: colorScheme.onSurface.withValues(alpha: 0.6),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

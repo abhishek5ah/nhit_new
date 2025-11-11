@@ -583,7 +583,7 @@ class _CreateRoleScreenState extends State<CreateRoleScreen> {
               children: [
                 SecondaryButton(
                   onPressed: () => context.go('/roles'),
-                  label: 'Cancel btn',
+                  label: 'Cancel',
                 ),
                 const SizedBox(width: 12),
                 PrimaryButton(onPressed: _createRole, label: 'Create Role'),

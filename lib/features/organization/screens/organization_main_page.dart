@@ -7,6 +7,7 @@ import 'package:ppv_components/features/organization/model/organization_model.da
 import 'package:ppv_components/features/organization/data/organization_mockdb.dart';
 import 'package:ppv_components/features/organization/screens/create_organization.dart';
 import 'package:ppv_components/features/organization/screens/edit_organization.dart';
+import 'package:ppv_components/features/organization/screens/settings_organization.dart';
 import 'package:ppv_components/features/organization/screens/view_organization.dart';
 
 class OrganizationMainPage extends StatefulWidget {
@@ -69,6 +70,50 @@ class _OrganizationMainPageState extends State<OrganizationMainPage> {
         builder: (context) => ViewOrganizationScreen(organization: org),
       ),
     );
+  }
+
+  Future<void> _toggleOrganizationStatus(Organization org) async {
+    final newStatus = org.status == 'Active' ? 'Inactive' : 'Active';
+    final actionText = org.status == 'Active' ? 'deactivate' : 'activate';
+
+    final shouldToggle = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text('${actionText == 'activate' ? 'Activate' : 'Deactivate'} Organization'),
+        content: Text(
+          'Are you sure you want to $actionText ${org.name}?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: TextButton.styleFrom(
+              foregroundColor: newStatus == 'Active' ? Colors.green : Colors.orange,
+            ),
+            child: Text(actionText == 'activate' ? 'Activate' : 'Deactivate'),
+          ),
+        ],
+      ),
+    );
+
+    if (shouldToggle == true) {
+      final updatedOrg = org.copyWith(status: newStatus);
+      setState(() {
+        OrganizationMockDB.update(updatedOrg);
+        _loadOrganizations();
+      });
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Organization ${actionText}d successfully'),
+            backgroundColor: newStatus == 'Active' ? Colors.green : Colors.orange,
+          ),
+        );
+      }
+    }
   }
 
   Future<void> _deleteOrganization(Organization org) async {
@@ -284,8 +329,8 @@ class _OrganizationMainPageState extends State<OrganizationMainPage> {
                                   Text(
                                     displayDescription,
                                     style: theme.textTheme.bodySmall?.copyWith(
-                                      color:
-                                      colorScheme.onSurface.withValues(alpha: 0.6),
+                                      color: colorScheme.onSurface
+                                          .withValues(alpha: 0.6),
                                     ),
                                   ),
                               ],
@@ -359,33 +404,49 @@ class _OrganizationMainPageState extends State<OrganizationMainPage> {
                               tooltip: 'Edit',
                               onPressed: () => _editOrganization(org),
                               style: IconButton.styleFrom(
-                                backgroundColor:
-                                colorScheme.tertiary.withValues(alpha: 0.1),
+                                backgroundColor: colorScheme.tertiary
+                                    .withValues(alpha: 0.1),
                               ),
                             ),
                             const SizedBox(width: 4),
                             IconButton(
-                              icon: const Icon(Icons.settings_outlined,
-                                  size: 20),
+                              icon: const Icon(Icons.settings_outlined, size: 20),
                               color: colorScheme.onSurface.withValues(alpha: 0.6),
                               tooltip: 'Settings',
-                              onPressed: () {},
+                              onPressed: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => OrganizationSettingsPage(
+                                      organization: org,
+                                    ),
+                                  ),
+                                );
+                              },
                               style: IconButton.styleFrom(
-                                backgroundColor: colorScheme
-                                    .surfaceContainerHighest
-                                    .withValues(alpha: 0.5),
+                                backgroundColor: colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
                               ),
                             ),
                             const SizedBox(width: 4),
+                            // Activate/Deactivate button
                             IconButton(
-                              icon: const Icon(Icons.content_copy_outlined,
-                                  size: 20),
-                              color: colorScheme.secondary,
-                              tooltip: 'Duplicate',
-                              onPressed: () {},
+                              icon: Icon(
+                                org.status == 'Active'
+                                    ? Icons.toggle_on_outlined
+                                    : Icons.toggle_off_outlined,
+                                size: 20,
+                              ),
+                              color: org.status == 'Active'
+                                  ? Colors.green
+                                  : Colors.orange,
+                              tooltip: org.status == 'Active'
+                                  ? 'Deactivate'
+                                  : 'Activate',
+                              onPressed: () => _toggleOrganizationStatus(org),
                               style: IconButton.styleFrom(
-                                backgroundColor:
-                                colorScheme.secondary.withValues(alpha: 0.1),
+                                backgroundColor: org.status == 'Active'
+                                    ? Colors.green.withValues(alpha: 0.1)
+                                    : Colors.orange.withValues(alpha: 0.1),
                               ),
                             ),
                             const SizedBox(width: 4),

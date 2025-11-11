@@ -1,4 +1,3 @@
-
 class Organization {
   final int id;
   final String name;
@@ -8,6 +7,7 @@ class Organization {
   final String createdDate;
   final String? description;
   final String? logoPath;
+  final List<String>? projects;
 
   Organization({
     required this.id,
@@ -18,6 +18,7 @@ class Organization {
     required this.createdDate,
     this.description,
     this.logoPath,
+    this.projects,
   });
 
   Organization copyWith({
@@ -29,7 +30,7 @@ class Organization {
     String? createdDate,
     String? description,
     String? logoPath,
-
+    List<String>? projects,
   }) {
     return Organization(
       id: id ?? this.id,
@@ -40,7 +41,7 @@ class Organization {
       createdDate: createdDate ?? this.createdDate,
       description: description ?? this.description,
       logoPath: logoPath ?? this.logoPath,
-
+      projects: projects ?? this.projects,
     );
   }
 
@@ -54,19 +55,23 @@ class Organization {
       'createdDate': createdDate,
       'description': description,
       'logoPath': logoPath,
+      'projects': projects,
     };
   }
 
   factory Organization.fromJson(Map<String, dynamic> json) {
     return Organization(
-      id: json['id'],
-      name: json['name'],
-      code: json['code'],
-      status: json['status'],
-      createdBy: json['createdBy'],
-      createdDate: json['createdDate'],
+      id: json['id'] ?? 0,
+      name: json['name'] ?? '',
+      code: json['code'] ?? '',
+      status: json['status'] ?? '',
+      createdBy: json['createdBy'] ?? '',
+      createdDate: json['createdDate'] ?? '',
       description: json['description'],
       logoPath: json['logoPath'],
+      projects: json['projects'] != null
+          ? List<String>.from(json['projects'])
+          : null,
     );
   }
 }

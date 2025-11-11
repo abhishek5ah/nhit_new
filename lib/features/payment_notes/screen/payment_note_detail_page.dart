@@ -124,7 +124,6 @@ class _PaymentNoteDetailPageState extends State<PaymentNoteDetailPage> {
                             onGotoPage: gotoPage,
                             onDeleteDoc: deleteDoc,
                           ),
-
                           // Comments widget
                           PaymentNoteComments(),
                         ],
