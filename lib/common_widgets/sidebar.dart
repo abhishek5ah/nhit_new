@@ -47,8 +47,7 @@ class _SidebarState extends State<Sidebar> with SingleTickerProviderStateMixin {
           _SubItem("Create Payment Rules", "/approval-rules/payment_note/create", Icons.playlist_add_check),
           _SubItem("Reimbursement Rules", "/approval-rules/reimbursement_note", Icons.card_travel),
           _SubItem("Create Reimbursement Rules", "/approval-rules/reimbursement_note/create", Icons.luggage),
-          _SubItem("Bank Letter", "/approval-rules/bank_letter", Icons.mark_as_unread),
-          _SubItem("Create Bank Letter Rule", "/approval-rules/bank_letter/create", Icons.note_add),
+          // Removed Bank Letter and Create Bank Letter Rule from here
         ]),
         _SidebarItem(Icons.account_balance, "Escrow Banking System", "", subItems: [
           _SubItem("Escrow Accounts", "/escrow-accounts", Icons.account_balance_wallet_outlined),
@@ -64,6 +63,7 @@ class _SidebarState extends State<Sidebar> with SingleTickerProviderStateMixin {
         ]),
       ],
     ),
+    // The rest of your categories remain unchanged
     _SidebarCategory(
       heading: "MANAGEMENT",
       items: [
@@ -270,50 +270,58 @@ class _SidebarState extends State<Sidebar> with SingleTickerProviderStateMixin {
                   Divider(height: 1),
                   Padding(
                     padding: EdgeInsets.symmetric(horizontal: isExpanded ? 18 : 10, vertical: 8),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        InkWell(
-                          onTap: toggleOrgExpansion,
-                          borderRadius: BorderRadius.circular(5),
-                          child: Row(
-                            children: [
-                              Icon(
-                                Icons.swap_horiz,
-                                color: colors.onSurfaceVariant,
-                                size: 22,
-                              ),
-                              if (isExpanded) ...[
-                                const SizedBox(width: 18, height: 36),
-                                Expanded(
-                                  child: Text(
-                                    "Switch Organization",
-                                    style: TextStyle(
-                                      color: colors.onSurface,
-                                      fontWeight: FontWeight.w500,
-                                      fontSize: 16,
-                                    ),
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                ),
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: isOrgExpanded
+                            ? Theme.of(context).colorScheme.surface
+                            : Colors.transparent,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          InkWell(
+                            onTap: toggleOrgExpansion,
+                            borderRadius: BorderRadius.circular(5),
+                            child: Row(
+                              children: [
                                 Icon(
-                                  isOrgExpanded ? Icons.expand_less : Icons.expand_more,
+                                  Icons.swap_horiz,
                                   color: colors.onSurfaceVariant,
-                                  size: 20,
+                                  size: 22,
                                 ),
+                                if (isExpanded) ...[
+                                  const SizedBox(width: 18, height: 36),
+                                  Expanded(
+                                    child: Text(
+                                      "Switch Organization",
+                                      style: TextStyle(
+                                        color: colors.onSurface,
+                                        fontWeight: FontWeight.w500,
+                                        fontSize: 16,
+                                      ),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                                  Icon(
+                                    isOrgExpanded ? Icons.expand_less : Icons.expand_more,
+                                    color: colors.onSurfaceVariant,
+                                    size: 20,
+                                  ),
+                                ],
                               ],
-                            ],
+                            ),
                           ),
-                        ),
-                        if (isOrgExpanded && isExpanded) ...[
-                          const SizedBox(height: 18),
-                          _buildOrgOption("Organization 1", 0),
-                          _buildOrgOption("Organization 2", 1),
-                          _buildOrgOption("Organization 3", 2),
-                          _buildOrgOption("Organization 4", 3),
+                          if (isOrgExpanded && isExpanded) ...[
+                            const SizedBox(height: 18),
+                            _buildOrgOption("Organization 1", 0),
+                            _buildOrgOption("Organization 2", 1),
+                            _buildOrgOption("Organization 3", 2),
+                            _buildOrgOption("Organization 4", 3),
+                          ],
                         ],
-                      ],
+                      ),
                     ),
                   ),
                   const SizedBox(height: 12),

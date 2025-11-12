@@ -9,6 +9,8 @@ import 'package:ppv_components/features/designation/screen/create_designation.da
 import 'package:ppv_components/features/designation/screen/designation_main_page.dart';
 import 'package:ppv_components/features/organization/screens/create_organization.dart';
 import 'package:ppv_components/features/organization/screens/organization_main_page.dart';
+import 'package:ppv_components/features/payment_notes/screen/create_payment.dart';
+import 'package:ppv_components/features/payment_notes/screen/draft_payment.dart';
 import 'package:ppv_components/features/payment_notes/screen/payment_notes_main_page.dart';
 import 'package:ppv_components/features/reimbursement/screens/reimbursement_main_page.dart';
 import 'package:ppv_components/features/roles/screens/create_role.dart';
@@ -50,7 +52,7 @@ class PlaceholderPage extends StatelessWidget {
 }
 
 final GoRouter router = GoRouter(
-  initialLocation: '/organizations',
+  initialLocation: '/payment-notes/create',
   routes: [
     ShellRoute(
       builder: (context, state, child) => LayoutPage(child: child),
@@ -69,7 +71,7 @@ final GoRouter router = GoRouter(
         // Payment Notes
         GoRoute(
           path: '/payment-notes/create',
-          builder: (context, state) => const PlaceholderPage(title: 'Create Payment Note'),
+          builder: (context, state) => const CreatePaymentScreen(),
         ),
         GoRoute(
           path: '/payment-notes',
@@ -77,7 +79,7 @@ final GoRouter router = GoRouter(
         ),
         GoRoute(
           path: '/drafts',
-          builder: (context, state) => const PlaceholderPage(title: 'Draft Notes'),
+          builder: (context, state) => const DraftPaymentScreen(),
         ),
 
         // APPROVAL RULES

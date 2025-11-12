@@ -7,7 +7,7 @@ final List<PaymentNote> paymentNoteData = [
     vendorName: 'M/s Qualix Information Systems Llp',
     invoiceValue: '1,36,54,257.00',
     date: '11/09/2025 08:15 PM',
-    status: 'Sent for Approval',
+    status: 'Pending',
     nextApprover: 'Ravi Kant Vij',
   ),
   PaymentNote(
@@ -16,7 +16,7 @@ final List<PaymentNote> paymentNoteData = [
     vendorName: 'Studio Mnt Private Limited',
     invoiceValue: '3,99,071.00',
     date: '11/09/2025 08:06 PM',
-    status: 'Sent for Approval',
+    status: 'Pending',
     nextApprover: 'Ravi Kant Vij',
   ),
   PaymentNote(
@@ -34,7 +34,7 @@ final List<PaymentNote> paymentNoteData = [
     vendorName: 'PSMG & Associates',
     invoiceValue: '1,35,000.00',
     date: '11/09/2025 06:37 PM',
-    status: 'Sent for Approval',
+    status: 'Pending',
     nextApprover: 'Ravi Kant Vij',
   ),
   PaymentNote(
@@ -52,7 +52,7 @@ final List<PaymentNote> paymentNoteData = [
     vendorName: 'PSMG & Associates',
     invoiceValue: '1,35,000.00',
     date: '11/09/2025 06:35 PM',
-    status: 'Sent for Approval',
+    status: 'Draft',
     nextApprover: 'Ravi Kant Vij',
   ),
   PaymentNote(
@@ -61,7 +61,7 @@ final List<PaymentNote> paymentNoteData = [
     vendorName: 'Radha Sharma',
     invoiceValue: '2,700.00',
     date: '11/09/2025 06:21 PM',
-    status: 'Sent for Approval',
+    status: 'Rejected',
     nextApprover: 'Ravi Kant Vij',
   ),
   PaymentNote(
