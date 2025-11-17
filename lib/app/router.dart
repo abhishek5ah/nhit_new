@@ -3,6 +3,13 @@ import 'package:go_router/go_router.dart';
 import 'package:ppv_components/app/layout.dart';
 import 'package:ppv_components/features/activity/screen/activity_main_page.dart';
 import 'package:ppv_components/features/activity/screen/login_history_main_page.dart';
+import 'package:ppv_components/features/auth/presentation/pages/create_organization_page.dart';
+import 'package:ppv_components/features/auth/presentation/pages/register_super_admin_page.dart';
+import 'package:ppv_components/features/auth/presentation/pages/forgot_password_page.dart';
+import 'package:ppv_components/features/auth/presentation/pages/login_page.dart';
+import 'package:ppv_components/features/auth/presentation/pages/signup_page.dart';
+import 'package:ppv_components/features/auth/presentation/pages/verify_email_page.dart';
+import 'package:ppv_components/features/dashboard/presentation/pages/dashboard_page.dart';
 import 'package:ppv_components/features/department/screen/create_department.dart';
 import 'package:ppv_components/features/department/screen/department_main_page.dart';
 import 'package:ppv_components/features/designation/screen/create_designation.dart';
@@ -19,6 +26,9 @@ import 'package:ppv_components/features/user/screens/add_user.dart';
 import 'package:ppv_components/features/user/screens/user_main_page.dart';
 import 'package:ppv_components/features/vendor/screen/vendor_main_page.dart';
 import 'package:ppv_components/features/vendor/widgets/add_vendor_form.dart';
+import 'package:ppv_components/core/services/auth_service.dart';
+import 'package:ppv_components/core/services/jwt_token_manager.dart';
+import 'package:ppv_components/core/notifiers/auth_notifier.dart';
 
 // Placeholder widget for pages that don't exist yet
 class PlaceholderPage extends StatelessWidget {
@@ -51,14 +61,91 @@ class PlaceholderPage extends StatelessWidget {
   }
 }
 
+// Create AuthNotifier instance
+final _authNotifier = AuthNotifier(authService);
+
 final GoRouter router = GoRouter(
-  initialLocation: '/payment-notes/create',
+  initialLocation: '/login',
+  refreshListenable: _authNotifier, // Listen to auth state changes
+  redirect: (BuildContext context, GoRouterState state) async {
+    print('🔄 [Router] Checking route: ${state.matchedLocation}');
+
+    // Define auth routes (public routes)
+    final authRoutes = {
+      '/login',
+      '/tenants',
+      '/create-organization',
+      '/forgot-password',
+      '/verify-email'
+    };
+
+    final isAuthRoute = authRoutes.contains(state.matchedLocation);
+
+    try {
+      // Use AuthService's enhanced authentication check
+      final isAuthenticated = await authService.checkIsAuthenticated();
+
+      print('🔐 [Router] Authentication status: $isAuthenticated');
+      print('📍 [Router] Current route: ${state.matchedLocation}, Is auth route: $isAuthRoute');
+
+      // If not authenticated and trying to access protected route
+      if (!isAuthenticated && !isAuthRoute) {
+        print('🚫 [Router] Not authenticated, redirecting to login');
+        return '/login';
+      }
+
+      // If authenticated and trying to access auth routes, redirect to dashboard
+      if (isAuthenticated && isAuthRoute) {
+        print('✅ [Router] Already authenticated, redirecting to dashboard');
+        return '/dashboard';
+      }
+
+      print('✅ [Router] Route access allowed');
+      return null; // No redirect needed
+
+    } catch (e) {
+      print('🚨 [Router] Error in redirect logic: $e');
+      // On error, redirect to login for safety
+      if (!isAuthRoute) {
+        return '/login';
+      }
+      return null;
+    }
+  },
   routes: [
+    // Authentication Routes
+    GoRoute(
+      path: '/tenants',
+      builder: (context, state) => const RegisterSuperAdminPage(),
+    ),
+    GoRoute(
+      path: '/create-organization',
+      builder: (context, state) => const CreateOrganizationPage(),
+    ),
+    GoRoute(
+      path: '/login',
+      builder: (context, state) => const LoginPage(),
+    ),
+    GoRoute(
+      path: '/forgot-password',
+      builder: (context, state) => const ForgotPasswordPage(),
+    ),
+    GoRoute(
+      path: '/verify-email',
+      builder: (context, state) => const VerifyEmailPage(),
+    ),
+
+    // Protected Routes (inside ShellRoute - with layout)
     ShellRoute(
       builder: (context, state, child) => LayoutPage(child: child),
       routes: [
+        // DASHBOARD
+        GoRoute(
+          path: '/dashboard',
+          builder: (context, state) => const DashboardPage(),
+        ),
+
         // EXPENSE MANAGEMENT
-        // Expense Approval Notes
         GoRoute(
           path: '/expense-notes/note',
           builder: (context, state) => const PlaceholderPage(title: 'Expense Notes'),
@@ -83,7 +170,6 @@ final GoRouter router = GoRouter(
         ),
 
         // APPROVAL RULES
-        // Approval Rules Management
         GoRoute(
           path: '/approval-rules',
           builder: (context, state) => const PlaceholderPage(title: 'Approval Rules Dashboard'),
@@ -111,14 +197,6 @@ final GoRouter router = GoRouter(
         GoRoute(
           path: '/approval-rules/reimbursement_note/create',
           builder: (context, state) => const PlaceholderPage(title: 'Create Reimbursement Rule'),
-        ),
-        GoRoute(
-          path: '/approval-rules/bank_letter',
-          builder: (context, state) => const PlaceholderPage(title: 'Bank Letter Rules'),
-        ),
-        GoRoute(
-          path: '/approval-rules/bank_letter/create',
-          builder: (context, state) => const PlaceholderPage(title: 'Create Bank Letter Rule'),
         ),
 
         // Escrow Banking System
@@ -158,6 +236,12 @@ final GoRouter router = GoRouter(
         ),
 
         // MANAGEMENT
+        // Organization Management
+        GoRoute(
+          path: '/organizations',
+          builder: (context, state) => const OrganizationMainPage(),
+        ),
+
         // User Management
         GoRoute(
           path: '/users',
@@ -219,7 +303,6 @@ final GoRouter router = GoRouter(
         ),
 
         // ACTIVITY & REPORTS
-        // Activity
         GoRoute(
           path: '/activity',
           builder: (context, state) => const ActivityMainPage(),

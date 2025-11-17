@@ -57,7 +57,7 @@ class User {
       name: name ?? this.name,
       username: username ?? this.username,
       email: email ?? this.email,
-      roles: roles ?? List<String>.from(this.roles),
+      roles: roles ?? List<String>.from(this.roles), // Safe copy
       isActive: isActive ?? this.isActive,
       designation: designation ?? this.designation,
       department: department ?? this.department,
@@ -68,6 +68,46 @@ class User {
       bankName: bankName ?? this.bankName,
       bankAccount: bankAccount ?? this.bankAccount,
       ifsc: ifsc ?? this.ifsc,
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'name': name,
+      'username': username,
+      'email': email,
+      'roles': roles,
+      'isActive': isActive,
+      'designation': designation,
+      'department': department,
+      'signatureUrl': signatureUrl,
+      'employeeId': employeeId,
+      'contactNumber': contactNumber,
+      'accountHolder': accountHolder,
+      'bankName': bankName,
+      'bankAccount': bankAccount,
+      'ifsc': ifsc,
+    };
+  }
+
+  factory User.fromJson(Map<String, dynamic> json) {
+    return User(
+      id: json['id'] ?? 0,
+      name: json['name'] ?? '',
+      username: json['username'] ?? '',
+      email: json['email'] ?? '',
+      roles: (json['roles'] as List?)?.map((e) => e.toString()).toList() ?? [],
+      isActive: json['isActive'] ?? false,
+      designation: json['designation'],
+      department: json['department'],
+      signatureUrl: json['signatureUrl'],
+      employeeId: json['employeeId'],
+      contactNumber: json['contactNumber'],
+      accountHolder: json['accountHolder'],
+      bankName: json['bankName'],
+      bankAccount: json['bankAccount'],
+      ifsc: json['ifsc'],
     );
   }
 }

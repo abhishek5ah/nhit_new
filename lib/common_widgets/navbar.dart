@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:go_router/go_router.dart';
 import 'package:ppv_components/core/theme/theme_notifier.dart';
 import 'package:ppv_components/common_widgets/breadcrumb_item.dart';
+import 'package:ppv_components/core/services/auth_service.dart';
 
 class Navbar extends StatelessWidget {
   final String? currentLocation;
@@ -104,6 +106,40 @@ class Navbar extends StatelessWidget {
                   fontSize: 16,
                   color: colorScheme.onSurface,
                 ),
+              ),
+              const SizedBox(width: 10),
+              // Logout button
+              IconButton(
+                icon: Icon(Icons.logout, color: colorScheme.onSurfaceVariant),
+                onPressed: () async {
+                  // Show confirmation dialog
+                  final shouldLogout = await showDialog<bool>(
+                    context: context,
+                    builder: (context) => AlertDialog(
+                      title: const Text('Logout'),
+                      content: const Text('Are you sure you want to logout?'),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.of(context).pop(false),
+                          child: const Text('Cancel'),
+                        ),
+                        TextButton(
+                          onPressed: () => Navigator.of(context).pop(true),
+                          child: const Text('Logout'),
+                        ),
+                      ],
+                    ),
+                  );
+                  
+                  if (shouldLogout == true) {
+                    // Call logout and navigate to login
+                    await authService.logout();
+                    if (context.mounted) {
+                      context.go('/login');
+                    }
+                  }
+                },
+                tooltip: "Logout",
               ),
             ],
           ),

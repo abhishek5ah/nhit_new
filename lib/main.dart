@@ -1,13 +1,26 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:ppv_components/core/theme/theme_notifier.dart';
+import 'package:ppv_components/core/services/auth_service.dart';
+import 'package:ppv_components/core/services/api_service.dart';
+import 'package:ppv_components/features/organization/services/organization_service.dart';
 import 'app/router.dart';
 import 'package:ppv_components/core/theme/theme.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  
+  // Initialize services
+  ApiService.initialize();
+  await authService.initialize();
+  
   runApp(
-    ChangeNotifierProvider(
-      create: (_) => ThemeNotifier(),
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => ThemeNotifier()),
+        ChangeNotifierProvider.value(value: authService),
+        ChangeNotifierProvider.value(value: organizationService),
+      ],
       child: const MyApp(),
     ),
   );

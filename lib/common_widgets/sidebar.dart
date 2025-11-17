@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
+import 'package:ppv_components/features/organization/services/organization_service.dart';
 
 class Sidebar extends StatefulWidget {
-  const Sidebar({super.key, required Null Function(dynamic route) onItemSelected});
+  final Function(String route) onItemSelected;
+  
+  const Sidebar({super.key, required this.onItemSelected});
 
   @override
   State<Sidebar> createState() => _SidebarState();
@@ -22,6 +26,12 @@ class _SidebarState extends State<Sidebar> with SingleTickerProviderStateMixin {
 
   // Updated categories list with icons for each sub-item
   final List<_SidebarCategory> categories = [
+    _SidebarCategory(
+      heading: "DASHBOARD",
+      items: [
+        _SidebarItem(Icons.dashboard, "Dashboard", "/dashboard", subItems: []),
+      ],
+    ),
     _SidebarCategory(
       heading: "EXPENSE MANAGEMENT",
       items: [
@@ -114,6 +124,11 @@ class _SidebarState extends State<Sidebar> with SingleTickerProviderStateMixin {
     widthAnim = Tween<double>(begin: expandedWidth, end: collapsedWidth).animate(
       CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
     );
+    
+    // Load organizations when sidebar initializes
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<OrganizationService>().loadOrganizations();
+    });
   }
 
   void toggleSidebar() {
@@ -147,10 +162,13 @@ class _SidebarState extends State<Sidebar> with SingleTickerProviderStateMixin {
   }
 
   void _navigate(String route) {
+    print('🧭 [Sidebar] Navigating to route: $route');
     setState(() {
       selectedSubRoute = route;
     });
-    GoRouter.of(context).go(route);
+    // Use the callback provided by the parent layout
+    widget.onItemSelected(route);
+    print('✅ [Sidebar] Called onItemSelected with route: $route');
   }
 
   @override
@@ -159,28 +177,72 @@ class _SidebarState extends State<Sidebar> with SingleTickerProviderStateMixin {
     super.dispose();
   }
 
-  Widget _buildOrgOption(String label, int index) {
-    final bool isSelected = index == selectedOrgIndex;
+  Widget _buildOrgOption(String label, dynamic organization, bool isSelected) {
     if (!isExpanded) return const SizedBox();
 
     return Padding(
       padding: const EdgeInsets.only(left: 40, top: 6, bottom: 6),
       child: InkWell(
-        onTap: () {
-          setState(() {
-            selectedOrgIndex = index;
-          });
+        onTap: () async {
+          if (organization != null) {
+            // Show loading indicator
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('Switching to ${organization.name}...'),
+                duration: const Duration(seconds: 1),
+              ),
+            );
+            
+            // Switch organization
+            final orgService = context.read<OrganizationService>();
+            final result = await orgService.switchOrganization(organization);
+            
+            if (result.success) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text('Switched to ${organization.name}'),
+                  backgroundColor: Theme.of(context).colorScheme.primary,
+                ),
+              );
+              
+              // Collapse the organization section after switching
+              setState(() {
+                isOrgExpanded = false;
+              });
+            } else {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(result.message ?? 'Failed to switch organization'),
+                  backgroundColor: Theme.of(context).colorScheme.error,
+                ),
+              );
+            }
+          }
         },
         borderRadius: BorderRadius.circular(5),
         child: Container(
           padding: const EdgeInsets.symmetric(vertical: 8),
-          child: Text(
-            label,
-            style: TextStyle(
-              color: isSelected ? Theme.of(context).colorScheme.error : Theme.of(context).colorScheme.onSurfaceVariant,
-              fontSize: 14,
-              fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-            ),
+          child: Row(
+            children: [
+              Expanded(
+                child: Text(
+                  label,
+                  style: TextStyle(
+                    color: isSelected ? Theme.of(context).colorScheme.primary : Theme.of(context).colorScheme.onSurfaceVariant,
+                    fontSize: 14,
+                    fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              if (isSelected)
+                Icon(
+                  Icons.check_circle,
+                  size: 16,
+                  color: Theme.of(context).colorScheme.primary,
+                ),
+            ],
           ),
         ),
       ),
@@ -238,6 +300,7 @@ class _SidebarState extends State<Sidebar> with SingleTickerProviderStateMixin {
                       ],
                     ),
                   ),
+                  
                   Expanded(
                     child: ListView(
                       padding: EdgeInsets.zero,
@@ -315,10 +378,36 @@ class _SidebarState extends State<Sidebar> with SingleTickerProviderStateMixin {
                           ),
                           if (isOrgExpanded && isExpanded) ...[
                             const SizedBox(height: 18),
-                            _buildOrgOption("Organization 1", 0),
-                            _buildOrgOption("Organization 2", 1),
-                            _buildOrgOption("Organization 3", 2),
-                            _buildOrgOption("Organization 4", 3),
+                            Consumer<OrganizationService>(
+                              builder: (context, orgService, child) {
+                                if (orgService.isLoading) {
+                                  return const Padding(
+                                    padding: EdgeInsets.all(16.0),
+                                    child: Center(child: CircularProgressIndicator()),
+                                  );
+                                }
+                                
+                                if (orgService.organizations.isEmpty) {
+                                  return Padding(
+                                    padding: const EdgeInsets.only(left: 40, top: 6, bottom: 6),
+                                    child: Text(
+                                      'No organizations found',
+                                      style: TextStyle(
+                                        color: colors.onSurfaceVariant,
+                                        fontSize: 14,
+                                      ),
+                                    ),
+                                  );
+                                }
+                                
+                                return Column(
+                                  children: orgService.organizations.map((org) {
+                                    final isSelected = orgService.currentOrganization?.orgId == org.orgId;
+                                    return _buildOrgOption(org.name, org, isSelected);
+                                  }).toList(),
+                                );
+                              },
+                            ),
                           ],
                         ],
                       ),
@@ -344,29 +433,44 @@ class _SidebarState extends State<Sidebar> with SingleTickerProviderStateMixin {
         color: isActive ? colors.surfaceContainerHighest.withValues(alpha: 0.5) : Colors.transparent,
         borderRadius: BorderRadius.circular(10),
       ),
-      child: ExpansionTile(
-        onExpansionChanged: (expanded) => toggleMenuExpansion(index),
-        trailing: isExpanded && item.subItems.isNotEmpty
-            ? Icon(
-          isExpandedItem ? Icons.expand_less : Icons.expand_more,
-          color: colors.onSurfaceVariant,
-          size: 20,
-        )
-            : const SizedBox.shrink(),
-        initiallyExpanded: isExpandedItem,
-        leading: Icon(item.icon, color: colors.onSurfaceVariant),
-        textColor: isExpanded ? colors.onSurface : Colors.transparent,
-        iconColor: isExpanded ? colors.onSurfaceVariant : Colors.transparent,
-        title: isExpanded
-            ? Text(
-          item.label,
-          style: TextStyle(
-            fontWeight: FontWeight.w600,
-            color: isActive ? colors.primary : colors.onSurface,
-            fontSize: 16,
-          ),
-        )
-            : const SizedBox.shrink(),
+      child: item.subItems.isEmpty
+          ? ListTile(
+              leading: Icon(item.icon, color: colors.onSurfaceVariant),
+              title: isExpanded
+                  ? Text(
+                      item.label,
+                      style: TextStyle(
+                        fontWeight: FontWeight.w600,
+                        color: isActive ? colors.primary : colors.onSurface,
+                        fontSize: 16,
+                      ),
+                    )
+                  : const SizedBox.shrink(),
+              onTap: () => _navigate(item.route),
+            )
+          : ExpansionTile(
+              onExpansionChanged: (expanded) => toggleMenuExpansion(index),
+              trailing: isExpanded && item.subItems.isNotEmpty
+                  ? Icon(
+                      isExpandedItem ? Icons.expand_less : Icons.expand_more,
+                      color: colors.onSurfaceVariant,
+                      size: 20,
+                    )
+                  : const SizedBox.shrink(),
+              initiallyExpanded: isExpandedItem,
+              leading: Icon(item.icon, color: colors.onSurfaceVariant),
+              textColor: isExpanded ? colors.onSurface : Colors.transparent,
+              iconColor: isExpanded ? colors.onSurfaceVariant : Colors.transparent,
+              title: isExpanded
+                  ? Text(
+                      item.label,
+                      style: TextStyle(
+                        fontWeight: FontWeight.w600,
+                        color: isActive ? colors.primary : colors.onSurface,
+                        fontSize: 16,
+                      ),
+                    )
+                  : const SizedBox.shrink(),
         childrenPadding: const EdgeInsets.only(left: 30, bottom: 8, right: 16),
         children: isExpanded && item.subItems.isNotEmpty
             ? item.subItems

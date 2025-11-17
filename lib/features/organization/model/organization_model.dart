@@ -69,9 +69,7 @@ class Organization {
       createdDate: json['createdDate'] ?? '',
       description: json['description'],
       logoPath: json['logoPath'],
-      projects: json['projects'] != null
-          ? List<String>.from(json['projects'])
-          : null,
+      projects: (json['projects'] as List?)?.map((e) => e.toString()).toList(),
     );
   }
 }

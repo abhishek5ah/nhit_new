@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:ppv_components/common_widgets/badge.dart';
 import 'package:ppv_components/common_widgets/button/primary_button.dart';
 import 'package:ppv_components/common_widgets/custom_table.dart';
@@ -7,8 +8,8 @@ import 'package:ppv_components/features/organization/model/organization_model.da
 import 'package:ppv_components/features/organization/data/organization_mockdb.dart';
 import 'package:ppv_components/features/organization/screens/create_organization.dart';
 import 'package:ppv_components/features/organization/screens/edit_organization.dart';
-import 'package:ppv_components/features/organization/screens/settings_organization.dart';
 import 'package:ppv_components/features/organization/screens/view_organization.dart';
+import 'package:ppv_components/features/organization/services/organization_service.dart';
 
 class OrganizationMainPage extends StatefulWidget {
   const OrganizationMainPage({super.key});
@@ -27,8 +28,14 @@ class _OrganizationMainPageState extends State<OrganizationMainPage> {
   }
 
   void _loadOrganizations() {
+    // Load from both mock DB and real service
     setState(() {
       organizations = OrganizationMockDB.organizations;
+    });
+    
+    // Also load from real service
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<OrganizationService>().loadOrganizations();
     });
   }
 
@@ -406,25 +413,6 @@ class _OrganizationMainPageState extends State<OrganizationMainPage> {
                               style: IconButton.styleFrom(
                                 backgroundColor: colorScheme.tertiary
                                     .withValues(alpha: 0.1),
-                              ),
-                            ),
-                            const SizedBox(width: 4),
-                            IconButton(
-                              icon: const Icon(Icons.settings_outlined, size: 20),
-                              color: colorScheme.onSurface.withValues(alpha: 0.6),
-                              tooltip: 'Settings',
-                              onPressed: () {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) => OrganizationSettingsPage(
-                                      organization: org,
-                                    ),
-                                  ),
-                                );
-                              },
-                              style: IconButton.styleFrom(
-                                backgroundColor: colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
                               ),
                             ),
                             const SizedBox(width: 4),

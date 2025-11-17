@@ -7,6 +7,9 @@ import 'package:ppv_components/features/organization/data/organization_mockdb.da
 import 'package:ppv_components/common_widgets/button/primary_button.dart';
 import 'package:ppv_components/common_widgets/button/secondary_button.dart';
 import 'package:ppv_components/features/organization/model/organization_model.dart';
+import 'package:provider/provider.dart';
+import 'package:ppv_components/core/services/auth_service.dart';
+import 'package:ppv_components/features/organization/services/organization_service.dart';
 
 class CreateOrganizationScreen extends StatefulWidget {
   const CreateOrganizationScreen({super.key});
@@ -26,6 +29,7 @@ class _CreateOrganizationScreenState extends State<CreateOrganizationScreen> {
 
   String _selectedStatus = 'Active';
   final List<String> _statusOptions = ['Active', 'Inactive'];
+  bool _isLoading = false;
 
   File? _logoFile;
   String? _logoFileName;
@@ -134,30 +138,77 @@ class _CreateOrganizationScreenState extends State<CreateOrganizationScreen> {
     });
   }
 
-  void _submitForm() {
+  void _submitForm() async {
     if (_formKey.currentState!.validate()) {
-      final newOrganization = Organization(
-        id: DateTime.now().millisecondsSinceEpoch,
-        name: _nameController.text.trim(),
-        code: _codeController.text.trim().toUpperCase(),
-        status: _selectedStatus,
-        createdBy: 'Super Admin',
-        createdDate: 'Nov 10, 2025',
-        description: _descriptionController.text.trim(),
-        logoPath: _permanentLogoPath, // Use permanent path instead
-      );
+      setState(() {
+        _isLoading = true;
+      });
 
-      OrganizationMockDB.add(newOrganization);
+      try {
+        // Use the AuthService to create organization (which integrates with backend)
+        final authService = context.read<AuthService>();
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Organization created successfully!'),
-          backgroundColor: Colors.green,
-          duration: Duration(seconds: 2),
-        ),
-      );
+        final result = await authService.createOrganization(
+          organizationName: _nameController.text.trim(),
+          organizationCode: _codeController.text.trim().toUpperCase(),
+          description: _descriptionController.text.trim().isEmpty
+              ? 'Main ${_nameController.text.trim()} Organization'
+              : _descriptionController.text.trim(),
+          initialProjects: _projectControllers.map((c) => c.text.trim()).where((p) => p.isNotEmpty).toList(),
+        );
 
-      Navigator.pop(context, newOrganization);
+        if (result.success) {
+          // Also add to mock DB for compatibility with old UI
+          final newOrganization = Organization(
+            id: DateTime.now().millisecondsSinceEpoch,
+            name: _nameController.text.trim(),
+            code: _codeController.text.trim().toUpperCase(),
+            status: _selectedStatus,
+            createdBy: 'Super Admin',
+            createdDate: 'Nov 10, 2025',
+            description: _descriptionController.text.trim(),
+            logoPath: _permanentLogoPath, // Logo is optional
+          );
+
+          OrganizationMockDB.add(newOrganization);
+
+          // Reload organizations in the service
+          final orgService = context.read<OrganizationService>();
+          await orgService.loadOrganizations();
+
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(result.message ?? 'Organization created successfully!'),
+              backgroundColor: Colors.green,
+              duration: const Duration(seconds: 2),
+            ),
+          );
+
+          Navigator.pop(context, newOrganization);
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(result.message ?? 'Failed to create organization'),
+              backgroundColor: Colors.red,
+              duration: const Duration(seconds: 3),
+            ),
+          );
+        }
+      } catch (e) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error: $e'),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      } finally {
+        if (mounted) {
+          setState(() {
+            _isLoading = false;
+          });
+        }
+      }
     }
   }
 

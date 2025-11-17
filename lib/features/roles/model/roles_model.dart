@@ -1,4 +1,3 @@
-
 class Role {
   final int id;
   final String roleName;
@@ -11,13 +10,15 @@ class Role {
   });
 
   Role copyWith({
+    int? id,
     String? roleName,
     List<String>? permissions,
   }) {
     return Role(
-      id: id,
+      id: id ?? this.id,
       roleName: roleName ?? this.roleName,
-      permissions: permissions ?? this.permissions,
+      permissions: permissions ?? List<String>.from(this.permissions),
     );
   }
 }
+  
