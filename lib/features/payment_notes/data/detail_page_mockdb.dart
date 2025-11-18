@@ -8,8 +8,7 @@ final paymentNoteDetailMockData = PaymentNoteDetail(
   greenNoteAppDate: '08/09/2025 10:56 PM',
   department: 'ITS',
   greenNoteApprover: 'Rakshit Jain',
-  subject:
-  'Payment against Milestone - 1 (Mobilization Advance) for Design, Supply, Installation, Configuration, Integration, Testing & Commissioning of ATMS at Shivpuri Jhansi Project',
+  subject: 'Payment against Milestone ',
   vendorCode: 'E0789',
   vendorName: 'M/s Qualix Information Systems Llp',
   invoiceNo: 'QIS/PI/25-26/033',
@@ -46,10 +45,38 @@ final paymentNoteDetailMockData = PaymentNoteDetail(
   workflowSteps: [
     FlowStep(
       step: 1,
-      makerName: 'Dharmendra Kumar Meel',
-      status: 'Draft',
-      dateTime: '11/09/2025 08:15 PM',
-      nextApprover: 'Ravi Kant Vij',
+      makerName: 'Shailendrasinh Rajput',
+      status: 'Approved',
+      dateTime: '18/11/2025 12:54 AM',
+      nextApprover: 'Deepak Kumar',
+    ),
+    FlowStep(
+      step: 2,
+      makerName: 'Deepak Kumar',
+      status: 'Approved',
+      dateTime: '18/11/2025 01:01 AM',
+      nextApprover: 'Priya Ranjan Giri',
+    ),
+    FlowStep(
+      step: 3,
+      makerName: 'Priya Ranjan Giri',
+      status: 'Approved',
+      dateTime: '18/11/2025 01:04 AM',
+      nextApprover: 'Mathew George',
+    ),
+    FlowStep(
+      step: 4,
+      makerName: 'Mathew George',
+      status: 'Approved',
+      dateTime: '18/11/2025 01:05 AM',
+      nextApprover: 'Rakshit Jain',
+    ),
+    FlowStep(
+      step: 5,
+      makerName: 'Rakshit Jain',
+      status: 'Approved',
+      dateTime: '18/11/2025 01:06 AM',
+      nextApprover: '',
     ),
   ],
 );

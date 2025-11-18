@@ -1,12 +1,10 @@
 import 'package:flutter/material.dart';
 
 class ActivityHeader extends StatelessWidget {
-  final int tabIndex;
   final IconData? actionButtonIcon;
 
   const ActivityHeader({
     super.key,
-    required this.tabIndex,
     this.actionButtonIcon,
   });
 
@@ -14,16 +12,6 @@ class ActivityHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
-
-    final List<_HeaderData> headerData = [
-      _HeaderData(
-        title: 'Activity Logs',
-        subtitle: 'View and manage all system activity logs',
-        icon: Icons.history,
-      ),
-    ];
-
-    final header = headerData[tabIndex];
 
     return Container(
       width: double.infinity,
@@ -49,7 +37,7 @@ class ActivityHeader extends StatelessWidget {
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Icon(
-                  header.icon,
+                  Icons.history,
                   color: colorScheme.onPrimary,
                   size: 24,
                 ),
@@ -60,7 +48,7 @@ class ActivityHeader extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    header.title,
+                    'Activity Logs Management',
                     style: theme.textTheme.headlineSmall?.copyWith(
                       fontWeight: FontWeight.bold,
                       color: colorScheme.onSurface,
@@ -68,7 +56,7 @@ class ActivityHeader extends StatelessWidget {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    header.subtitle,
+                    'Track and monitor system activities and user actions',
                     style: theme.textTheme.bodyMedium?.copyWith(
                       color: colorScheme.onSurface.withValues(alpha: 0.6),
                     ),
@@ -81,16 +69,4 @@ class ActivityHeader extends StatelessWidget {
       ),
     );
   }
-}
-
-class _HeaderData {
-  final String title;
-  final String subtitle;
-  final IconData icon;
-
-  _HeaderData({
-    required this.title,
-    required this.subtitle,
-    required this.icon,
-  });
 }

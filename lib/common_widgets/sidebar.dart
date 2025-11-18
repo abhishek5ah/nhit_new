@@ -42,7 +42,7 @@ class _SidebarState extends State<Sidebar> with SingleTickerProviderStateMixin {
         _SidebarItem(Icons.money, "Payment Notes", "", subItems: [
           _SubItem("Create Payment Note", "/payment-notes/create", Icons.post_add),
           _SubItem("All Payment Notes", "/payment-notes", Icons.credit_card),
-          _SubItem("Draft Notes", "/drafts", Icons.drafts_outlined),
+          _SubItem("Draft Notes", "/payment-notes/drafts", Icons.drafts_outlined),
         ]),
       ],
     ),

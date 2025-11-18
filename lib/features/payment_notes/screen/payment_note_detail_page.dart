@@ -5,6 +5,7 @@ import 'package:ppv_components/features/payment_notes/widget/detail_page_widgets
 import 'package:ppv_components/features/payment_notes/widget/detail_page_widgets/payment_note_comments.dart';
 import 'package:ppv_components/features/payment_notes/widget/detail_page_widgets/payment_note_summary.dart';
 import 'package:ppv_components/features/payment_notes/data/detail_page_mockdb.dart';
+import 'package:ppv_components/features/payment_notes/widget/quick_action_card.dart';
 
 class PaymentNoteDetailPage extends StatefulWidget {
   const PaymentNoteDetailPage({super.key});
@@ -88,7 +89,7 @@ class _PaymentNoteDetailPageState extends State<PaymentNoteDetailPage> {
       body: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Main content
+          // Main content - Left side with independent scrolling
           Expanded(
             flex: 3,
             child: SingleChildScrollView(
@@ -134,10 +135,18 @@ class _PaymentNoteDetailPageState extends State<PaymentNoteDetailPage> {
               ),
             ),
           ),
-          // Side Flow card
-          SizedBox(
-            width: 300,
-            child: FlowCard(step: paymentNoteDetailMockData.workflowSteps[0]),
+
+          // Side Flow card and Quick Actions - Right side with independent scrolling
+          Expanded(
+            flex: 1,
+            child: SingleChildScrollView(
+              child: Column(
+                children: [
+                  FlowCard(steps: paymentNoteDetailMockData.workflowSteps),
+                  const QuickActionsCard(),
+                ],
+              ),
+            ),
           ),
         ],
       ),

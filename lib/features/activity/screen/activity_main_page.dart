@@ -78,7 +78,7 @@ class _ActivityMainPageState extends State<ActivityMainPage> {
           children: [
             const Padding(
               padding: EdgeInsets.only(left: 12, right: 12, bottom: 12),
-              child: ActivityHeader(tabIndex: 0),
+              child: ActivityHeader(),
             ),
             Padding(
               padding: const EdgeInsets.only(right: 12),

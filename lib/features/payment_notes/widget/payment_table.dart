@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:ppv_components/common_widgets/badge.dart';
 import 'package:ppv_components/common_widgets/button/toggle_button.dart';
 import 'package:ppv_components/common_widgets/button/outlined_button.dart';
 import 'package:ppv_components/common_widgets/custom_pagination.dart';
 import 'package:ppv_components/common_widgets/custom_table.dart';
 import 'package:ppv_components/features/payment_notes/model/payment_notes_model.dart';
+import 'package:ppv_components/features/payment_notes/screen/edit_payment_status.dart';
 import 'package:ppv_components/features/payment_notes/screen/payment_note_detail_page.dart';
 import 'package:ppv_components/features/payment_notes/widget/payment_grid.dart';
 
@@ -218,6 +220,26 @@ class _PaymentTableViewState extends State<PaymentTableView> {
     }
   }
 
+  // Helper method to get status color
+  Color _getStatusColor(String status) {
+    switch (status.toLowerCase()) {
+      case 'draft':
+        return Colors.grey;
+      case 'pending':
+        return Colors.orange;
+      case 'submitted':
+        return Colors.blue;
+      case 'approved':
+        return Colors.green;
+      case 'rejected':
+        return Colors.red;
+      case 'paid':
+        return Colors.teal;
+      default:
+        return Colors.grey;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
@@ -293,20 +315,12 @@ class _PaymentTableViewState extends State<PaymentTableView> {
             Text(payment.date, style: TextStyle(color: colorScheme.onSurface)),
           ),
           DataCell(
-            Container(
-              padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 10),
-              decoration: BoxDecoration(
-                color: colorScheme.primary,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Text(
-                payment.status,
-                style: TextStyle(
-                  color: colorScheme.onPrimary,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 12,
-                ),
-              ),
+            BadgeChip(
+              label: payment.status,
+              type: ChipType.status,
+              statusKey: payment.status,
+              backgroundColor: _getStatusColor(payment.status),
+              textColor: Colors.white,
             ),
           ),
           DataCell(
@@ -328,6 +342,31 @@ class _PaymentTableViewState extends State<PaymentTableView> {
                         builder: (context) => const PaymentNoteDetailPage(),
                       ),
                     );
+                  },
+                ),
+                const SizedBox(width: 8),
+                IconButton(
+                  icon: Icon(Icons.edit_outlined, color: Colors.orange[600]),
+                  tooltip: 'Edit Status',
+                  onPressed: () async {
+                    final result = await Navigator.of(context).push<PaymentNote>(
+                      MaterialPageRoute(
+                        builder: (context) => EditPaymentStatusScreen(payment: payment),
+                      ),
+                    );
+
+                    // If status was updated, refresh the data
+                    if (result != null) {
+                      setState(() {
+                        // Update the payment in the list
+                        final index = widget.paymentData.indexWhere((p) => p.sno == result.sno);
+                        if (index != -1) {
+                          widget.paymentData[index] = result;
+                        }
+                        _applyFilters();
+                        _updatePagination();
+                      });
+                    }
                   },
                 ),
                 const SizedBox(width: 8),
@@ -417,16 +456,19 @@ class _PaymentTableViewState extends State<PaymentTableView> {
                     ),
                     const SizedBox(height: 16),
 
-                    // Display active filters
+                    // Display active filters using BadgeChip
                     if (statusFilter != null || searchQuery.isNotEmpty) ...[
                       Wrap(
                         spacing: 8,
                         runSpacing: 8,
                         children: [
                           if (statusFilter != null)
-                            Chip(
-                              label: Text('Status: $statusFilter'),
-                              onDeleted: () {
+                            BadgeChip(
+                              label: 'Status: $statusFilter',
+                              type: ChipType.removable,
+                              backgroundColor: colorScheme.primaryContainer,
+                              textColor: colorScheme.onPrimaryContainer,
+                              onRemove: () {
                                 setState(() {
                                   statusFilter = null;
                                   _applyFilters();
@@ -434,18 +476,17 @@ class _PaymentTableViewState extends State<PaymentTableView> {
                                   _updatePagination();
                                 });
                               },
-                              deleteIcon: const Icon(Icons.close, size: 18),
-                              backgroundColor: colorScheme.primaryContainer,
                             ),
                           if (searchQuery.isNotEmpty)
-                            Chip(
-                              label: Text('Search: "$searchQuery"'),
-                              onDeleted: () {
+                            BadgeChip(
+                              label: 'Search: "$searchQuery"',
+                              type: ChipType.removable,
+                              backgroundColor: colorScheme.secondaryContainer,
+                              textColor: colorScheme.onSecondaryContainer,
+                              onRemove: () {
                                 _searchController.clear();
                                 updateSearch('');
                               },
-                              deleteIcon: const Icon(Icons.close, size: 18),
-                              backgroundColor: colorScheme.secondaryContainer,
                             ),
                         ],
                       ),

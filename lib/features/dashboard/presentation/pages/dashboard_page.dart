@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:ppv_components/core/services/auth_service.dart';
 import 'package:provider/provider.dart';
 
@@ -248,11 +249,6 @@ class _DashboardPageState extends State<DashboardPage> {
               ),
             ),
           ),
-          floatingActionButton: FloatingActionButton(
-            onPressed: () => _showComingSoon(context),
-            backgroundColor: Colors.green,
-            child: const Icon(Icons.add, color: Colors.white),
-          ),
         );
       },
     );
@@ -426,7 +422,7 @@ class _DashboardPageState extends State<DashboardPage> {
               'View Activity',
               Icons.trending_up,
               Colors.grey,
-                  () => _showComingSoon(context),
+                  () => context.go('/activity'),
             ),
           ],
         ),
@@ -595,9 +591,10 @@ class _DashboardPageState extends State<DashboardPage> {
 
   void _showComingSoon(BuildContext context) {
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Feature coming soon!'),
-        duration: Duration(seconds: 2),
+      SnackBar(
+        content: const Text('Feature coming soon!'),
+        backgroundColor: Theme.of(context).colorScheme.primary,
+        duration: const Duration(seconds: 2),
       ),
     );
   }

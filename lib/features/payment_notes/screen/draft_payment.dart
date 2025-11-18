@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:ppv_components/features/payment_notes/screen/create_payment.dart';
 
-
 class DraftPaymentScreen extends StatelessWidget {
   const DraftPaymentScreen({super.key});
 
@@ -20,28 +19,30 @@ class DraftPaymentScreen extends StatelessWidget {
             // Themed Header Container with icon, heading, subheading
             Container(
               width: double.infinity,
-              padding: const EdgeInsets.fromLTRB(36, 16, 0, 16),
+              padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
-                color: colorScheme.surfaceContainer,
-                borderRadius: BorderRadius.circular(16),
+                color: colorScheme.surface,
+                borderRadius: BorderRadius.circular(12),
                 border: Border.all(
-                  color: colorScheme.outline,
-                  width: 0.5,
+                  color: colorScheme.outline.withValues(alpha: 0.2),
+                  width: 1,
                 ),
               ),
               child: Row(
                 children: [
                   Container(
-                    width: 46,
-                    height: 46,
+                    padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
                       color: colorScheme.primary,
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    child: Icon(Icons.description_outlined,
-                        color: colorScheme.onPrimary, size: 26),
+                    child: Icon(
+                      Icons.description_outlined,
+                      color: colorScheme.onPrimary,
+                      size: 24,
+                    ),
                   ),
-                  const SizedBox(width: 18),
+                  const SizedBox(width: 16),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -50,13 +51,14 @@ class DraftPaymentScreen extends StatelessWidget {
                           'Draft Payment Notes',
                           style: textTheme.headlineSmall?.copyWith(
                             fontWeight: FontWeight.bold,
+                            color: colorScheme.onSurface,
                           ),
                         ),
                         const SizedBox(height: 4),
                         Text(
                           'Manage and convert draft payment notes to active status.',
                           style: textTheme.bodyMedium?.copyWith(
-                            color: colorScheme.onSurface.withAlpha(204),
+                            color: colorScheme.onSurface.withValues(alpha: 0.6),
                           ),
                         ),
                       ],
@@ -72,11 +74,11 @@ class DraftPaymentScreen extends StatelessWidget {
               width: double.infinity,
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
-                color: colorScheme.primary.withValues(alpha:0.13),
+                color: colorScheme.surfaceContainerLowest,
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(
-                  color: colorScheme.primary,
-                  width: 0.5,
+                  color: colorScheme.primary.withValues(alpha: 0.3),
+                  width: 1,
                 ),
               ),
               child: Row(
@@ -119,17 +121,20 @@ class DraftPaymentScreen extends StatelessWidget {
               width: double.infinity,
               padding: const EdgeInsets.all(32),
               decoration: BoxDecoration(
-                color: colorScheme.surfaceContainerHighest.withValues(alpha:0.13),
+                color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
                 borderRadius: BorderRadius.circular(14),
                 border: Border.all(
-                  color: colorScheme.outline.withValues(alpha:0.15),
-                  width: 0.7,
+                  color: colorScheme.outline.withValues(alpha: 0.2),
+                  width: 1,
                 ),
               ),
               child: Column(
                 children: [
-                  Icon(Icons.insert_drive_file_outlined,
-                      size: 56, color: colorScheme.outline),
+                  Icon(
+                    Icons.insert_drive_file_outlined,
+                    size: 56,
+                    color: colorScheme.outline,
+                  ),
                   const SizedBox(height: 18),
                   Text(
                     'No Draft Payment Notes Found',
@@ -142,7 +147,7 @@ class DraftPaymentScreen extends StatelessWidget {
                   Text(
                     'Draft payment notes will appear here when green notes are approved or when manually created.',
                     style: textTheme.bodyMedium?.copyWith(
-                      color: colorScheme.onSurface.withValues(alpha:0.69),
+                      color: colorScheme.onSurface.withValues(alpha: 0.6),
                     ),
                     textAlign: TextAlign.center,
                   ),
@@ -155,9 +160,12 @@ class DraftPaymentScreen extends StatelessWidget {
                           backgroundColor: colorScheme.primary,
                           foregroundColor: colorScheme.onPrimary,
                           padding: const EdgeInsets.symmetric(
-                              horizontal: 20, vertical: 12),
+                            horizontal: 20,
+                            vertical: 16,
+                          ),
+                          minimumSize: const Size(0, 56),
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(7),
+                            borderRadius: BorderRadius.circular(8),
                           ),
                         ),
                         icon: const Icon(Icons.add),
@@ -176,9 +184,12 @@ class DraftPaymentScreen extends StatelessWidget {
                           foregroundColor: colorScheme.primary,
                           side: BorderSide(color: colorScheme.primary),
                           padding: const EdgeInsets.symmetric(
-                              horizontal: 20, vertical: 12),
+                            horizontal: 20,
+                            vertical: 16,
+                          ),
+                          minimumSize: const Size(0, 56),
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(7),
+                            borderRadius: BorderRadius.circular(8),
                           ),
                         ),
                         icon: const Icon(Icons.visibility_outlined),
@@ -200,7 +211,7 @@ class DraftPaymentScreen extends StatelessWidget {
               decoration: BoxDecoration(
                 color: colorScheme.surface,
                 border: Border.all(
-                  color: colorScheme.outline.withValues(alpha:0.25),
+                  color: colorScheme.outline.withValues(alpha: 0.2),
                   width: 1,
                 ),
                 borderRadius: BorderRadius.circular(12),
@@ -236,18 +247,18 @@ class DraftPaymentScreen extends StatelessWidget {
                       const SizedBox(width: 16),
                       _buildStatBox(
                         context: context,
-                        color: colorScheme.outline,
+                        color: colorScheme.tertiary,
                         label: 'Manual Created',
                         value: '0',
-                        textColor: colorScheme.surface,
+                        textColor: colorScheme.onTertiary,
                       ),
                       const SizedBox(width: 16),
                       _buildStatBox(
                         context: context,
-                        color: colorScheme.tertiary,
+                        color: colorScheme.primaryContainer,
                         label: 'Today\'s Drafts',
                         value: '0',
-                        textColor: colorScheme.onTertiary,
+                        textColor: colorScheme.onPrimaryContainer,
                       ),
                     ],
                   ),
@@ -273,7 +284,8 @@ class DraftPaymentScreen extends StatelessWidget {
           foregroundColor: color,
           side: BorderSide(color: color),
           textStyle: textTheme.bodyMedium,
-          padding: const EdgeInsets.symmetric(vertical: 14),
+          padding: const EdgeInsets.symmetric(vertical: 18),
+          minimumSize: const Size(0, 56),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(8),
           ),
@@ -300,7 +312,7 @@ class DraftPaymentScreen extends StatelessWidget {
         padding: const EdgeInsets.symmetric(vertical: 28),
         decoration: BoxDecoration(
           color: color,
-          borderRadius: BorderRadius.circular(13),
+          borderRadius: BorderRadius.circular(12),
         ),
         child: Column(
           children: [
@@ -315,7 +327,7 @@ class DraftPaymentScreen extends StatelessWidget {
             Text(
               label,
               style: textTheme.bodyMedium?.copyWith(
-                color: textColor.withValues(alpha:0.96),
+                color: textColor.withValues(alpha: 0.9),
                 fontWeight: FontWeight.w500,
               ),
             ),

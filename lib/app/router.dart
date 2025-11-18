@@ -165,7 +165,7 @@
 //           builder: (context, state) => const PaymentMainPage(),
 //         ),
 //         GoRoute(
-//           path: '/drafts',
+//           path: '/payment-notes/drafts',
 //           builder: (context, state) => const DraftPaymentScreen(),
 //         ),
 
@@ -492,7 +492,7 @@ final GoRouter router = GoRouter(
           builder: (context, state) => const PaymentMainPage(),
         ),
         GoRoute(
-          path: '/drafts',
+          path: '/payment-notes/drafts',
           builder: (context, state) => const DraftPaymentScreen(),
         ),
 

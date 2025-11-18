@@ -67,16 +67,16 @@ class Navbar extends StatelessWidget {
                   themeNotifier.toggleTheme();
                 },
               ),
-              IconButton(
-                icon: Icon(Icons.help_outline, color: colorScheme.onSurfaceVariant),
-                onPressed: () {}, // Help action
-                tooltip: "Help",
-              ),
-              IconButton(
-                icon: Icon(Icons.notifications_none, color: colorScheme.onSurfaceVariant),
-                onPressed: () {}, // Notification action
-                tooltip: "Notifications",
-              ),
+              // IconButton(
+              //   icon: Icon(Icons.help_outline, color: colorScheme.onSurfaceVariant),
+              //   onPressed: () {}, // Help action
+              //   tooltip: "Help",
+              // ),
+              // IconButton(
+              //   icon: Icon(Icons.notifications_none, color: colorScheme.onSurfaceVariant),
+              //   onPressed: () {}, // Notification action
+              //   tooltip: "Notifications",
+              // ),
               const SizedBox(width: 10),
               CircleAvatar(
                 radius: 16,

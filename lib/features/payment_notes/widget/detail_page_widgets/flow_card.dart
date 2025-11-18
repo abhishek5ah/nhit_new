@@ -1,102 +1,242 @@
 import 'package:flutter/material.dart';
+import 'package:ppv_components/common_widgets/badge.dart';
 
 class FlowCard extends StatelessWidget {
-  final dynamic step;
-  const FlowCard({required this.step, super.key});
+  final List<dynamic> steps;
+
+  const FlowCard({
+    required this.steps,
+    super.key,
+  });
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
     return Container(
       decoration: BoxDecoration(
-        color: theme.colorScheme.surface,
+        color: colorScheme.surface,
         borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: colorScheme.outline.withValues(alpha: 0.2),
+          width: 1,
+        ),
       ),
-      padding: const EdgeInsets.all(18),
-      margin: const EdgeInsets.only(top: 24, right: 12, left: 12, bottom: 24),
+      padding: const EdgeInsets.all(24),
+      margin: const EdgeInsets.only(top: 24, left: 8, right: 8),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisSize: MainAxisSize.min,
         children: [
-          Text('Flow', style: theme.textTheme.titleMedium),
-          const SizedBox(height: 8),
+          // Header with icon
           Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Column(
-                children: [
-                  Container(
-                    width: 12,
-                    height: 12,
-                    decoration: BoxDecoration(
-                      color: theme.colorScheme.primary,
-                      shape: BoxShape.circle,
-                    ),
-                  ),
-                  Container(
-                    width: 2,
-                    height: 36,
-                    color: theme.colorScheme.primary,
-                  ),
-                ],
+              Icon(
+                Icons.approval,
+                color: colorScheme.primary,
+                size: 20,
               ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text('Step ${step.step}',
-                        style: theme.textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.bold,
-                          color: theme.colorScheme.onSurface,
-                        )),
-                    SizedBox(height: 2),
-                    Text('Maker: ${step.makerName}',
-                        style: theme.textTheme.bodyMedium?.copyWith(
-                          color: theme.colorScheme.onSurface,
-                        )),
-                    SizedBox(height: 2),
-                    Text('Date ${step.dateTime}',
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: theme.colorScheme.onSurface,
-                        )),
-                    SizedBox(height: 18),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 24, vertical: 10),
-                      decoration: BoxDecoration(
-                        color: theme.colorScheme.primary,
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Text(step.status,
-                        style:  TextStyle(
-                          color: theme.colorScheme.surface,
-                          fontWeight: FontWeight.w600,
-                          fontSize: 16,
-                        ),
-                      ),
-                    ),
-                    SizedBox(height: 18),
-                    Divider(color: Colors.white24, thickness: 1),
-                    SizedBox(height: 10),
-                    Text('Next Approver:',
-                        style: theme.textTheme.bodyMedium?.copyWith(
-                          color: theme.colorScheme.onSurface,
-                        )),
-                    Text('${step.nextApprover}',
-                        style: TextStyle(
-                          color: theme.colorScheme.onSurface,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 16,
-                        )),
-                  ],
+              const SizedBox(width: 8),
+              Text(
+                'Approval Flow',
+                style: theme.textTheme.titleLarge?.copyWith(
+                  fontWeight: FontWeight.bold,
+                  color: colorScheme.onSurface,
                 ),
               ),
             ],
           ),
+          const SizedBox(height: 24),
+
+          // Timeline steps
+          ...steps.asMap().entries.map((entry) {
+            final index = entry.key;
+            final step = entry.value;
+            final isLastStep = index == steps.length - 1;
+
+            return _buildTimelineStep(
+              context,
+              step: step,
+              isLastStep: isLastStep,
+            );
+          }).toList(),
+
+          // Final approval complete indicator
+          _buildApprovalComplete(context, steps.last),
         ],
       ),
+    );
+  }
+
+  Widget _buildTimelineStep(
+      BuildContext context, {
+        required dynamic step,
+        required bool isLastStep,
+      }) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Timeline indicator
+        Column(
+          children: [
+            Container(
+              width: 16,
+              height: 16,
+              decoration: BoxDecoration(
+                color: Colors.green,
+                shape: BoxShape.circle,
+                border: Border.all(
+                  color: colorScheme.surface,
+                  width: 2,
+                ),
+              ),
+            ),
+            if (!isLastStep)
+              Container(
+                width: 3,
+                height: 120,
+                color: colorScheme.primary,
+              ),
+          ],
+        ),
+        const SizedBox(width: 16),
+
+        // Step content
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Step ${step.step}',
+                style: theme.textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.bold,
+                  color: colorScheme.onSurface,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                'Reviewer: ${step.makerName}',
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: colorScheme.onSurfaceVariant,
+                ),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                'Date: ${step.dateTime}',
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: colorScheme.onSurfaceVariant,
+                ),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                'Remarks: Approved',
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: colorScheme.onSurfaceVariant,
+                ),
+              ),
+              const SizedBox(height: 8),
+
+              // Status badge using BadgeChip
+              BadgeChip(
+                label: step.status,
+                type: ChipType.status,
+                statusKey: step.status,
+                backgroundColor: Colors.green,
+                textColor: Colors.white,
+              ),
+              const SizedBox(height: 24),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildApprovalComplete(BuildContext context, dynamic lastStep) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Timeline indicator - checkmark
+        Column(
+          children: [
+            Container(
+              width: 16,
+              height: 16,
+              decoration: BoxDecoration(
+                color: Colors.green,
+                shape: BoxShape.circle,
+                border: Border.all(
+                  color: colorScheme.surface,
+                  width: 2,
+                ),
+              ),
+              child: const Icon(
+                Icons.check,
+                color: Colors.white,
+                size: 10,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(width: 16),
+
+        // Approval complete content
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Icon(
+                    Icons.check_circle,
+                    color: Colors.green,
+                    size: 18,
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    'Approval Complete',
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.bold,
+                      color: Colors.green,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+
+              // Final approval badge using BadgeChip (full width)
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(vertical: 4),
+                child: Center(
+                  child: BadgeChip(
+                    label: 'Fully Approved',
+                    type: ChipType.status,
+                    statusKey: 'Fully Approved',
+                    backgroundColor: Colors.green,
+                    textColor: Colors.white,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 12),
+
+              // Final approval text
+              Text(
+                'Final approval by ${lastStep.makerName} on ${lastStep.dateTime}',
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: colorScheme.onSurfaceVariant,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 }
