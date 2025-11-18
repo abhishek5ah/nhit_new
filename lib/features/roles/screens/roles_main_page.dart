@@ -67,7 +67,7 @@ class _RoleMainPageState extends State<RoleMainPage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  RoleHeader(tabIndex: 0),
+                  RoleHeader(),
                   const SizedBox(height: 12),
                 ],
               ),

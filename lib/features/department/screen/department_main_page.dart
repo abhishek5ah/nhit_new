@@ -76,7 +76,7 @@ class _DepartmentMainPageState extends State<DepartmentMainPage> {
           children: [
             Padding(
               padding: const EdgeInsets.only(left: 12, bottom: 12, right: 12),
-              child: DepartmentHeader(tabIndex: 0),
+              child: DepartmentHeader(),
             ),
             Padding(
               padding: const EdgeInsets.only(right: 12),

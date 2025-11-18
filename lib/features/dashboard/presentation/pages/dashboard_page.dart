@@ -1,17 +1,13 @@
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
 import 'package:ppv_components/core/services/auth_service.dart';
 import 'package:provider/provider.dart';
-
 
 class DashboardPage extends StatefulWidget {
   const DashboardPage({super.key});
 
-
   @override
   State<DashboardPage> createState() => _DashboardPageState();
 }
-
 
 class _DashboardPageState extends State<DashboardPage> {
   @override
@@ -20,53 +16,61 @@ class _DashboardPageState extends State<DashboardPage> {
       builder: (context, authService, child) {
         final user = authService.currentUser;
         final theme = Theme.of(context);
+        final colorScheme = theme.colorScheme;
         final screenWidth = MediaQuery.of(context).size.width;
         final isDesktop = screenWidth > 900;
 
-
         return Scaffold(
-          backgroundColor: theme.colorScheme.surfaceVariant.withOpacity(0.3),
+          backgroundColor: colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
           body: SafeArea(
             child: SingleChildScrollView(
               padding: EdgeInsets.all(isDesktop ? 24.0 : 16.0),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Welcome Section with Border - includes Export button only
+                  // Welcome Section with Border - updated to match reference style
                   Container(
                     padding: const EdgeInsets.all(20),
                     decoration: BoxDecoration(
-                      color: Theme.of(context).colorScheme.surfaceContainer,
+                      color: colorScheme.surface,
                       border: Border.all(
-                        color: theme.colorScheme.outline.withOpacity(0.3),
+                        color: colorScheme.outline.withValues(alpha: 0.2),
                         width: 1,
                       ),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Row(
                       children: [
-                        Icon(
-                          Icons.account_balance_wallet_outlined,
-                          color: theme.colorScheme.primary,
-                          size: 28,
+                        // Icon Container - matching reference style
+                        Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: colorScheme.primary,
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Icon(
+                            Icons.account_balance_wallet_outlined,
+                            color: colorScheme.onPrimary,
+                            size: 24,
+                          ),
                         ),
-                        const SizedBox(width: 12),
+                        const SizedBox(width: 16),
                         Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
                                 'Welcome back, ${user?.name ?? 'User'}!',
-                                style: theme.textTheme.titleLarge?.copyWith(
+                                style: theme.textTheme.headlineSmall?.copyWith(
                                   fontWeight: FontWeight.bold,
-                                  color: theme.colorScheme.onSurface,
+                                  color: colorScheme.onSurface,
                                 ),
                               ),
                               const SizedBox(height: 4),
                               Text(
                                 "Here's what's happening with your expense management today",
                                 style: theme.textTheme.bodyMedium?.copyWith(
-                                  color: theme.colorScheme.onSurfaceVariant,
+                                  color: colorScheme.onSurface.withValues(alpha: 0.6),
                                 ),
                               ),
                             ],
@@ -94,9 +98,7 @@ class _DashboardPageState extends State<DashboardPage> {
                     ),
                   ),
 
-
                   const SizedBox(height: 24),
-
 
                   // Stats Cards Row
                   LayoutBuilder(
@@ -211,9 +213,7 @@ class _DashboardPageState extends State<DashboardPage> {
                     },
                   ),
 
-
                   const SizedBox(height: 32),
-
 
                   // Quick Actions and Recent Activity Row
                   LayoutBuilder(
@@ -258,27 +258,25 @@ class _DashboardPageState extends State<DashboardPage> {
     );
   }
 
-
   Widget _buildStatCardWithBadge(
-    BuildContext context,
-    String title,
-    String value,
-    IconData icon,
-    Color color,
-    String badgeText,
-    String subtitle,
-    bool isPositive, {
-    bool isAlert = false,
-  }) {
+      BuildContext context,
+      String title,
+      String value,
+      IconData icon,
+      Color color,
+      String badgeText,
+      String subtitle,
+      bool isPositive, {
+        bool isAlert = false,
+      }) {
     final theme = Theme.of(context);
-
 
     return Card(
       elevation: 0,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
         side: BorderSide(
-          color: theme.colorScheme.outline.withOpacity(0.2),
+          color: theme.colorScheme.outline.withValues(alpha: 0.2),
         ),
       ),
       child: Padding(
@@ -292,7 +290,7 @@ class _DashboardPageState extends State<DashboardPage> {
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: color.withOpacity(0.1),
+                    color: color.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Icon(
@@ -308,8 +306,8 @@ class _DashboardPageState extends State<DashboardPage> {
                   ),
                   decoration: BoxDecoration(
                     color: isAlert
-                        ? Colors.red.withOpacity(0.1)
-                        : Colors.green.withOpacity(0.1),
+                        ? Colors.red.withValues(alpha: 0.1)
+                        : Colors.green.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Text(
@@ -366,17 +364,15 @@ class _DashboardPageState extends State<DashboardPage> {
     );
   }
 
-
   Widget _buildQuickActionsSection(BuildContext context) {
     final theme = Theme.of(context);
-
 
     return Card(
       elevation: 0,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
         side: BorderSide(
-          color: theme.colorScheme.outline.withOpacity(0.2),
+          color: theme.colorScheme.outline.withValues(alpha: 0.2),
         ),
       ),
       child: Padding(
@@ -406,7 +402,7 @@ class _DashboardPageState extends State<DashboardPage> {
               'New Note',
               Icons.add_circle_outline,
               Colors.green,
-              () => _showComingSoon(context),
+                  () => _showComingSoon(context),
             ),
             const SizedBox(height: 12),
             _buildActionButton(
@@ -414,7 +410,7 @@ class _DashboardPageState extends State<DashboardPage> {
               'Reimbursement',
               Icons.receipt_long,
               Colors.blue,
-              () => _showComingSoon(context),
+                  () => _showComingSoon(context),
             ),
             const SizedBox(height: 12),
             _buildActionButton(
@@ -422,7 +418,7 @@ class _DashboardPageState extends State<DashboardPage> {
               'Payment',
               Icons.payment,
               Colors.purple,
-              () => _showComingSoon(context),
+                  () => _showComingSoon(context),
             ),
             const SizedBox(height: 12),
             _buildActionButton(
@@ -430,7 +426,7 @@ class _DashboardPageState extends State<DashboardPage> {
               'View Activity',
               Icons.trending_up,
               Colors.grey,
-              () => _showComingSoon(context),
+                  () => _showComingSoon(context),
             ),
           ],
         ),
@@ -438,17 +434,15 @@ class _DashboardPageState extends State<DashboardPage> {
     );
   }
 
-
   Widget _buildRecentActivitySection(BuildContext context, user) {
     final theme = Theme.of(context);
-
 
     return Card(
       elevation: 0,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
         side: BorderSide(
-          color: theme.colorScheme.outline.withOpacity(0.2),
+          color: theme.colorScheme.outline.withValues(alpha: 0.2),
         ),
       ),
       child: Padding(
@@ -514,16 +508,14 @@ class _DashboardPageState extends State<DashboardPage> {
     );
   }
 
-
   Widget _buildActionButton(
-    BuildContext context,
-    String label,
-    IconData icon,
-    Color color,
-    VoidCallback onPressed,
-  ) {
+      BuildContext context,
+      String label,
+      IconData icon,
+      Color color,
+      VoidCallback onPressed,
+      ) {
     final theme = Theme.of(context);
-
 
     return InkWell(
       onTap: onPressed,
@@ -532,7 +524,7 @@ class _DashboardPageState extends State<DashboardPage> {
         padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
         decoration: BoxDecoration(
           border: Border.all(
-            color: theme.colorScheme.outline.withOpacity(0.2),
+            color: theme.colorScheme.outline.withValues(alpha: 0.2),
           ),
           borderRadius: BorderRadius.circular(8),
         ),
@@ -559,14 +551,12 @@ class _DashboardPageState extends State<DashboardPage> {
     );
   }
 
-
   Widget _buildActivityItem(
-    BuildContext context,
-    String title,
-    String subtitle,
-  ) {
+      BuildContext context,
+      String title,
+      String subtitle,
+      ) {
     final theme = Theme.of(context);
-
 
     return Row(
       children: [
@@ -602,7 +592,6 @@ class _DashboardPageState extends State<DashboardPage> {
       ],
     );
   }
-
 
   void _showComingSoon(BuildContext context) {
     ScaffoldMessenger.of(context).showSnackBar(

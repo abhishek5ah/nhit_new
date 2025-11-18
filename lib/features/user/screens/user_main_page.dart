@@ -68,9 +68,7 @@ class _UserMainPageState extends State<UserMainPage> {
             // Header
             Padding(
               padding: const EdgeInsets.only(left: 12, bottom: 12, right: 12),
-              child: UserHeader(
-                tabIndex: 0,
-              ),
+              child: UserHeader(),
             ),
             // Search Bar on right side
             Padding(

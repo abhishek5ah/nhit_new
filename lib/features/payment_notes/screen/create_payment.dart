@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 
 class CreatePaymentScreen extends StatefulWidget {
@@ -8,8 +10,9 @@ class CreatePaymentScreen extends StatefulWidget {
 }
 
 class _CreatePaymentScreenState extends State<CreatePaymentScreen> {
-  final TextEditingController _noteNoController =
-      TextEditingController(text: 'W/25-26/PN/0001');
+  final TextEditingController _noteNoController = TextEditingController(
+    text: 'W/25-26/PN/0001',
+  );
 
   // Less and Add rows
   final List<Map<String, TextEditingController>> _lessRows = [];
@@ -17,17 +20,18 @@ class _CreatePaymentScreenState extends State<CreatePaymentScreen> {
 
   // Bank Details
   final TextEditingController _accountHolderNameController =
-      TextEditingController();
+  TextEditingController();
   final TextEditingController _bankNameController = TextEditingController();
   final TextEditingController _accountNumberController =
-      TextEditingController();
+  TextEditingController();
   final TextEditingController _ifscCodeController = TextEditingController();
 
-  final TextEditingController _recommendationController =
-      TextEditingController(text: 'Proposed to release the payment');
+  final TextEditingController _recommendationController = TextEditingController(
+    text: 'Proposed to release the payment',
+  );
 
   final TextEditingController _netPayableRoundController =
-      TextEditingController(text: '0.00');
+  TextEditingController(text: '0.00');
 
   double _grossAmount = 0.0; // Set this from invoice/bill data
 
@@ -62,12 +66,26 @@ class _CreatePaymentScreenState extends State<CreatePaymentScreen> {
     setState(() {
       _lessRows.add({
         'particular': TextEditingController(),
-        'amount': TextEditingController(),
+        'amount': TextEditingController(text: '0.00'),
       });
     });
   }
 
   void _removeLessRow(int index) {
+    // Check if only one row remains
+    if (_lessRows.length <= 1) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text(
+            'At least one row is required in Less: Deductions',
+          ),
+          backgroundColor: Theme.of(context).colorScheme.error,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return;
+    }
+
     setState(() {
       _lessRows[index]['particular']?.dispose();
       _lessRows[index]['amount']?.dispose();
@@ -79,12 +97,24 @@ class _CreatePaymentScreenState extends State<CreatePaymentScreen> {
     setState(() {
       _addRows.add({
         'particular': TextEditingController(),
-        'amount': TextEditingController(),
+        'amount': TextEditingController(text: '0.00'),
       });
     });
   }
 
   void _removeAddRow(int index) {
+    // Check if only one row remains
+    if (_addRows.length <= 1) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('At least one row is required in Add: Additions'),
+          backgroundColor: Theme.of(context).colorScheme.error,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return;
+    }
+
     setState(() {
       _addRows[index]['particular']?.dispose();
       _addRows[index]['amount']?.dispose();
@@ -100,6 +130,20 @@ class _CreatePaymentScreenState extends State<CreatePaymentScreen> {
       total += amount;
     }
     return total;
+  }
+
+  void _incrementAmount(TextEditingController controller, {double step = 1.0}) {
+    final currentValue = double.tryParse(controller.text) ?? 0.0;
+    final newValue = currentValue + step;
+    controller.text = newValue.toStringAsFixed(2);
+    setState(() {});
+  }
+
+  void _decrementAmount(TextEditingController controller, {double step = 1.0}) {
+    final currentValue = double.tryParse(controller.text) ?? 0.0;
+    final newValue = (currentValue - step).clamp(0.0, double.infinity);
+    controller.text = newValue.toStringAsFixed(2);
+    setState(() {});
   }
 
   @override
@@ -123,12 +167,9 @@ class _CreatePaymentScreenState extends State<CreatePaymentScreen> {
               width: double.infinity,
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
-                color: colorScheme.surfaceContainerHighest,
+                color: colorScheme.surfaceContainer,
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(
-                  color: colorScheme.outlineVariant,
-                  width: 1,
-                ),
+                border: Border.all(color: colorScheme.outlineVariant, width: 1),
               ),
               child: Row(
                 children: [
@@ -139,8 +180,11 @@ class _CreatePaymentScreenState extends State<CreatePaymentScreen> {
                       color: colorScheme.primary,
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    child: Icon(Icons.receipt_long,
-                        color: colorScheme.onPrimary, size: 28),
+                    child: Icon(
+                      Icons.receipt_long,
+                      color: colorScheme.onPrimary,
+                      size: 28,
+                    ),
                   ),
                   const SizedBox(width: 16),
                   Expanded(
@@ -168,19 +212,18 @@ class _CreatePaymentScreenState extends State<CreatePaymentScreen> {
             ),
             const SizedBox(height: 24),
 
-            // Note Number Section (Single Field)
+            // Main Form Container - Everything wrapped in a box
             Container(
-              padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
                 color: colorScheme.surface,
-                border: Border.all(
-                  color: colorScheme.outlineVariant,
-                ),
+                border: Border.all(color: colorScheme.outlineVariant, width: 1),
                 borderRadius: BorderRadius.circular(12),
               ),
+              padding: const EdgeInsets.all(24),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  // Note Number Section (Single Field)
                   Text(
                     'Create Payment Note',
                     style: textTheme.titleMedium?.copyWith(
@@ -194,194 +237,198 @@ class _CreatePaymentScreenState extends State<CreatePaymentScreen> {
                     decoration: InputDecoration(
                       labelText: 'Note Number',
                       filled: true,
-                      fillColor: colorScheme.surfaceContainerHighest,
+                      fillColor: colorScheme.surfaceContainer,
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(8),
                       ),
                     ),
                   ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 24),
+                  const SizedBox(height: 24),
 
-            // Less: Deductions Section (Yellow/Amber background)
-            _buildLessSection(context, textTheme, colorScheme),
-            const SizedBox(height: 16),
+                  // Less: Deductions Section (Using theme colors)
+                  _buildLessSection(context, textTheme, colorScheme),
+                  const SizedBox(height: 16),
 
-            // Add: Additions Section (Green background)
-            _buildAddSection(context, textTheme, colorScheme),
-            const SizedBox(height: 24),
+                  // Add: Additions Section (Using theme colors)
+                  _buildAddSection(context, textTheme, colorScheme),
+                  const SizedBox(height: 24),
 
-            // Formula text
-            Center(
-              child: Text(
-                'Formula: Net Payable = Gross - Deductions + Additions',
-                style: textTheme.bodySmall?.copyWith(
-                  color: colorScheme.onSurfaceVariant,
-                ),
-              ),
-            ),
-            const SizedBox(height: 16),
+                  // Formula text
+                  Center(
+                    child: Text(
+                      'Formula: Net Payable = Gross - Deductions + Additions',
+                      style: textTheme.bodySmall?.copyWith(
+                        color: colorScheme.onSurface,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
 
-            // Net Payable Calculation Card (Blue)
-            Container(
-              decoration: BoxDecoration(
-                color: colorScheme.primary,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              padding: const EdgeInsets.all(20),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
+                  // Net Payable Calculation Card
+                  Container(
+                    decoration: BoxDecoration(
+                      color: colorScheme.surfaceContainerHigh,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: colorScheme.outline,
+                        width: 1,
+                      ),
+                    ),
+                    padding: const EdgeInsets.all(20),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Icon(
+                              Icons.calculate_outlined,
+                              size: 20,
+                              color: colorScheme.onSurface,
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              'Net Payable Calculation',
+                              style: textTheme.titleMedium?.copyWith(
+                                color: colorScheme.onSurface,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 16),
+                        Row(
+                          children: [
+                            _buildStatCard(
+                              'Gross (Invoice)',
+                              '₹${_grossAmount.toStringAsFixed(2)}',
+                              colorScheme,
+                            ),
+                            _buildStatCard(
+                              'Less (Deductions)',
+                              '-₹${lessTotal.toStringAsFixed(2)}',
+                              colorScheme,
+                            ),
+                            _buildStatCard(
+                              'Add (Additions)',
+                              '+₹${addTotal.toStringAsFixed(2)}',
+                              colorScheme,
+                            ),
+                            _buildStatCard(
+                              'Net Payable',
+                              '₹${netPayable.toStringAsFixed(2)}',
+                              colorScheme,
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+
+                  // Net Payable Amount (Round Off)
                   Row(
                     children: [
-                      Icon(Icons.calculate_outlined,
-                          size: 20, color: colorScheme.onPrimary),
-                      const SizedBox(width: 8),
-                      Text(
-                        'Net Payable Calculation',
-                        style: textTheme.titleMedium?.copyWith(
-                          color: colorScheme.onPrimary,
-                          fontWeight: FontWeight.bold,
+                      Expanded(
+                        flex: 3,
+                        child: TextFormField(
+                          readOnly: true,
+                          initialValue: 'Net Payable Amount (Round Off)',
+                          style: textTheme.bodyMedium,
+                          decoration: InputDecoration(
+                            filled: false,
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 16,
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        flex: 1,
+                        child: TextFormField(
+                          controller: _netPayableRoundController,
+                          keyboardType: const TextInputType.numberWithOptions(
+                            decimal: true,
+                          ),
+                          decoration: InputDecoration(
+                            contentPadding: const EdgeInsets.symmetric(
+                              vertical: 16,
+                              horizontal: 16,
+                            ),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                          ),
                         ),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 16),
-                  Row(
-                    children: [
-                      _buildStatCard(
-                        'Gross (Invoice)',
-                        '₹${_grossAmount.toStringAsFixed(2)}',
-                        colorScheme,
-                        isInverted: true,
+                  const SizedBox(height: 24),
+
+                  // Bank Details Section
+                  _buildBankDetailsSection(context, colorScheme, textTheme),
+                  const SizedBox(height: 24),
+
+                  // Recommendation of Payment
+                  Text(
+                    'Recommendation of Payment',
+                    style: textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  TextFormField(
+                    controller: _recommendationController,
+                    maxLines: 3,
+                    decoration: InputDecoration(
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
                       ),
-                      _buildStatCard(
-                        'Less (Deductions)',
-                        '-₹${lessTotal.toStringAsFixed(2)}',
-                        colorScheme,
-                        isInverted: true,
-                        valueColor: Colors.amber[700]!,
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 12,
                       ),
-                      _buildStatCard(
-                        'Add (Additions)',
-                        '+₹${addTotal.toStringAsFixed(2)}',
-                        colorScheme,
-                        isInverted: true,
-                        valueColor: Colors.green[700]!,
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+
+                  // Submit Button
+                  Align(
+                    alignment: Alignment.center,
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: colorScheme.primary,
+                        foregroundColor: colorScheme.onPrimary,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 48,
+                          vertical: 16,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
                       ),
-                      _buildStatCard(
-                        'Net Payable',
-                        '₹${netPayable.toStringAsFixed(2)}',
-                        colorScheme,
-                        isInverted: true,
-                        highlighted: true,
+                      onPressed: () {
+                        // Handle submit
+                      },
+                      child: Text(
+                        'Submit',
+                        style: textTheme.titleMedium?.copyWith(
+                          color: colorScheme.onSecondary,
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
-                    ],
+                    ),
                   ),
                 ],
               ),
             ),
-            const SizedBox(height: 16),
-
-            // Net Payable Amount (Round Off)
-            Row(
-              children: [
-                Expanded(
-                  flex: 3,
-                  child: TextFormField(
-                    readOnly: true,
-                    initialValue: 'Net Payable Amount (Round Off)',
-                    style: textTheme.bodyMedium,
-                    decoration: InputDecoration(
-                      filled: true,
-                      fillColor: colorScheme.surfaceContainerHighest,
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 16,
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  flex: 1,
-                  child: TextFormField(
-                    controller: _netPayableRoundController,
-                    keyboardType:
-                        const TextInputType.numberWithOptions(decimal: true),
-                    decoration: InputDecoration(
-                      contentPadding: const EdgeInsets.symmetric(
-                        vertical: 16,
-                        horizontal: 16,
-                      ),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 24),
-
-            // Bank Details Section
-            _buildBankDetailsSection(context, colorScheme, textTheme),
-            const SizedBox(height: 24),
-
-            // Recommendation of Payment
-            Text(
-              'Recommendation of Payment',
-              style: textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            const SizedBox(height: 12),
-            TextFormField(
-              controller: _recommendationController,
-              maxLines: 3,
-              decoration: InputDecoration(
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                contentPadding:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              ),
-            ),
-            const SizedBox(height: 24),
-
-            // Submit Button
-            Align(
-              alignment: Alignment.center,
-              child: ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.green,
-                  foregroundColor: Colors.white,
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 48, vertical: 16),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                ),
-                onPressed: () {
-                  // Handle submit
-                },
-                child: const Text(
-                  'Submit',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ),
-            ),
             const SizedBox(height: 32),
 
-            // Attached Supporting Docs
+            // Attached Supporting Docs (Outside the main box)
             Text(
               'Attached Supporting Docs',
               style: textTheme.titleMedium?.copyWith(
@@ -401,23 +448,53 @@ class _CreatePaymentScreenState extends State<CreatePaymentScreen> {
                 ),
                 columns: [
                   DataColumn(
-                      label: Text('S NO.',
-                          style: TextStyle(fontWeight: FontWeight.w600))),
+                    label: Text(
+                      'S NO.',
+                      style: textTheme.labelLarge?.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
                   DataColumn(
-                      label: Text('FILE NAME',
-                          style: TextStyle(fontWeight: FontWeight.w600))),
+                    label: Text(
+                      'FILE NAME',
+                      style: textTheme.labelLarge?.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
                   DataColumn(
-                      label: Text('FILE',
-                          style: TextStyle(fontWeight: FontWeight.w600))),
+                    label: Text(
+                      'FILE',
+                      style: textTheme.labelLarge?.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
                   DataColumn(
-                      label: Text('UPLOAD DATE',
-                          style: TextStyle(fontWeight: FontWeight.w600))),
+                    label: Text(
+                      'UPLOAD DATE',
+                      style: textTheme.labelLarge?.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
                   DataColumn(
-                      label: Text('UPLOADED BY',
-                          style: TextStyle(fontWeight: FontWeight.w600))),
+                    label: Text(
+                      'UPLOADED BY',
+                      style: textTheme.labelLarge?.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
                   DataColumn(
-                      label: Text('ACTION',
-                          style: TextStyle(fontWeight: FontWeight.w600))),
+                    label: Text(
+                      'ACTION',
+                      style: textTheme.labelLarge?.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
                 ],
                 rows: const [],
               ),
@@ -429,20 +506,22 @@ class _CreatePaymentScreenState extends State<CreatePaymentScreen> {
   }
 
   Widget _buildLessSection(
-    BuildContext context,
-    TextTheme textTheme,
-    ColorScheme colorScheme,
-  ) {
+      BuildContext context,
+      TextTheme textTheme,
+      ColorScheme colorScheme,
+      ) {
     final lessTotal = _getTotal(_lessRows);
-    const bgColor = Color(0xFFFFF9E6); // Light yellow/amber
-    const headerColor = Color(0xFFFFC107); // Amber
+    final bgColor = colorScheme.surface;
+    final headerColor = colorScheme.onPrimary;
 
     return Container(
       decoration: BoxDecoration(
         color: bgColor,
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: headerColor),
-      ),
+        border: Border.all(
+          color: colorScheme.outline,
+          width: 1,
+        ),      ),
       padding: const EdgeInsets.all(16),
       child: Column(
         children: [
@@ -450,23 +529,31 @@ class _CreatePaymentScreenState extends State<CreatePaymentScreen> {
           Row(
             children: [
               Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 6,
+                ),
                 decoration: BoxDecoration(
                   color: headerColor,
                   borderRadius: BorderRadius.circular(20),
+                  border: Border.all(
+                    color: colorScheme.onPrimary,
+                    width: 0.5,
+                  ),
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Icon(Icons.remove_circle_outline,
-                        size: 18, color: Colors.white),
+                    Icon(
+                      Icons.remove_circle_outline,
+                      size: 18,
+                      color: colorScheme.primary,
+                    ),
                     const SizedBox(width: 6),
                     Text(
                       'Less: Deductions',
                       style: textTheme.bodyMedium?.copyWith(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
+                        color: colorScheme.primary,
                       ),
                     ),
                   ],
@@ -475,8 +562,9 @@ class _CreatePaymentScreenState extends State<CreatePaymentScreen> {
               const Spacer(),
               OutlinedButton.icon(
                 style: OutlinedButton.styleFrom(
-                  foregroundColor: headerColor,
-                  side: const BorderSide(color: headerColor),
+                  foregroundColor: colorScheme.primary,
+                  backgroundColor: colorScheme.onPrimary,
+                  side: BorderSide(color: headerColor),
                 ),
                 icon: const Icon(Icons.add_circle_outline, size: 18),
                 label: const Text('Add Row'),
@@ -501,7 +589,7 @@ class _CreatePaymentScreenState extends State<CreatePaymentScreen> {
                       decoration: InputDecoration(
                         labelText: 'Particular',
                         filled: true,
-                        fillColor: Colors.white,
+                        fillColor: colorScheme.surface,
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(8),
                         ),
@@ -517,11 +605,13 @@ class _CreatePaymentScreenState extends State<CreatePaymentScreen> {
                     flex: 1,
                     child: TextFormField(
                       controller: row['amount'],
-                      keyboardType: TextInputType.number,
+                      keyboardType: const TextInputType.numberWithOptions(
+                        decimal: true,
+                      ),
                       decoration: InputDecoration(
                         labelText: 'Amount (₹)',
                         filled: true,
-                        fillColor: Colors.white,
+                        fillColor: colorScheme.surface,
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(8),
                         ),
@@ -529,12 +619,51 @@ class _CreatePaymentScreenState extends State<CreatePaymentScreen> {
                           horizontal: 12,
                           vertical: 12,
                         ),
+                        suffixIcon: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            SizedBox(
+                              height: 24,
+                              width: 24,
+                              child: IconButton(
+                                padding: EdgeInsets.zero,
+                                iconSize: 20,
+                                icon: Icon(
+                                  Icons.arrow_drop_up,
+                                  color: headerColor,
+                                ),
+                                onPressed: () => _incrementAmount(
+                                  row['amount']!,
+                                  step: 0.01,
+                                ),
+                                tooltip: 'Increase',
+                              ),
+                            ),
+                            SizedBox(
+                              height: 24,
+                              width: 24,
+                              child: IconButton(
+                                padding: EdgeInsets.zero,
+                                iconSize: 20,
+                                icon: Icon(
+                                  Icons.arrow_drop_down,
+                                  color: headerColor,
+                                ),
+                                onPressed: () => _decrementAmount(
+                                  row['amount']!,
+                                  step: 0.01,
+                                ),
+                                tooltip: 'Decrease',
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                       onChanged: (_) => setState(() {}),
                     ),
                   ),
                   IconButton(
-                    icon: Icon(Icons.delete_outline, color: Colors.red[700]),
+                    icon: Icon(Icons.delete_outline, color: colorScheme.error),
                     tooltip: 'Remove',
                     onPressed: () => _removeLessRow(index),
                   ),
@@ -549,7 +678,7 @@ class _CreatePaymentScreenState extends State<CreatePaymentScreen> {
             child: Text(
               'Tip: Use this section for TDS, penalties, or any amount to subtract.',
               style: textTheme.bodySmall?.copyWith(
-                color: Colors.grey[700],
+                color: colorScheme.secondary,
                 fontStyle: FontStyle.italic,
               ),
             ),
@@ -563,7 +692,7 @@ class _CreatePaymentScreenState extends State<CreatePaymentScreen> {
               'Total Deductions: ₹${lessTotal.toStringAsFixed(2)}',
               style: textTheme.bodyLarge?.copyWith(
                 fontWeight: FontWeight.bold,
-                color: Colors.black87,
+                color: colorScheme.onSurface,
               ),
             ),
           ),
@@ -573,19 +702,22 @@ class _CreatePaymentScreenState extends State<CreatePaymentScreen> {
   }
 
   Widget _buildAddSection(
-    BuildContext context,
-    TextTheme textTheme,
-    ColorScheme colorScheme,
-  ) {
+      BuildContext context,
+      TextTheme textTheme,
+      ColorScheme colorScheme,
+      ) {
     final addTotal = _getTotal(_addRows);
-    const bgColor = Color(0xFFE8F5E9); // Light green
-    const headerColor = Color(0xFF4CAF50); // Green
+    final bgColor = colorScheme.surface;
+    final headerColor = colorScheme.onPrimary;
 
     return Container(
       decoration: BoxDecoration(
         color: bgColor,
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: headerColor),
+        border: Border.all(
+          color: colorScheme.outline,
+          width: 1,
+        ),
       ),
       padding: const EdgeInsets.all(16),
       child: Column(
@@ -594,23 +726,31 @@ class _CreatePaymentScreenState extends State<CreatePaymentScreen> {
           Row(
             children: [
               Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 6,
+                ),
                 decoration: BoxDecoration(
                   color: headerColor,
                   borderRadius: BorderRadius.circular(20),
+                  border: Border.all(
+                    color: colorScheme.onPrimary,
+                    width: 0.5,
+                  ),
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Icon(Icons.add_circle_outline,
-                        size: 18, color: Colors.white),
+                    Icon(
+                      Icons.add_circle_outline,
+                      size: 18,
+                      color: colorScheme.primary,
+                    ),
                     const SizedBox(width: 6),
                     Text(
                       'Add: Additions',
                       style: textTheme.bodyMedium?.copyWith(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
+                        color: colorScheme.primary,
                       ),
                     ),
                   ],
@@ -619,8 +759,9 @@ class _CreatePaymentScreenState extends State<CreatePaymentScreen> {
               const Spacer(),
               OutlinedButton.icon(
                 style: OutlinedButton.styleFrom(
-                  foregroundColor: headerColor,
-                  side: const BorderSide(color: headerColor),
+                  foregroundColor: colorScheme.primary,
+                  backgroundColor: colorScheme.onPrimary,
+                  // side: BorderSide(color: headerColor),
                 ),
                 icon: const Icon(Icons.add_circle_outline, size: 18),
                 label: const Text('Add Row'),
@@ -645,7 +786,7 @@ class _CreatePaymentScreenState extends State<CreatePaymentScreen> {
                       decoration: InputDecoration(
                         labelText: 'Particular',
                         filled: true,
-                        fillColor: Colors.white,
+                        fillColor: colorScheme.surface,
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(8),
                         ),
@@ -661,11 +802,13 @@ class _CreatePaymentScreenState extends State<CreatePaymentScreen> {
                     flex: 1,
                     child: TextFormField(
                       controller: row['amount'],
-                      keyboardType: TextInputType.number,
+                      keyboardType: const TextInputType.numberWithOptions(
+                        decimal: true,
+                      ),
                       decoration: InputDecoration(
                         labelText: 'Amount (₹)',
                         filled: true,
-                        fillColor: Colors.white,
+                        fillColor: colorScheme.surface,
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(8),
                         ),
@@ -673,12 +816,51 @@ class _CreatePaymentScreenState extends State<CreatePaymentScreen> {
                           horizontal: 12,
                           vertical: 12,
                         ),
+                        suffixIcon: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            SizedBox(
+                              height: 24,
+                              width: 24,
+                              child: IconButton(
+                                padding: EdgeInsets.zero,
+                                iconSize: 20,
+                                icon: Icon(
+                                  Icons.arrow_drop_up,
+                                  color: headerColor,
+                                ),
+                                onPressed: () => _incrementAmount(
+                                  row['amount']!,
+                                  step: 0.01,
+                                ),
+                                tooltip: 'Increase',
+                              ),
+                            ),
+                            SizedBox(
+                              height: 24,
+                              width: 24,
+                              child: IconButton(
+                                padding: EdgeInsets.zero,
+                                iconSize: 20,
+                                icon: Icon(
+                                  Icons.arrow_drop_down,
+                                  color: headerColor,
+                                ),
+                                onPressed: () => _decrementAmount(
+                                  row['amount']!,
+                                  step: 0.01,
+                                ),
+                                tooltip: 'Decrease',
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                       onChanged: (_) => setState(() {}),
                     ),
                   ),
                   IconButton(
-                    icon: Icon(Icons.delete_outline, color: Colors.red[700]),
+                    icon: Icon(Icons.delete_outline, color: colorScheme.error),
                     tooltip: 'Remove',
                     onPressed: () => _removeAddRow(index),
                   ),
@@ -693,7 +875,7 @@ class _CreatePaymentScreenState extends State<CreatePaymentScreen> {
             child: Text(
               'Tip: Use this for rounding additions, refunds, or extra approved amounts.',
               style: textTheme.bodySmall?.copyWith(
-                color: Colors.grey[700],
+                color: colorScheme.secondary,
                 fontStyle: FontStyle.italic,
               ),
             ),
@@ -707,7 +889,7 @@ class _CreatePaymentScreenState extends State<CreatePaymentScreen> {
               'Total Additions: ₹${addTotal.toStringAsFixed(2)}',
               style: textTheme.bodyLarge?.copyWith(
                 fontWeight: FontWeight.bold,
-                color: Colors.black87,
+                color: colorScheme.onSurface,
               ),
             ),
           ),
@@ -717,24 +899,20 @@ class _CreatePaymentScreenState extends State<CreatePaymentScreen> {
   }
 
   Widget _buildStatCard(
-    String label,
-    String value,
-    ColorScheme colorScheme, {
-    bool isInverted = false,
-    bool highlighted = false,
-    Color? valueColor,
-  }) {
+      String label,
+      String value,
+      ColorScheme colorScheme, {
+        bool highlighted = false,
+      }) {
     return Expanded(
       child: Container(
         margin: const EdgeInsets.symmetric(horizontal: 6),
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: highlighted
-              ? colorScheme.primaryContainer
-              : Colors.white.withOpacity(0.2),
+          color: colorScheme.surface,
           borderRadius: BorderRadius.circular(8),
           border: highlighted
-              ? Border.all(color: colorScheme.primary, width: 2)
+              ? Border.all(color: colorScheme.onPrimary, width: 0.5)
               : null,
         ),
         child: Column(
@@ -743,11 +921,7 @@ class _CreatePaymentScreenState extends State<CreatePaymentScreen> {
             Text(
               label,
               style: TextStyle(
-                color: highlighted
-                    ? colorScheme.primary
-                    : (isInverted
-                        ? Colors.white.withOpacity(0.9)
-                        : colorScheme.onSurfaceVariant),
+                color: colorScheme.onSurface.withValues(alpha: 0.9),
                 fontSize: 12,
                 fontWeight: FontWeight.w500,
               ),
@@ -756,10 +930,7 @@ class _CreatePaymentScreenState extends State<CreatePaymentScreen> {
             Text(
               value,
               style: TextStyle(
-                color: valueColor ??
-                    (highlighted
-                        ? colorScheme.primary
-                        : (isInverted ? Colors.white : colorScheme.onSurface)),
+                color: colorScheme.onSurface,
                 fontSize: 20,
                 fontWeight: FontWeight.bold,
               ),
@@ -771,15 +942,16 @@ class _CreatePaymentScreenState extends State<CreatePaymentScreen> {
   }
 
   Widget _buildBankDetailsSection(
-      BuildContext context, ColorScheme colorScheme, TextTheme textTheme) {
+      BuildContext context,
+      ColorScheme colorScheme,
+      TextTheme textTheme,
+      ) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           'Bank Details:',
-          style: textTheme.titleMedium?.copyWith(
-            fontWeight: FontWeight.w600,
-          ),
+          style: textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
         ),
         const SizedBox(height: 12),
         Row(
@@ -790,7 +962,8 @@ class _CreatePaymentScreenState extends State<CreatePaymentScreen> {
                 decoration: InputDecoration(
                   labelText: 'Account Holder Name',
                   filled: true,
-                  fillColor: colorScheme.surfaceContainerHighest,
+                  fillColor: colorScheme.surfaceContainer,
+
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8),
                   ),
@@ -804,7 +977,7 @@ class _CreatePaymentScreenState extends State<CreatePaymentScreen> {
                 decoration: InputDecoration(
                   labelText: 'Bank Name',
                   filled: true,
-                  fillColor: colorScheme.surfaceContainerHighest,
+                  fillColor: colorScheme.surfaceContainer,
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8),
                   ),
@@ -822,7 +995,7 @@ class _CreatePaymentScreenState extends State<CreatePaymentScreen> {
                 decoration: InputDecoration(
                   labelText: 'Account Number',
                   filled: true,
-                  fillColor: colorScheme.surfaceContainerHighest,
+                  fillColor: colorScheme.surfaceContainer,
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8),
                   ),
@@ -836,7 +1009,7 @@ class _CreatePaymentScreenState extends State<CreatePaymentScreen> {
                 decoration: InputDecoration(
                   labelText: 'IFSC Code',
                   filled: true,
-                  fillColor: colorScheme.surfaceContainerHighest,
+                  fillColor: colorScheme.surfaceContainer,
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8),
                   ),

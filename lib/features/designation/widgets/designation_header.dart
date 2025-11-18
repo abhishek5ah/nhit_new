@@ -1,64 +1,62 @@
 import 'package:flutter/material.dart';
 
 class DesignationHeader extends StatelessWidget {
-  final int tabIndex;
-
-  const DesignationHeader({super.key, required this.tabIndex});
+  const DesignationHeader({super.key});
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
-    final List<_HeaderData> headerData = [
-      _HeaderData(
-        title: 'Designation',
-        subtitle: 'Manage your designation list here',
-      ),
-      _HeaderData(
-        title: 'Add Designation',
-        subtitle: 'Add a new designation',
-      ),
-    ];
-
-    final header = headerData[tabIndex];
-
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(36, 16, 0, 16),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: colorScheme.surfaceContainer,
-        borderRadius: BorderRadius.circular(16),
+        color: colorScheme.surface,
+        borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: theme.colorScheme.outline,
-          width: 0.5,
+          color: colorScheme.outline.withValues(alpha: 0.2),
+          width: 1,
         ),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Row(
         children: [
-          Text(
-            header.title,
-            style: theme.textTheme.headlineSmall?.copyWith(
-              fontWeight: FontWeight.bold,
+          // Icon Container
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: colorScheme.primary,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Icon(
+              Icons.work_outline,
+              color: colorScheme.onPrimary,
+              size: 24,
             ),
           ),
-          const SizedBox(height: 4),
-          Text(
-            header.subtitle,
-            style: theme.textTheme.bodyMedium?.copyWith(
-              color: colorScheme.onSurface.withValues(alpha:0.8),
-            ),
+          const SizedBox(width: 16),
+          // Text Content
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Designation',
+                style: theme.textTheme.headlineSmall?.copyWith(
+                  fontWeight: FontWeight.bold,
+                  color: colorScheme.onSurface,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                'Manage your designation list here',
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: colorScheme.onSurface.withValues(alpha: 0.6),
+                ),
+              ),
+            ],
           ),
         ],
       ),
     );
   }
-}
-
-class _HeaderData {
-  final String title;
-  final String subtitle;
-
-  _HeaderData({required this.title, required this.subtitle});
 }

@@ -63,7 +63,7 @@ class _DesignationMainPageState extends State<DesignationMainPage> {
           children: [
             Padding(
               padding: const EdgeInsets.only(left: 12, bottom: 12, right: 12),
-              child: DesignationHeader(tabIndex: 0),
+              child: DesignationHeader(),
             ),
             Padding(
               padding: const EdgeInsets.only(right: 12),

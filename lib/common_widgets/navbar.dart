@@ -110,7 +110,7 @@ class Navbar extends StatelessWidget {
               const SizedBox(width: 10),
               // Logout button
               IconButton(
-                icon: Icon(Icons.logout, color: colorScheme.onSurfaceVariant),
+                icon: Icon(Icons.power_settings_new, color: colorScheme.onSurfaceVariant),
                 onPressed: () async {
                   // Show confirmation dialog
                   final shouldLogout = await showDialog<bool>(

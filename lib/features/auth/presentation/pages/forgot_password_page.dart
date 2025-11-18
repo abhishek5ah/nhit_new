@@ -13,7 +13,7 @@ class ForgotPasswordPage extends StatefulWidget {
 class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
-  
+
   bool _isLoading = false;
   bool _emailSent = false;
 
@@ -49,32 +49,29 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
   @override
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
+    final screenHeight = MediaQuery.of(context).size.height;
     final isDesktop = screenWidth > 900;
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Reset Password'),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () => context.go('/login'),
-        ),
-      ),
       body: SafeArea(
-        child: SingleChildScrollView(
-          padding: EdgeInsets.all(isDesktop ? 32 : 24),
-          child: Center(
+        child: Center(
+          child: SingleChildScrollView(
+            padding: EdgeInsets.all(isDesktop ? 32 : 24),
             child: ConstrainedBox(
               constraints: BoxConstraints(
-                maxWidth: isDesktop ? 400 : double.infinity,
+                maxWidth: isDesktop ? 500 : double.infinity,
+                minHeight: screenHeight - (isDesktop ? 64 : 48),
               ),
-              child: Card(
-                elevation: isDesktop ? 8 : 0,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                child: Padding(
-                  padding: EdgeInsets.all(isDesktop ? 32 : 24),
-                  child: _emailSent ? _buildSuccessView() : _buildFormView(),
+              child: Center(
+                child: Card(
+                  elevation: isDesktop ? 8 : 0,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: Padding(
+                    padding: EdgeInsets.all(isDesktop ? 32 : 24),
+                    child: _emailSent ? _buildSuccessView() : _buildFormView(),
+                  ),
                 ),
               ),
             ),
@@ -86,9 +83,10 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
 
   Widget _buildFormView() {
     final theme = Theme.of(context);
-    
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
+      mainAxisSize: MainAxisSize.min,
       children: [
         // Header
         Column(
@@ -116,7 +114,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
             ),
           ],
         ),
-        
+
         const SizedBox(height: 32),
 
         // Form
@@ -141,9 +139,9 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                   return null;
                 },
               ),
-              
+
               const SizedBox(height: 24),
-              
+
               // Send Reset Email Button
               SizedBox(
                 width: double.infinity,
@@ -152,22 +150,22 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                   onPressed: _isLoading ? null : _handleSendResetEmail,
                   child: _isLoading
                       ? const SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            valueColor: AlwaysStoppedAnimation<Color>(
-                              Colors.white,
-                            ),
-                          ),
-                        )
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      valueColor: AlwaysStoppedAnimation<Color>(
+                        Colors.white,
+                      ),
+                    ),
+                  )
                       : const Text(
-                          'Send Reset Link',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
+                    'Send Reset Link',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
                 ),
               ),
             ],
@@ -204,9 +202,10 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
 
   Widget _buildSuccessView() {
     final theme = Theme.of(context);
-    
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
+      mainAxisSize: MainAxisSize.min,
       children: [
         // Success Icon
         Column(
@@ -267,10 +266,10 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
           onPressed: _isLoading ? null : _handleSendResetEmail,
           child: _isLoading
               ? const SizedBox(
-                  width: 20,
-                  height: 20,
-                  child: CircularProgressIndicator(strokeWidth: 2),
-                )
+            width: 20,
+            height: 20,
+            child: CircularProgressIndicator(strokeWidth: 2),
+          )
               : const Text('Resend Email'),
         ),
 

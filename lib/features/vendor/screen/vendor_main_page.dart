@@ -70,7 +70,7 @@ class _VendorMainPageState extends State<VendorMainPage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  VendorHeader(tabIndex: 0),
+                  VendorHeader(),
                   SizedBox(height: 12),
                 ],
               ),
