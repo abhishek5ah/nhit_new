@@ -24,6 +24,11 @@ class _CreateOrganizationScreenState extends State<CreateOrganizationScreen> {
   late TextEditingController _nameController;
   late TextEditingController _codeController;
   late TextEditingController _descriptionController;
+  
+  // Super Admin fields
+  late TextEditingController _adminNameController;
+  late TextEditingController _adminEmailController;
+  late TextEditingController _adminPasswordController;
 
   final List<TextEditingController> _projectControllers = [];
 
@@ -41,6 +46,9 @@ class _CreateOrganizationScreenState extends State<CreateOrganizationScreen> {
     _nameController = TextEditingController();
     _codeController = TextEditingController();
     _descriptionController = TextEditingController();
+    _adminNameController = TextEditingController();
+    _adminEmailController = TextEditingController();
+    _adminPasswordController = TextEditingController();
   }
 
   @override
@@ -48,6 +56,9 @@ class _CreateOrganizationScreenState extends State<CreateOrganizationScreen> {
     _nameController.dispose();
     _codeController.dispose();
     _descriptionController.dispose();
+    _adminNameController.dispose();
+    _adminEmailController.dispose();
+    _adminPasswordController.dispose();
     for (var controller in _projectControllers) {
       controller.dispose();
     }
@@ -145,15 +156,18 @@ class _CreateOrganizationScreenState extends State<CreateOrganizationScreen> {
       });
 
       try {
-        // Use the AuthService to create organization (which integrates with backend)
+        // Use the NEW AuthService method for logged-in users
         final authService = context.read<AuthService>();
 
-        final result = await authService.createOrganization(
+        final result = await authService.createOrganizationFromLoggedInState(
           organizationName: _nameController.text.trim(),
           organizationCode: _codeController.text.trim().toUpperCase(),
           description: _descriptionController.text.trim().isEmpty
               ? 'Main ${_nameController.text.trim()} Organization'
               : _descriptionController.text.trim(),
+          superAdminName: _adminNameController.text.trim(),
+          superAdminEmail: _adminEmailController.text.trim(),
+          superAdminPassword: _adminPasswordController.text.trim(),
           initialProjects: _projectControllers.map((c) => c.text.trim()).where((p) => p.isNotEmpty).toList(),
         );
 
@@ -561,6 +575,93 @@ class _CreateOrganizationScreenState extends State<CreateOrganizationScreen> {
 
                   const SizedBox(height: 24),
 
+                  // Super Admin Section
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      border: Border.all(
+                        color: colorScheme.outline.withValues(alpha: 0.3),
+                      ),
+                      borderRadius: BorderRadius.circular(8),
+                      color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Icon(Icons.admin_panel_settings, 
+                                 color: colorScheme.primary, size: 20),
+                            const SizedBox(width: 8),
+                            Text(
+                              'Super Admin Details',
+                              style: textTheme.titleSmall?.copyWith(
+                                fontWeight: FontWeight.w600,
+                                color: colorScheme.primary,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          'This admin will have full access to the organization',
+                          style: textTheme.bodySmall?.copyWith(
+                            color: colorScheme.onSurface.withValues(alpha: 0.6),
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+
+                        // Admin Name
+                        _buildTextField(
+                          controller: _adminNameController,
+                          label: 'Admin Name',
+                          hintText: 'Enter admin full name',
+                          isRequired: true,
+                          validator: (value) => _validateRequired(value, 'Admin name'),
+                        ),
+                        const SizedBox(height: 16),
+
+                        // Admin Email
+                        _buildTextField(
+                          controller: _adminEmailController,
+                          label: 'Admin Email',
+                          hintText: 'admin@example.com',
+                          isRequired: true,
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return 'Admin email is required';
+                            }
+                            if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(value)) {
+                              return 'Enter a valid email address';
+                            }
+                            return null;
+                          },
+                        ),
+                        const SizedBox(height: 16),
+
+                        // Admin Password
+                        _buildTextField(
+                          controller: _adminPasswordController,
+                          label: 'Admin Password',
+                          hintText: 'Enter strong password',
+                          isRequired: true,
+                          obscureText: true,
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return 'Admin password is required';
+                            }
+                            if (value.length < 8) {
+                              return 'Password must be at least 8 characters';
+                            }
+                            return null;
+                          },
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  const SizedBox(height: 24),
+
                   // Info Note Box
                   Container(
                     padding: const EdgeInsets.all(16),
@@ -675,6 +776,7 @@ class _CreateOrganizationScreenState extends State<CreateOrganizationScreen> {
     bool isRequired = false,
     String? Function(String?)? validator,
     int maxLines = 1,
+    bool obscureText = false,
   }) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
@@ -704,6 +806,7 @@ class _CreateOrganizationScreenState extends State<CreateOrganizationScreen> {
           controller: controller,
           validator: validator,
           maxLines: maxLines,
+          obscureText: obscureText,
           decoration: InputDecoration(
             hintText: hintText,
             hintStyle: TextStyle(

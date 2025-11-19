@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:ppv_components/core/services/auth_service.dart';
 import 'package:ppv_components/core/services/google_auth_service.dart';
-import 'package:ppv_components/core/services/jwt_token_manager.dart';
 
 
 class LoginPage extends StatefulWidget {
@@ -50,40 +49,11 @@ class _LoginPageState extends State<LoginPage> {
       final email = _emailController.text.trim();
       final password = _passwordController.text; // Don't trim password
       
-      print('🔑 [LoginPage] Starting login for user: $email');
+      print('🔑 [LoginPage] Starting GLOBAL login for user: $email (email + password only)');
       
-      // Get tenant ID from multiple sources
-      String? tenantId = authService.currentTenantId;
-      
-      // If not available from auth service, try to get from JWT token manager
-      if (tenantId == null || tenantId.isEmpty) {
-        tenantId = await JwtTokenManager.getTenantId();
-        print('🏢 [LoginPage] Retrieved tenant ID from storage: $tenantId');
-      }
-      
-      // If still not available, try to get remembered tenant ID for this email
-      if (tenantId == null || tenantId.isEmpty) {
-        tenantId = await authService.getRememberedTenantId(email);
-        print('🏢 [LoginPage] Retrieved remembered tenant ID for $email: $tenantId');
-      }
-      
-      // Tenant ID is required for login
-      if (tenantId == null || tenantId.isEmpty) {
-        print('❌ [LoginPage] No tenant ID available, redirecting to create tenant');
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: const Text('Please complete the registration process first or contact your administrator for tenant ID'),
-              backgroundColor: Theme.of(context).colorScheme.error,
-            ),
-          );
-          context.go('/tenants');
-        }
-        return;
-      }
-      
-      // Call AuthService with tenant ID, email, and password
-      final result = await authService.login(tenantId, email, password);
+      // 🌍 GLOBAL LOGIN: Backend will find tenant automatically
+      // No tenant ID needed - backend does GetByEmailGlobal lookup
+      final result = await authService.login(email, password);
       
       print('📥 [LoginPage] AuthService result - Success: ${result.success}, Message: ${result.message}');
       

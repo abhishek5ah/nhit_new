@@ -1,7 +1,10 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:ppv_components/core/services/auth_service.dart';
+import 'package:ppv_components/core/services/jwt_token_manager.dart';
 import 'package:provider/provider.dart';
+import 'package:intl/intl.dart';
 
 class DashboardPage extends StatefulWidget {
   const DashboardPage({super.key});
@@ -11,6 +14,68 @@ class DashboardPage extends StatefulWidget {
 }
 
 class _DashboardPageState extends State<DashboardPage> {
+  String? _lastLoginAt;
+  String? _lastLoginIp;
+  bool _isLoadingLoginData = true;
+  Timer? _timer;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadLastLoginData();
+    // Update the time display every minute for real-time updates
+    _timer = Timer.periodic(const Duration(minutes: 1), (_) {
+      if (mounted) {
+        setState(() {
+          // Force rebuild to update relative time display
+        });
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
+
+  Future<void> _loadLastLoginData() async {
+    final lastLogin = await JwtTokenManager.getLastLoginAt();
+    final lastIp = await JwtTokenManager.getLastLoginIp();
+    
+    setState(() {
+      _lastLoginAt = lastLogin;
+      _lastLoginIp = lastIp;
+      _isLoadingLoginData = false;
+    });
+  }
+
+  String _formatLastLogin(String? isoTimestamp) {
+    if (isoTimestamp == null || isoTimestamp.isEmpty) {
+      return 'Just now';
+    }
+    
+    try {
+      final loginTime = DateTime.parse(isoTimestamp);
+      final now = DateTime.now();
+      final difference = now.difference(loginTime);
+      
+      if (difference.inSeconds < 60) {
+        return 'Just now';
+      } else if (difference.inMinutes < 60) {
+        return '${difference.inMinutes} ${difference.inMinutes == 1 ? 'minute' : 'minutes'} ago';
+      } else if (difference.inHours < 24) {
+        return '${difference.inHours} ${difference.inHours == 1 ? 'hour' : 'hours'} ago';
+      } else if (difference.inDays < 7) {
+        return '${difference.inDays} ${difference.inDays == 1 ? 'day' : 'days'} ago';
+      } else {
+        return DateFormat('MMM d, y h:mm a').format(loginTime);
+      }
+    } catch (e) {
+      return 'Recently';
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Consumer<AuthService>(
@@ -463,41 +528,66 @@ class _DashboardPageState extends State<DashboardPage> {
               ],
             ),
             const SizedBox(height: 20),
-            _buildActivityItem(
-              context,
-              '${user?.name ?? 'Super Admin'} logged in',
-              '${user?.name ?? 'Super Admin'} • 0 seconds ago',
-            ),
-            const Divider(height: 24),
-            _buildActivityItem(
-              context,
-              '${user?.name ?? 'Super Admin'} logged in',
-              '${user?.name ?? 'Super Admin'} • 10 minutes ago',
-            ),
-            const Divider(height: 24),
-            _buildActivityItem(
-              context,
-              '${user?.name ?? 'Super Admin'} logged in',
-              '${user?.name ?? 'Super Admin'} • 9 hours ago',
-            ),
-            const Divider(height: 24),
-            _buildActivityItem(
-              context,
-              '${user?.name ?? 'Super Admin'} logged in',
-              '${user?.name ?? 'Super Admin'} • 9 hours ago',
-            ),
-            const Divider(height: 24),
-            _buildActivityItem(
-              context,
-              '${user?.name ?? 'Super Admin'} logged in',
-              '${user?.name ?? 'Super Admin'} • 15 hours ago',
-            ),
-            const Divider(height: 24),
-            _buildActivityItem(
-              context,
-              '${user?.name ?? 'Super Admin'} logged in',
-              '${user?.name ?? 'Super Admin'} • 16 hours ago',
-            ),
+            if (_isLoadingLoginData)
+              Center(
+                child: Padding(
+                  padding: const EdgeInsets.all(20.0),
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: theme.colorScheme.primary,
+                  ),
+                ),
+              )
+            else if (_lastLoginAt != null && _lastLoginAt!.isNotEmpty)
+              Column(
+                children: [
+                  _buildActivityItem(
+                    context,
+                    '${user?.name ?? 'User'} logged in',
+                    '${user?.name ?? 'User'} • ${_formatLastLogin(_lastLoginAt)}${_lastLoginIp != null && _lastLoginIp!.isNotEmpty ? ' from $_lastLoginIp' : ''}',
+                    Icons.login,
+                    Colors.green,
+                  ),
+                  const Divider(height: 24),
+                  _buildActivityItem(
+                    context,
+                    'Session authenticated',
+                    'Multi-tenant access verified',
+                    Icons.verified_user,
+                    Colors.blue,
+                  ),
+                  const Divider(height: 24),
+                  _buildActivityItem(
+                    context,
+                    'Dashboard accessed',
+                    'Viewing analytics and reports',
+                    Icons.dashboard,
+                    Colors.purple,
+                  ),
+                ],
+              )
+            else
+              Padding(
+                padding: const EdgeInsets.all(20.0),
+                child: Center(
+                  child: Column(
+                    children: [
+                      Icon(
+                        Icons.info_outline,
+                        size: 48,
+                        color: Colors.grey[400],
+                      ),
+                      const SizedBox(height: 12),
+                      Text(
+                        'No recent activity',
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          color: Colors.grey[600],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
           ],
         ),
       ),
@@ -550,20 +640,36 @@ class _DashboardPageState extends State<DashboardPage> {
   Widget _buildActivityItem(
       BuildContext context,
       String title,
-      String subtitle,
-      ) {
+      String subtitle, [
+      IconData? icon,
+      Color? iconColor,
+      ]) {
     final theme = Theme.of(context);
 
     return Row(
       children: [
-        Container(
-          width: 8,
-          height: 8,
-          decoration: BoxDecoration(
-            color: theme.colorScheme.primary,
-            shape: BoxShape.circle,
+        if (icon != null)
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: (iconColor ?? theme.colorScheme.primary).withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Icon(
+              icon,
+              size: 16,
+              color: iconColor ?? theme.colorScheme.primary,
+            ),
+          )
+        else
+          Container(
+            width: 8,
+            height: 8,
+            decoration: BoxDecoration(
+              color: theme.colorScheme.primary,
+              shape: BoxShape.circle,
+            ),
           ),
-        ),
         const SizedBox(width: 12),
         Expanded(
           child: Column(

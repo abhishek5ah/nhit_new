@@ -127,6 +127,10 @@ class AuthService extends ChangeNotifier {
         _currentUserPassword = password;
         print('💾 [AuthService] Stored tenant data - ID: ${response.data!.tenantId}, Name: $name, Email: $email');
         
+        // IMPORTANT: Remember tenant ID for this email immediately
+        await saveTenantIdForEmail(email, response.data!.tenantId);
+        print('📝 [AuthService] Permanently saved tenant ID mapping for email: $email');
+        
         print('🔔 [AuthService] Calling notifyListeners to update UI');
         notifyListeners();
         print('🎉 [AuthService] Tenant creation completed successfully');
@@ -222,6 +226,67 @@ class AuthService extends ChangeNotifier {
     }
   }
 
+  // Create Organization from Logged-in State (NEW METHOD)
+  Future<({bool success, String? message, OrganizationResponse? data})> createOrganizationFromLoggedInState({
+    required String organizationName,
+    required String organizationCode,
+    required String description,
+    required String superAdminName,
+    required String superAdminEmail,
+    required String superAdminPassword,
+    List<String> initialProjects = const [],
+  }) async {
+    print('🏢 [AuthService] Creating organization from logged-in state: $organizationName');
+    _setLoading(true);
+    
+    try {
+      // Get current user's tenant ID from JWT token
+      final tenantId = await JwtTokenManager.getTenantId();
+      if (tenantId == null || tenantId.isEmpty) {
+        print('❌ [AuthService] No tenant ID found in JWT token');
+        return (success: false, message: 'User not properly authenticated. Please login again.', data: null);
+      }
+      
+      print('✅ [AuthService] Using tenant ID from JWT: $tenantId');
+      print('🔄 [AuthService] Creating OrganizationRequest for logged-in user');
+      
+      final request = OrganizationRequest(
+        tenantId: tenantId,
+        name: organizationName,
+        code: organizationCode.toUpperCase(),
+        description: description,
+        superAdmin: SuperAdminRequest(
+          name: superAdminName,
+          email: superAdminEmail,
+          password: superAdminPassword,
+        ),
+        initialProjects: initialProjects,
+      );
+      
+      print('📡 [AuthService] Calling auth repository createOrganization');
+      final response = await _authRepository.createOrganization(request);
+      
+      print('📥 [AuthService] Organization response - Success: ${response.success}');
+      if (response.success && response.data != null) {
+        print('✅ [AuthService] Organization created successfully: ${response.data!.organization.name}');
+        
+        // Immediately save tenant ID for this email (for future logins)
+        await saveTenantIdForEmail(superAdminEmail, tenantId);
+        print('📝 [AuthService] Saved tenant ID mapping for super admin email');
+        
+        return (success: true, message: response.data!.message, data: response.data);
+      } else {
+        print('❌ [AuthService] Organization creation failed: ${response.message}');
+        return (success: false, message: response.message ?? 'Failed to create organization', data: null);
+      }
+    } catch (e) {
+      print('🚨 [AuthService] Exception in createOrganizationFromLoggedInState: $e');
+      return (success: false, message: 'Failed to create organization: $e', data: null);
+    } finally {
+      _setLoading(false);
+    }
+  }
+
 
   // Register new user (old method - kept for compatibility)
   Future<({bool success, String? message})> register(RegisterRequest request) async {
@@ -244,15 +309,20 @@ class AuthService extends ChangeNotifier {
   }
 
 
-  // STEP 3: Login user (existing Super Admin)
-  Future<({bool success, String? message})> login(String tenantId, String email, String password) async {
-    print('🔑 [AuthService] Starting login for email: $email, tenantId: $tenantId');
+  // STEP 3: Login user (supports global login with email + password only)
+  Future<({bool success, String? message})> login(String email, String password, {String? tenantId}) async {
+    print('🔑 [AuthService] Starting login for email: $email');
+    if (tenantId != null) {
+      print('🏢 [AuthService] Using tenant-specific login with tenantId: $tenantId');
+    } else {
+      print('🌐 [AuthService] Using global login (email + password only)');
+    }
     _setLoading(true);
     
     try {
       print('🔄 [AuthService] Creating LoginRequest object');
       final request = LoginRequest(
-        tenantId: tenantId,
+        tenantId: tenantId, // Optional - backend will lookup if null
         login: email, // Using email as login
         password: password,
       );
@@ -273,9 +343,9 @@ class AuthService extends ChangeNotifier {
         print('💾 [AuthService] Saving authentication data');
         await _saveLoginData(loginData);
         
-        // Remember tenant ID for this email for future logins
-        await saveTenantIdForEmail(email, tenantId);
-        print('📝 [AuthService] Remembered tenant ID for email: $email');
+        // Remember tenant ID for this email for future logins (use the one from response)
+        await saveTenantIdForEmail(email, loginData.tenantId);
+        print('📝 [AuthService] Remembered tenant ID (${loginData.tenantId}) for email: $email');
         
         // Clear stored tenant data after successful login
         clearStoredData();

@@ -1,20 +1,24 @@
 class LoginRequest {
-  final String tenantId;
+  final String? tenantId; // Optional - backend supports global login
   final String login; // Email or username
   final String password;
 
   LoginRequest({
-    required this.tenantId,
+    this.tenantId, // Optional
     required this.login,
     required this.password,
   });
 
   Map<String, dynamic> toJson() {
-    return {
-      'tenant_id': tenantId,
+    final map = {
       'login': login,
       'password': password,
     };
+    // Only include tenant_id if provided (for tenant-specific login)
+    if (tenantId != null && tenantId!.isNotEmpty) {
+      map['tenant_id'] = tenantId!;
+    }
+    return map;
   }
 
   factory LoginRequest.fromJson(Map<String, dynamic> json) {

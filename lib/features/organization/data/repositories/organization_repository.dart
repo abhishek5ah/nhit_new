@@ -26,7 +26,7 @@ class OrganizationRepository {
       }
       
       final response = await dio.get(
-        '${ApiConstants.getOrganizations}?page=1&page_size=100',
+        '${ApiConstants.getOrganizationsByTenant}/$tenantId/organizations',
       );
       
       if (response.statusCode == 200) {

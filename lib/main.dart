@@ -3,7 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:ppv_components/core/theme/theme_notifier.dart';
 import 'package:ppv_components/core/services/auth_service.dart';
 import 'package:ppv_components/core/services/api_service.dart';
-import 'package:ppv_components/features/organization/services/organization_service.dart';
+import 'package:ppv_components/features/organization/services/organizations_api_service.dart';
 import 'app/router.dart';
 import 'package:ppv_components/core/theme/theme.dart';
 
@@ -19,7 +19,7 @@ void main() async {
       providers: [
         ChangeNotifierProvider(create: (_) => ThemeNotifier()),
         ChangeNotifierProvider.value(value: authService),
-        ChangeNotifierProvider.value(value: organizationService),
+        ChangeNotifierProvider(create: (_) => OrganizationsApiService()),
       ],
       child: const MyApp(),
     ),

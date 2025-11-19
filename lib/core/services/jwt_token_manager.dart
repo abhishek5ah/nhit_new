@@ -212,6 +212,26 @@ class JwtTokenManager {
     }
   }
 
+  // Get last login timestamp
+  static Future<String?> getLastLoginAt() async {
+    try {
+      return await _storage.read(key: _lastLoginAtKey);
+    } catch (e) {
+      print('⚠️ [JwtTokenManager] Error reading last login timestamp: $e');
+      return null;
+    }
+  }
+
+  // Get last login IP
+  static Future<String?> getLastLoginIp() async {
+    try {
+      return await _storage.read(key: _lastLoginIpKey);
+    } catch (e) {
+      print('⚠️ [JwtTokenManager] Error reading last login IP: $e');
+      return null;
+    }
+  }
+
   // Save tenant ID
   static Future<void> saveTenantId(String tenantId) async {
     await _storage.write(key: _tenantIdKey, value: tenantId);
@@ -287,6 +307,16 @@ class JwtTokenManager {
 
   // Clear all tokens and user data
   static Future<void> clearTokens() async {
+    // Before clearing, save tenant ID mapping for this email
+    final email = await getEmail();
+    final tenantId = await getTenantId();
+    
+    if (email != null && email.isNotEmpty && tenantId != null && tenantId.isNotEmpty) {
+      // Remember tenant ID for this email before clearing
+      await saveRememberedTenantId(email, tenantId);
+      print('💾 [JwtTokenManager] Saved tenant ID for $email before clearing tokens');
+    }
+    
     await Future.wait([
       // Legacy keys
       _storage.delete(key: _accessTokenKey),
@@ -306,7 +336,7 @@ class JwtTokenManager {
       _storage.delete(key: _lastLoginAtKey),
       _storage.delete(key: _lastLoginIpKey),
     ]);
-    print('🧹 [JwtTokenManager] Cleared all tokens and user data');
+    print('🧹 [JwtTokenManager] Cleared all tokens and user data (tenant mapping preserved)');
   }
 
   // Update email verification status

@@ -47,6 +47,7 @@ class ApiConstants {
   // ============ ORGANIZATION SERVICE ENDPOINTS (Port 8053) ============
   static const String createOrganization = '/organizations';
   static const String getOrganizations = '/organizations';
+  static const String getOrganizationsByTenant = '/tenants'; // GET /tenants/{tenantId}/organizations
   static const String getOrganizationByCode = '/organizations/code';
   static const String updateOrganization = '/organizations';
   static const String deleteOrganization = '/organizations';
