@@ -149,6 +149,7 @@ class PaginationInfo {
 
 // Request models
 class CreateOrganizationRequest {
+  final String? parentOrgId;
   final String name;
   final String code;
   final String description;
@@ -156,6 +157,7 @@ class CreateOrganizationRequest {
   final List<String> initialProjects;
 
   CreateOrganizationRequest({
+    this.parentOrgId,
     required this.name,
     required this.code,
     required this.description,
@@ -165,6 +167,7 @@ class CreateOrganizationRequest {
 
   Map<String, dynamic> toJson() {
     return {
+      if (parentOrgId != null && parentOrgId!.isNotEmpty) 'parentOrgId': parentOrgId,
       'name': name,
       'code': code,
       'description': description,

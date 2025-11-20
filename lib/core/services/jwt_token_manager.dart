@@ -27,6 +27,7 @@ class JwtTokenManager {
   static const String _tokenKey = 'token'; // Main access token
   static const String _nameKey = 'name';
   static const String _orgIdKey = 'org_id';
+  static const String _parentOrgIdKey = 'parent_org_id';
   static const String _tokenExpiresAtKey = 'token_expires_at';
   static const String _refreshExpiresAtKey = 'refresh_expires_at';
   static const String _rolesKey = 'roles';
@@ -82,6 +83,7 @@ class JwtTokenManager {
       _storage.write(key: _nameKey, value: name),
       _storage.write(key: _tenantIdKey, value: tenantId),
       _storage.write(key: _orgIdKey, value: orgId),
+      _storage.write(key: _parentOrgIdKey, value: orgId),
       _storage.write(key: _tokenExpiresAtKey, value: tokenExpiresAt),
       _storage.write(key: _refreshExpiresAtKey, value: refreshExpiresAt),
       _storage.write(key: _rolesKey, value: roles.join(',')),
@@ -174,6 +176,19 @@ class JwtTokenManager {
       return await _storage.read(key: _orgIdKey);
     } catch (e) {
       print('⚠️ [JwtTokenManager] Error reading org ID: $e');
+      return null;
+    }
+  }
+
+  static Future<void> saveParentOrgId(String orgId) async {
+    await _storage.write(key: _parentOrgIdKey, value: orgId);
+  }
+
+  static Future<String?> getParentOrgId() async {
+    try {
+      return await _storage.read(key: _parentOrgIdKey);
+    } catch (e) {
+      print('⚠️ [JwtTokenManager] Error reading parent org ID: $e');
       return null;
     }
   }
@@ -329,6 +344,7 @@ class JwtTokenManager {
       _storage.delete(key: _tokenKey),
       _storage.delete(key: _nameKey),
       _storage.delete(key: _orgIdKey),
+      _storage.delete(key: _parentOrgIdKey),
       _storage.delete(key: _tokenExpiresAtKey),
       _storage.delete(key: _refreshExpiresAtKey),
       _storage.delete(key: _rolesKey),

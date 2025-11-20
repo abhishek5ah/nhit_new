@@ -13,6 +13,8 @@ class OrganizationsApiService extends ChangeNotifier {
   bool _isLoading = false;
   String? _error;
   String? _currentTenantId;
+  final Map<String, List<OrganizationModel>> _childOrganizations = {};
+  final Set<String> _childLoadingParents = {};
 
   // Getters
   List<OrganizationModel> get organizations => _organizations;
@@ -21,6 +23,7 @@ class OrganizationsApiService extends ChangeNotifier {
   String? get error => _error;
   String? get currentTenantId => _currentTenantId;
   bool get hasOrganizations => _organizations.isNotEmpty;
+  Map<String, List<OrganizationModel>> get childOrganizations => _childOrganizations;
 
   // Set loading state
   void _setLoading(bool loading) {
@@ -135,11 +138,22 @@ class OrganizationsApiService extends ChangeNotifier {
       if (response.success && response.data != null) {
         print('✅ [OrganizationsApiService] Organization created successfully');
         
-        // Reload organizations to include the new one
+        final newOrg = response.data!;
+        final parentOrgId = request.parentOrgId;
+
+        if (parentOrgId == null || parentOrgId.isEmpty) {
+          // Newly created parent organization becomes default parent for future child creations
+          await JwtTokenManager.saveParentOrgId(newOrg.orgId);
+        } else {
+          // Refresh children for this parent so UI updates instantly
+          await loadChildOrganizations(parentOrgId, forceRefresh: true);
+        }
+
+        // Reload organizations to include the new one in parent list
         await loadOrganizations();
         
         _setLoading(false);
-        return (success: true, message: response.message, organization: response.data);
+        return (success: true, message: response.message, organization: newOrg);
       } else {
         _setError(response.message);
         _setLoading(false);
@@ -232,6 +246,39 @@ class OrganizationsApiService extends ChangeNotifier {
     _currentTenantId = null;
     _error = null;
     _isLoading = false;
+    _childOrganizations.clear();
+    _childLoadingParents.clear();
     notifyListeners();
+  }
+
+  /// Load child organizations for a given parent
+  Future<({bool success, String? message})> loadChildOrganizations(
+    String parentOrgId, {
+    bool forceRefresh = false,
+  }) async {
+    if (!forceRefresh && _childOrganizations.containsKey(parentOrgId)) {
+      return (success: true, message: 'Already loaded');
+    }
+
+    if (_childLoadingParents.contains(parentOrgId)) {
+      return (success: true, message: 'Already loading');
+    }
+
+    _childLoadingParents.add(parentOrgId);
+
+    try {
+      final response = await _repository.getChildOrganizations(parentOrgId);
+      if (response.success && response.data != null) {
+        _childOrganizations[parentOrgId] = response.data!.organizations;
+        notifyListeners();
+        return (success: true, message: response.message);
+      } else {
+        return (success: false, message: response.message ?? 'Failed to load child organizations');
+      }
+    } catch (e) {
+      return (success: false, message: 'Failed to load child organizations: $e');
+    } finally {
+      _childLoadingParents.remove(parentOrgId);
+    }
   }
 }

@@ -188,37 +188,37 @@ class _OrganizationMainPageState extends State<OrganizationMainPage> {
     }
   }
 
-  Future<void> _deleteOrganization(OrganizationModel org) async {
-    final shouldDelete = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Confirm Delete'),
-        content: Text('Are you sure you want to delete ${org.name}?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            style: TextButton.styleFrom(foregroundColor: Colors.red),
-            child: const Text('Delete'),
-          ),
-        ],
-      ),
-    );
+  // Future<void> _deleteOrganization(OrganizationModel org) async {
+  //   final shouldDelete = await showDialog<bool>(
+  //     context: context,
+  //     builder: (ctx) => AlertDialog(
+  //       title: const Text('Confirm Delete'),
+  //       content: Text('Are you sure you want to delete ${org.name}?'),
+  //       actions: [
+  //         TextButton(
+  //           onPressed: () => Navigator.pop(ctx, false),
+  //           child: const Text('Cancel'),
+  //         ),
+  //         TextButton(
+  //           onPressed: () => Navigator.pop(ctx, true),
+  //           style: TextButton.styleFrom(foregroundColor: Colors.red),
+  //           child: const Text('Delete'),
+  //         ),
+  //       ],
+  //     ),
+  //   );
 
-    if (shouldDelete == true) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Delete functionality not yet implemented'),
-            backgroundColor: Colors.orange,
-          ),
-        );
-      }
-    }
-  }
+  //   if (shouldDelete == true) {
+  //     if (mounted) {
+  //       ScaffoldMessenger.of(context).showSnackBar(
+  //         const SnackBar(
+  //           content: Text('Delete functionality not yet implemented'),
+  //           backgroundColor: Colors.orange,
+  //         ),
+  //       );
+  //     }
+  //   }
+  // }
 
   Widget _buildOrganizationLogo(OrganizationModel org, ColorScheme colorScheme) {
     // If logo URL exists, show the network image
@@ -442,7 +442,8 @@ class _OrganizationMainPageState extends State<OrganizationMainPage> {
             // Created date
             DataCell(
               Text(
-                '${org.createdAt.day}/${org.createdAt.month}/${org.createdAt.year}',
+                '${org.createdAt.day}/${org.createdAt.month}/${org.createdAt
+                    .year}',
                 style: theme.textTheme.bodyMedium?.copyWith(
                   color: colorScheme.onSurface,
                 ),
@@ -460,7 +461,8 @@ class _OrganizationMainPageState extends State<OrganizationMainPage> {
                     tooltip: 'View',
                     onPressed: () => _viewOrganization(org),
                     style: IconButton.styleFrom(
-                      backgroundColor: colorScheme.primary.withValues(alpha: 0.1),
+                      backgroundColor: colorScheme.primary.withValues(
+                          alpha: 0.1),
                     ),
                   ),
                   const SizedBox(width: 4),
@@ -470,7 +472,8 @@ class _OrganizationMainPageState extends State<OrganizationMainPage> {
                     tooltip: 'Edit',
                     onPressed: () => _editOrganization(org),
                     style: IconButton.styleFrom(
-                      backgroundColor: colorScheme.tertiary.withValues(alpha: 0.1),
+                      backgroundColor: colorScheme.tertiary.withValues(
+                          alpha: 0.1),
                     ),
                   ),
                   const SizedBox(width: 4),
@@ -481,8 +484,11 @@ class _OrganizationMainPageState extends State<OrganizationMainPage> {
                           : Icons.toggle_off_outlined,
                       size: 20,
                     ),
-                    color: org.status == 'activated' ? Colors.green : Colors.orange,
-                    tooltip: org.status == 'activated' ? 'Deactivate' : 'Activate',
+                    color: org.status == 'activated' ? Colors.green : Colors
+                        .orange,
+                    tooltip: org.status == 'activated'
+                        ? 'Deactivate'
+                        : 'Activate',
                     onPressed: () => _toggleOrganizationStatus(org),
                     style: IconButton.styleFrom(
                       backgroundColor: org.status == 'activated'
@@ -490,16 +496,20 @@ class _OrganizationMainPageState extends State<OrganizationMainPage> {
                           : Colors.orange.withValues(alpha: 0.1),
                     ),
                   ),
-                  const SizedBox(width: 4),
-                  IconButton(
-                    icon: const Icon(Icons.delete_outline, size: 20),
-                    color: colorScheme.error,
-                    tooltip: 'Delete',
-                    onPressed: () => _deleteOrganization(org),
-                    style: IconButton.styleFrom(
-                      backgroundColor: colorScheme.error.withValues(alpha: 0.1),
-                    ),
-                  ),
+
+
+                  // const SizedBox(width: 4),
+                  // IconButton(
+                  //   icon: const Icon(Icons.delete_outline, size: 20),
+                  //   color: colorScheme.error,
+                  //   tooltip: 'Delete',
+                  //   onPressed: () => _deleteOrganization(org),
+                  //   style: IconButton.styleFrom(
+                  //     backgroundColor: colorScheme.error.withValues(alpha: 0.1),
+                  //   ),
+                  // ),
+
+
                 ],
               ),
             ),

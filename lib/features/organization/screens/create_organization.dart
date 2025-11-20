@@ -3,13 +3,13 @@ import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as path;
-import 'package:ppv_components/features/organization/data/organization_mockdb.dart';
 import 'package:ppv_components/common_widgets/button/primary_button.dart';
 import 'package:ppv_components/common_widgets/button/secondary_button.dart';
-import 'package:ppv_components/features/organization/model/organization_model.dart';
 import 'package:provider/provider.dart';
 import 'package:ppv_components/core/services/auth_service.dart';
-import 'package:ppv_components/features/organization/services/organization_service.dart';
+import 'package:ppv_components/core/services/jwt_token_manager.dart';
+import 'package:ppv_components/features/organization/data/models/organization_api_models.dart';
+import 'package:ppv_components/features/organization/services/organizations_api_service.dart';
 
 class CreateOrganizationScreen extends StatefulWidget {
   const CreateOrganizationScreen({super.key});
@@ -24,21 +24,13 @@ class _CreateOrganizationScreenState extends State<CreateOrganizationScreen> {
   late TextEditingController _nameController;
   late TextEditingController _codeController;
   late TextEditingController _descriptionController;
-  
-  // Super Admin fields
-  late TextEditingController _adminNameController;
-  late TextEditingController _adminEmailController;
-  late TextEditingController _adminPasswordController;
 
   final List<TextEditingController> _projectControllers = [];
 
-  String _selectedStatus = 'Active';
-  final List<String> _statusOptions = ['Active', 'Inactive'];
   bool _isLoading = false;
 
   File? _logoFile;
   String? _logoFileName;
-  String? _permanentLogoPath; // Add this to store permanent path
 
   @override
   void initState() {
@@ -46,9 +38,6 @@ class _CreateOrganizationScreenState extends State<CreateOrganizationScreen> {
     _nameController = TextEditingController();
     _codeController = TextEditingController();
     _descriptionController = TextEditingController();
-    _adminNameController = TextEditingController();
-    _adminEmailController = TextEditingController();
-    _adminPasswordController = TextEditingController();
   }
 
   @override
@@ -56,9 +45,6 @@ class _CreateOrganizationScreenState extends State<CreateOrganizationScreen> {
     _nameController.dispose();
     _codeController.dispose();
     _descriptionController.dispose();
-    _adminNameController.dispose();
-    _adminEmailController.dispose();
-    _adminPasswordController.dispose();
     for (var controller in _projectControllers) {
       controller.dispose();
     }
@@ -121,7 +107,6 @@ class _CreateOrganizationScreenState extends State<CreateOrganizationScreen> {
         setState(() {
           _logoFile = permanentFile;
           _logoFileName = result.files.single.name;
-          _permanentLogoPath = permanentPath;
         });
       }
     } catch (e) {
@@ -156,40 +141,41 @@ class _CreateOrganizationScreenState extends State<CreateOrganizationScreen> {
       });
 
       try {
-        // Use the NEW AuthService method for logged-in users
         final authService = context.read<AuthService>();
+        final orgService = context.read<OrganizationsApiService>();
 
-        final result = await authService.createOrganizationFromLoggedInState(
-          organizationName: _nameController.text.trim(),
-          organizationCode: _codeController.text.trim().toUpperCase(),
+        final currentUser = authService.currentUser;
+        final userName = currentUser?.name ?? '';
+        final userEmail = currentUser?.email ?? '';
+
+        final superAdmin = SuperAdminRequest(
+          name: userName.isNotEmpty ? userName : 'System Admin',
+          email: userEmail.isNotEmpty ? userEmail : 'system@nhit.com',
+          password: 'Default@123',
+        );
+
+        final savedParentOrgId = await JwtTokenManager.getParentOrgId();
+        final fallbackParentOrgId = orgService.currentOrganization?.orgId;
+
+        final request = CreateOrganizationRequest(
+          parentOrgId: savedParentOrgId?.isNotEmpty == true
+              ? savedParentOrgId
+              : fallbackParentOrgId,
+          name: _nameController.text.trim(),
+          code: _codeController.text.trim().toUpperCase(),
           description: _descriptionController.text.trim().isEmpty
               ? 'Main ${_nameController.text.trim()} Organization'
               : _descriptionController.text.trim(),
-          superAdminName: _adminNameController.text.trim(),
-          superAdminEmail: _adminEmailController.text.trim(),
-          superAdminPassword: _adminPasswordController.text.trim(),
-          initialProjects: _projectControllers.map((c) => c.text.trim()).where((p) => p.isNotEmpty).toList(),
+          superAdmin: superAdmin,
+          initialProjects: _projectControllers
+              .map((c) => c.text.trim())
+              .where((p) => p.isNotEmpty)
+              .toList(),
         );
 
-        if (result.success) {
-          // Also add to mock DB for compatibility with old UI
-          final newOrganization = Organization(
-            id: DateTime.now().millisecondsSinceEpoch,
-            name: _nameController.text.trim(),
-            code: _codeController.text.trim().toUpperCase(),
-            status: _selectedStatus,
-            createdBy: 'Super Admin',
-            createdDate: 'Nov 10, 2025',
-            description: _descriptionController.text.trim(),
-            logoPath: _permanentLogoPath, // Logo is optional
-          );
+        final result = await orgService.createOrganization(request);
 
-          OrganizationMockDB.add(newOrganization);
-
-          // Reload organizations in the service
-          final orgService = context.read<OrganizationService>();
-          await orgService.loadOrganizations();
-
+        if (result.success && result.organization != null) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(result.message ?? 'Organization created successfully!'),
@@ -198,7 +184,7 @@ class _CreateOrganizationScreenState extends State<CreateOrganizationScreen> {
             ),
           );
 
-          Navigator.pop(context, newOrganization);
+          Navigator.pop(context, result.organization);
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
@@ -410,7 +396,6 @@ class _CreateOrganizationScreenState extends State<CreateOrganizationScreen> {
                                   setState(() {
                                     _logoFile = null;
                                     _logoFileName = null;
-                                    _permanentLogoPath = null;
                                   });
                                 },
                                 tooltip: 'Remove file',
@@ -568,93 +553,6 @@ class _CreateOrganizationScreenState extends State<CreateOrganizationScreen> {
                             colorScheme.onSurface.withValues(alpha: 0.6),
                             fontSize: 12,
                           ),
-                        ),
-                      ],
-                    ),
-                  ),
-
-                  const SizedBox(height: 24),
-
-                  // Super Admin Section
-                  Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      border: Border.all(
-                        color: colorScheme.outline.withValues(alpha: 0.3),
-                      ),
-                      borderRadius: BorderRadius.circular(8),
-                      color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            Icon(Icons.admin_panel_settings, 
-                                 color: colorScheme.primary, size: 20),
-                            const SizedBox(width: 8),
-                            Text(
-                              'Super Admin Details',
-                              style: textTheme.titleSmall?.copyWith(
-                                fontWeight: FontWeight.w600,
-                                color: colorScheme.primary,
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          'This admin will have full access to the organization',
-                          style: textTheme.bodySmall?.copyWith(
-                            color: colorScheme.onSurface.withValues(alpha: 0.6),
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-
-                        // Admin Name
-                        _buildTextField(
-                          controller: _adminNameController,
-                          label: 'Admin Name',
-                          hintText: 'Enter admin full name',
-                          isRequired: true,
-                          validator: (value) => _validateRequired(value, 'Admin name'),
-                        ),
-                        const SizedBox(height: 16),
-
-                        // Admin Email
-                        _buildTextField(
-                          controller: _adminEmailController,
-                          label: 'Admin Email',
-                          hintText: 'admin@example.com',
-                          isRequired: true,
-                          validator: (value) {
-                            if (value == null || value.isEmpty) {
-                              return 'Admin email is required';
-                            }
-                            if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(value)) {
-                              return 'Enter a valid email address';
-                            }
-                            return null;
-                          },
-                        ),
-                        const SizedBox(height: 16),
-
-                        // Admin Password
-                        _buildTextField(
-                          controller: _adminPasswordController,
-                          label: 'Admin Password',
-                          hintText: 'Enter strong password',
-                          isRequired: true,
-                          obscureText: true,
-                          validator: (value) {
-                            if (value == null || value.isEmpty) {
-                              return 'Admin password is required';
-                            }
-                            if (value.length < 8) {
-                              return 'Password must be at least 8 characters';
-                            }
-                            return null;
-                          },
                         ),
                       ],
                     ),

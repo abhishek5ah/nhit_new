@@ -149,6 +149,32 @@ class OrganizationsApiRepository {
     }
   }
 
+  /// Get child organizations for a parent
+  /// Uses: GET /organizations/{parentOrgId}/children
+  Future<ApiResponse<OrganizationsListResponse>> getChildOrganizations(String parentOrgId) async {
+    try {
+      print('🌿 [OrganizationsApiRepository] Fetching children for parent: $parentOrgId');
+      await _addAuthHeader();
+
+      final response = await _dio.get('/organizations/$parentOrgId/children');
+
+      if (response.statusCode == 200) {
+        final children = OrganizationsListResponse.fromJson(response.data);
+        return ApiResponse.success(
+          message: response.data['message'] ?? 'Child organizations retrieved successfully',
+          data: children,
+        );
+      } else {
+        return ApiResponse.error(message: 'Failed to retrieve child organizations');
+      }
+    } on DioException catch (e) {
+      final errorMsg = e.response?.data['message'] ?? e.response?.data['error'] ?? 'Failed to load child organizations';
+      return ApiResponse.error(message: errorMsg);
+    } catch (e) {
+      return ApiResponse.error(message: 'Unexpected error: $e');
+    }
+  }
+
   /// Update organization
   /// Uses: PUT /organizations/{orgId}
   Future<ApiResponse<OrganizationModel>> updateOrganization(String orgId, UpdateOrganizationRequest request) async {
