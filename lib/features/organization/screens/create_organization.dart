@@ -1,12 +1,12 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:go_router/go_router.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as path;
 import 'package:ppv_components/common_widgets/button/primary_button.dart';
 import 'package:ppv_components/common_widgets/button/secondary_button.dart';
 import 'package:provider/provider.dart';
-import 'package:ppv_components/core/services/auth_service.dart';
 import 'package:ppv_components/core/services/jwt_token_manager.dart';
 import 'package:ppv_components/features/organization/data/models/organization_api_models.dart';
 import 'package:ppv_components/features/organization/services/organizations_api_service.dart';
@@ -96,7 +96,8 @@ class _CreateOrganizationScreenState extends State<CreateOrganizationScreen> {
         }
 
         // Create unique filename
-        final String timestamp = DateTime.now().millisecondsSinceEpoch.toString();
+        final String timestamp = DateTime.now().millisecondsSinceEpoch
+            .toString();
         final String extension = path.extension(result.files.single.name);
         final String newFileName = 'logo_$timestamp$extension';
         final String permanentPath = '$organizationLogosDir/$newFileName';
@@ -141,23 +142,43 @@ class _CreateOrganizationScreenState extends State<CreateOrganizationScreen> {
       });
 
       try {
-        final authService = context.read<AuthService>();
         final orgService = context.read<OrganizationsApiService>();
 
-        final currentUser = authService.currentUser;
-        final userName = currentUser?.name ?? '';
-        final userEmail = currentUser?.email ?? '';
+        // Get current user data from JWT tokens (this is the correct source)
+        final userName = await JwtTokenManager.getName();
+        final userEmail = await JwtTokenManager.getEmail();
+        
+        print('👤 [CreateOrganization] Current user data:');
+        print('   Name: "${userName ?? 'NULL'}"');
+        print('   Email: "${userEmail ?? 'NULL'}"');
+
+        // Ensure we have valid user data - this should never be empty after login
+        if (userName == null || userName.isEmpty || userEmail == null || userEmail.isEmpty) {
+          throw Exception('User data not available. Please login again.');
+        }
 
         final superAdmin = SuperAdminRequest(
-          name: userName.isNotEmpty ? userName : 'System Admin',
-          email: userEmail.isNotEmpty ? userEmail : 'system@nhit.com',
-          password: 'Default@123',
+          name: userName,
+          email: userEmail,
+          password: '', // Empty password like in working registration flow
         );
+        
+        print('🔑 [CreateOrganization] SuperAdmin data:');
+        print('   Name: "${superAdmin.name}"');
+        print('   Email: "${superAdmin.email}"');
 
+        // Get tenant ID and parent org ID
+        final tenantId = await JwtTokenManager.getTenantId();
         final savedParentOrgId = await JwtTokenManager.getParentOrgId();
         final fallbackParentOrgId = orgService.currentOrganization?.orgId;
+        
+        print('🔑 [CreateOrganization] Context data:');
+        print('   TenantId: "${tenantId ?? 'NULL'}"');
+        print('   SavedParentOrgId: "${savedParentOrgId ?? 'NULL'}"');
+        print('   FallbackParentOrgId: "${fallbackParentOrgId ?? 'NULL'}"');
 
         final request = CreateOrganizationRequest(
+          tenantId: tenantId, // Include tenantId like in registration flow
           parentOrgId: savedParentOrgId?.isNotEmpty == true
               ? savedParentOrgId
               : fallbackParentOrgId,
@@ -167,18 +188,32 @@ class _CreateOrganizationScreenState extends State<CreateOrganizationScreen> {
               ? 'Main ${_nameController.text.trim()} Organization'
               : _descriptionController.text.trim(),
           superAdmin: superAdmin,
+          createdBy: userName, // Explicitly set createdBy to current user's name
           initialProjects: _projectControllers
               .map((c) => c.text.trim())
               .where((p) => p.isNotEmpty)
               .toList(),
         );
+        
+        print('📦 [CreateOrganization] Request payload:');
+        print('   TenantId: ${request.tenantId}');
+        print('   ParentOrgId: ${request.parentOrgId}');
+        print('   Name: ${request.name}');
+        print('   Code: ${request.code}');
+        print('   SuperAdmin: ${request.superAdmin.name} (${request.superAdmin.email})');
+        print('   SuperAdmin Password: "${request.superAdmin.password}"');
+        print('   CreatedBy: "${request.createdBy}"');
+        print('   Projects: ${request.initialProjects}');
+        print('   Full JSON: ${request.toJson()}');
 
         final result = await orgService.createOrganization(request);
 
         if (result.success && result.organization != null) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text(result.message ?? 'Organization created successfully!'),
+              content: Text(
+                result.message ?? 'Organization created successfully!',
+              ),
               backgroundColor: Colors.green,
               duration: const Duration(seconds: 2),
             ),
@@ -306,15 +341,16 @@ class _CreateOrganizationScreenState extends State<CreateOrganizationScreen> {
                               label: 'Organization Code',
                               hintText: 'ENTER UNIQUE CODE (E.G., NHIT)',
                               isRequired: true,
-                              validator: (value) => _validateRequired(
-                                  value, 'Organization code'),
+                              validator: (value) =>
+                                  _validateRequired(value, 'Organization code'),
                             ),
                             const SizedBox(height: 4),
                             Text(
                               'This will be used to generate the database name.',
                               style: textTheme.bodySmall?.copyWith(
-                                color: colorScheme.onSurface
-                                    .withValues(alpha: 0.6),
+                                color: colorScheme.onSurface.withValues(
+                                  alpha: 0.6,
+                                ),
                                 fontSize: 12,
                               ),
                             ),
@@ -355,8 +391,9 @@ class _CreateOrganizationScreenState extends State<CreateOrganizationScreen> {
                           vertical: 12,
                         ),
                         decoration: BoxDecoration(
-                          color: colorScheme.surfaceContainerHighest
-                              .withValues(alpha: 0.3),
+                          color: colorScheme.surfaceContainerHighest.withValues(
+                            alpha: 0.3,
+                          ),
                           borderRadius: BorderRadius.circular(8),
                           border: Border.all(
                             color: colorScheme.outline.withValues(alpha: 0.5),
@@ -372,8 +409,9 @@ class _CreateOrganizationScreenState extends State<CreateOrganizationScreen> {
                                   vertical: 8,
                                 ),
                                 side: BorderSide(
-                                  color: colorScheme.outline
-                                      .withValues(alpha: 0.5),
+                                  color: colorScheme.outline.withValues(
+                                    alpha: 0.5,
+                                  ),
                                 ),
                               ),
                               child: const Text('Choose File'),
@@ -383,8 +421,9 @@ class _CreateOrganizationScreenState extends State<CreateOrganizationScreen> {
                               child: Text(
                                 _logoFileName ?? 'No file chosen',
                                 style: textTheme.bodyMedium?.copyWith(
-                                  color: colorScheme.onSurface
-                                      .withValues(alpha: 0.6),
+                                  color: colorScheme.onSurface.withValues(
+                                    alpha: 0.6,
+                                  ),
                                 ),
                                 overflow: TextOverflow.ellipsis,
                               ),
@@ -409,8 +448,7 @@ class _CreateOrganizationScreenState extends State<CreateOrganizationScreen> {
                       Text(
                         'Upload a logo image (JPEG, PNG, JPG, GIF, max 2MB).',
                         style: textTheme.bodySmall?.copyWith(
-                          color:
-                          colorScheme.onSurface.withValues(alpha: 0.6),
+                          color: colorScheme.onSurface.withValues(alpha: 0.6),
                           fontSize: 12,
                         ),
                       ),
@@ -428,10 +466,7 @@ class _CreateOrganizationScreenState extends State<CreateOrganizationScreen> {
                           ),
                           child: ClipRRect(
                             borderRadius: BorderRadius.circular(8),
-                            child: Image.file(
-                              _logoFile!,
-                              fit: BoxFit.cover,
-                            ),
+                            child: Image.file(_logoFile!, fit: BoxFit.cover),
                           ),
                         ),
                       ],
@@ -466,8 +501,9 @@ class _CreateOrganizationScreenState extends State<CreateOrganizationScreen> {
                             Text(
                               '(Optional - You can add these later in settings)',
                               style: textTheme.bodySmall?.copyWith(
-                                color: colorScheme.onSurface
-                                    .withValues(alpha: 0.6),
+                                color: colorScheme.onSurface.withValues(
+                                  alpha: 0.6,
+                                ),
                               ),
                             ),
                           ],
@@ -488,35 +524,39 @@ class _CreateOrganizationScreenState extends State<CreateOrganizationScreen> {
                                     decoration: InputDecoration(
                                       hintText: 'Enter project name',
                                       hintStyle: TextStyle(
-                                        color: colorScheme.onSurface
-                                            .withValues(alpha: 0.4),
+                                        color: colorScheme.onSurface.withValues(
+                                          alpha: 0.4,
+                                        ),
                                       ),
                                       filled: true,
                                       fillColor: colorScheme.surface,
                                       border: OutlineInputBorder(
                                         borderRadius: BorderRadius.circular(8),
                                         borderSide: BorderSide(
-                                          color: colorScheme.outline
-                                              .withValues(alpha: 0.5),
+                                          color: colorScheme.outline.withValues(
+                                            alpha: 0.5,
+                                          ),
                                         ),
                                       ),
                                       enabledBorder: OutlineInputBorder(
                                         borderRadius: BorderRadius.circular(8),
                                         borderSide: BorderSide(
-                                          color: colorScheme.outline
-                                              .withValues(alpha: 0.5),
+                                          color: colorScheme.outline.withValues(
+                                            alpha: 0.5,
+                                          ),
                                         ),
                                       ),
                                       focusedBorder: OutlineInputBorder(
                                         borderRadius: BorderRadius.circular(8),
                                         borderSide: BorderSide(
-                                            color: colorScheme.primary),
+                                          color: colorScheme.primary,
+                                        ),
                                       ),
                                       contentPadding:
-                                      const EdgeInsets.symmetric(
-                                        horizontal: 16,
-                                        vertical: 12,
-                                      ),
+                                          const EdgeInsets.symmetric(
+                                            horizontal: 16,
+                                            vertical: 12,
+                                          ),
                                       suffixIcon: IconButton(
                                         icon: const Icon(Icons.close, size: 20),
                                         onPressed: () => _removeProject(index),
@@ -549,8 +589,7 @@ class _CreateOrganizationScreenState extends State<CreateOrganizationScreen> {
                         Text(
                           'Add projects that will be available for this organization',
                           style: textTheme.bodySmall?.copyWith(
-                            color:
-                            colorScheme.onSurface.withValues(alpha: 0.6),
+                            color: colorScheme.onSurface.withValues(alpha: 0.6),
                             fontSize: 12,
                           ),
                         ),
@@ -566,9 +605,7 @@ class _CreateOrganizationScreenState extends State<CreateOrganizationScreen> {
                     decoration: BoxDecoration(
                       color: Colors.blue[50],
                       borderRadius: BorderRadius.circular(8),
-                      border: Border.all(
-                        color: Colors.blue[200]!,
-                      ),
+                      border: Border.all(color: Colors.blue[200]!),
                     ),
                     child: Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -600,13 +637,17 @@ class _CreateOrganizationScreenState extends State<CreateOrganizationScreen> {
                               ),
                               const SizedBox(height: 8),
                               _buildInfoItem(
-                                  'Create a separate database for this organization'),
+                                'Create a separate database for this organization',
+                              ),
                               _buildInfoItem(
-                                  'Clone the current system structure to the new database'),
+                                'Clone the current system structure to the new database',
+                              ),
                               _buildInfoItem(
-                                  'Allow you to switch between organizations seamlessly'),
+                                'Allow you to switch between organizations seamlessly',
+                              ),
                               _buildInfoItem(
-                                  'Maintain user roles and permissions across organizations'),
+                                'Maintain user roles and permissions across organizations',
+                              ),
                             ],
                           ),
                         ),
@@ -621,9 +662,10 @@ class _CreateOrganizationScreenState extends State<CreateOrganizationScreen> {
                     mainAxisAlignment: MainAxisAlignment.end,
                     children: [
                       SecondaryButton(
-                        onPressed: () => Navigator.pop(context),
+                        onPressed: () => context.go('/organizations'),
                         label: 'Cancel',
                       ),
+
                       const SizedBox(width: 8),
                       PrimaryButton(
                         onPressed: _submitForm,
@@ -656,10 +698,7 @@ class _CreateOrganizationScreenState extends State<CreateOrganizationScreen> {
           Expanded(
             child: Text(
               text,
-              style: TextStyle(
-                color: Colors.blue[900],
-                fontSize: 13,
-              ),
+              style: TextStyle(color: Colors.blue[900], fontSize: 13),
             ),
           ),
         ],

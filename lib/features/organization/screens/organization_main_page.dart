@@ -29,7 +29,7 @@ class _OrganizationMainPageState extends State<OrganizationMainPage> {
       name: orgModel.name,
       code: orgModel.code,
       status: orgModel.status == 'activated' ? 'Active' : 'Inactive',
-      createdBy: orgModel.superAdmin?.name ?? 'System',
+      createdBy: orgModel.createdByDisplay, // Use new fallback method
       createdDate: '${orgModel.createdAt.day}/${orgModel.createdAt.month}/${orgModel.createdAt.year}',
       description: orgModel.description,
       logoPath: orgModel.logo.isNotEmpty ? orgModel.logo : null,
@@ -378,35 +378,45 @@ class _OrganizationMainPageState extends State<OrganizationMainPage> {
         return DataRow(
           cells: [
             // Organization name + logo/badge
-            DataCell(Row(
-              children: [
-                _buildOrganizationLogo(org, colorScheme),
-                const SizedBox(width: 12),
-                Flexible(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text(
-                        org.name,
-                        style: theme.textTheme.bodyMedium?.copyWith(
-                          fontWeight: FontWeight.w600,
-                          color: colorScheme.onSurface,
-                        ),
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      if (org.description.isNotEmpty)
-                        Text(
-                          displayDescription,
-                          style: theme.textTheme.bodySmall?.copyWith(
-                            color: colorScheme.onSurface.withValues(alpha: 0.6),
-                          ),
-                        ),
-                    ],
+          DataCell(
+  SizedBox(
+    width: double.infinity,
+    child: Row(
+      children: [
+        _buildOrganizationLogo(org, colorScheme),
+        const SizedBox(width: 12),
+        
+        Expanded( // <-- important
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              
+              Text(
+                org.name,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: theme.textTheme.bodyLarge?.copyWith(
+                  color: colorScheme.onSurface,
+                ),
+              ),
+              
+              if (org.description.isNotEmpty)
+                Text(
+                  displayDescription,
+                  maxLines: 1, // or 2
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: colorScheme.onSurface.withValues(alpha: 0.6),
                   ),
                 ),
-              ],
-            )),
+            ],
+          ),
+        ),
+      ],
+    ),
+  ),
+),
 
             // Code badge
             DataCell(
@@ -429,13 +439,33 @@ class _OrganizationMainPageState extends State<OrganizationMainPage> {
               ),
             ),
 
-            // Created by
+            // Created by with enhanced fallback and missing data indicator
             DataCell(
-              Text(
-                org.superAdmin?.name ?? 'System',
-                style: theme.textTheme.bodyMedium?.copyWith(
-                  color: colorScheme.onSurface,
-                ),
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      org.createdByDisplay,
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: org.isMissingCreatedBy 
+                            ? colorScheme.onSurface.withValues(alpha: 0.5)
+                            : colorScheme.onSurface,
+                        fontStyle: org.isMissingCreatedBy 
+                            ? FontStyle.italic 
+                            : FontStyle.normal,
+                      ),
+                    ),
+                  ),
+                  if (org.isMissingCreatedBy)
+                    Tooltip(
+                      message: 'Creator information not available from API',
+                      child: Icon(
+                        Icons.info_outline,
+                        size: 16,
+                        color: colorScheme.onSurface.withValues(alpha: 0.5),
+                      ),
+                    ),
+                ],
               ),
             ),
 

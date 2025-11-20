@@ -52,19 +52,56 @@ class AuthRepository {
         data: request.toJson(),
       );
       
+      print('📥 [AuthRepository] Tenant response status: ${response.statusCode}');
+      
       if (response.statusCode == 200 || response.statusCode == 201) {
         print('✅ [AuthRepository] Tenant creation successful');
         return ApiResponse.success(
-          message: 'Tenant created successfully',
+          message: response.data['message'] ?? 'Tenant created successfully',
           data: TenantResponse.fromJson(response.data),
+          statusCode: response.statusCode,
         );
       } else {
         print('❌ [AuthRepository] Tenant creation failed: ${response.statusCode}');
-        return ApiResponse.error(message: 'Failed to create tenant');
+        return ApiResponse.error(
+          message: response.data['message'] ?? 'Failed to create tenant',
+          statusCode: response.statusCode,
+          errorData: response.data is Map<String, dynamic> ? response.data : null,
+        );
       }
+    } on DioException catch (e) {
+      print('🚨 [AuthRepository] DioException in createTenant: ${e.message}');
+      
+      final statusCode = e.response?.statusCode ?? 500;
+      final responseData = e.response?.data;
+      String errorMessage = 'Failed to create tenant';
+      
+      // Extract error message from response
+      if (responseData != null) {
+        if (responseData is Map<String, dynamic>) {
+          errorMessage = responseData['message'] ?? 
+                        responseData['error'] ?? 
+                        errorMessage;
+        } else if (responseData is String) {
+          errorMessage = responseData;
+        }
+      } else if (e.message != null) {
+        errorMessage = e.message!;
+      }
+      
+      print('🔴 [AuthRepository] Error message: $errorMessage');
+      
+      return ApiResponse.error(
+        message: errorMessage,
+        statusCode: statusCode,
+        errorData: responseData is Map<String, dynamic> ? responseData : null,
+      );
     } catch (e) {
       print('🚨 [AuthRepository] Exception in createTenant: $e');
-      return ApiResponse.error(message: 'Failed to create tenant: $e');
+      return ApiResponse.error(
+        message: 'Failed to create tenant: $e',
+        statusCode: 500,
+      );
     }
   }
 
@@ -84,19 +121,56 @@ class AuthRepository {
         data: request.toJson(),
       );
       
+      print('📥 [AuthRepository] Organization response status: ${response.statusCode}');
+      
       if (response.statusCode == 200 || response.statusCode == 201) {
         print('✅ [AuthRepository] Organization creation successful');
         return ApiResponse.success(
-          message: 'Organization created successfully',
+          message: response.data['message'] ?? 'Organization created successfully',
           data: OrganizationResponse.fromJson(response.data),
+          statusCode: response.statusCode,
         );
       } else {
         print('❌ [AuthRepository] Organization creation failed: ${response.statusCode}');
-        return ApiResponse.error(message: 'Failed to create organization');
+        return ApiResponse.error(
+          message: response.data['message'] ?? 'Failed to create organization',
+          statusCode: response.statusCode,
+          errorData: response.data is Map<String, dynamic> ? response.data : null,
+        );
       }
+    } on DioException catch (e) {
+      print('🚨 [AuthRepository] DioException in createOrganization: ${e.message}');
+      
+      final statusCode = e.response?.statusCode ?? 500;
+      final responseData = e.response?.data;
+      String errorMessage = 'Failed to create organization';
+      
+      // Extract error message from response
+      if (responseData != null) {
+        if (responseData is Map<String, dynamic>) {
+          errorMessage = responseData['message'] ?? 
+                        responseData['error'] ?? 
+                        errorMessage;
+        } else if (responseData is String) {
+          errorMessage = responseData;
+        }
+      } else if (e.message != null) {
+        errorMessage = e.message!;
+      }
+      
+      print('🔴 [AuthRepository] Error message: $errorMessage');
+      
+      return ApiResponse.error(
+        message: errorMessage,
+        statusCode: statusCode,
+        errorData: responseData is Map<String, dynamic> ? responseData : null,
+      );
     } catch (e) {
       print('🚨 [AuthRepository] Exception in createOrganization: $e');
-      return ApiResponse.error(message: 'Failed to create organization: $e');
+      return ApiResponse.error(
+        message: 'Failed to create organization: $e',
+        statusCode: 500,
+      );
     }
   }
 

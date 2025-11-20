@@ -37,14 +37,43 @@ class OrganizationsApiService extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// Load organizations for current tenant (TENANT-FILTERED)
+  /// Load organizations for the logged-in user's parent org hierarchy.
   Future<({bool success, String? message})> loadOrganizations() async {
     print('🏢 [OrganizationsApiService] Loading organizations');
     _setLoading(true);
     _setError(null);
 
     try {
-      // Get current tenant ID from JWT token
+      final parentOrgId = await JwtTokenManager.getParentOrgId();
+
+      if (parentOrgId != null && parentOrgId.isNotEmpty) {
+        print('🌿 [OrganizationsApiService] Loading child orgs for parent: $parentOrgId');
+        print('🔗 [OrganizationsApiService] API Call: GET /organizations/$parentOrgId/children');
+        final childResponse = await _repository.getChildOrganizations(parentOrgId);
+
+        if (childResponse.success && childResponse.data != null) {
+          _organizations = childResponse.data!.organizations;
+          _currentOrganization = _organizations.isNotEmpty ? _organizations.first : null;
+          _childOrganizations[parentOrgId] = _organizations;
+          
+          print('📊 [OrganizationsApiService] Child orgs loaded: ${_organizations.length} organizations');
+          
+          // Log missing data statistics
+          _logMissingDataStats(_organizations, 'child organizations');
+          
+          // Run detailed tenant analysis for debugging
+          debugTenantDataPatterns();
+          
+          _setLoading(false);
+          return (success: true, message: childResponse.message);
+        } else {
+          _setError(childResponse.message ?? 'Failed to load child organizations');
+          _setLoading(false);
+          return (success: false, message: childResponse.message);
+        }
+      }
+
+      // Fallback: tenant-filtered fetch (legacy support)
       final tenantId = await JwtTokenManager.getTenantId();
       if (tenantId == null || tenantId.isEmpty) {
         _setError('No tenant ID found. Please login again.');
@@ -53,30 +82,30 @@ class OrganizationsApiService extends ChangeNotifier {
       }
 
       _currentTenantId = tenantId;
-      print('🔑 [OrganizationsApiService] Using tenant ID: $tenantId');
+      print('🔑 [OrganizationsApiService] Falling back to tenant ID: $tenantId');
+      print('🔗 [OrganizationsApiService] API Call: GET /tenants/$tenantId/organizations');
 
-      // Fetch tenant-filtered organizations
       final response = await _repository.getOrganizationsByTenant(tenantId);
-      
       if (response.success && response.data != null) {
         _organizations = response.data!.organizations;
-        
-        // Set current organization if we have one stored
+
         final currentOrgId = await JwtTokenManager.getOrgId();
         if (currentOrgId != null && currentOrgId.isNotEmpty) {
           try {
-            _currentOrganization = _organizations.firstWhere(
-              (org) => org.orgId == currentOrgId,
-            );
+            _currentOrganization = _organizations.firstWhere((org) => org.orgId == currentOrgId);
           } catch (e) {
-            // If stored org not found, use first organization
             _currentOrganization = _organizations.isNotEmpty ? _organizations.first : null;
           }
         } else if (_organizations.isNotEmpty) {
           _currentOrganization = _organizations.first;
         }
+
+        // Log missing data statistics
+        _logMissingDataStats(_organizations, 'tenant organizations');
         
-        print('✅ [OrganizationsApiService] Loaded ${_organizations.length} organizations');
+        // Run detailed tenant analysis for debugging
+        debugTenantDataPatterns();
+
         _setLoading(false);
         return (success: true, message: 'Organizations loaded successfully');
       } else {
@@ -128,17 +157,30 @@ class OrganizationsApiService extends ChangeNotifier {
 
   /// Create new organization
   Future<({bool success, String? message, OrganizationModel? organization})> createOrganization(CreateOrganizationRequest request) async {
-    print('📝 [OrganizationsApiService] Creating organization: ${request.name}');
+    print('🏢 [OrganizationsApiService] Creating organization: ${request.name}');
+    print('📦 [OrganizationsApiService] Request JSON: ${request.toJson()}');
     _setLoading(true);
     _setError(null);
 
     try {
       final response = await _repository.createOrganization(request);
       
+      print('📝 [OrganizationsApiService] API Response:');
+      print('   Success: ${response.success}');
+      print('   Message: ${response.message}');
+      print('   Data: ${response.data?.toJson()}');
+      
       if (response.success && response.data != null) {
-        print('✅ [OrganizationsApiService] Organization created successfully');
-        
         final newOrg = response.data!;
+        
+        // Log the returned organization data
+        print('🔍 [OrganizationsApiService] Created organization analysis:');
+        print('   Name: ${newOrg.name}');
+        print('   SuperAdmin: ${newOrg.superAdmin != null ? 'PRESENT (${newOrg.superAdmin!.name})' : 'NULL'}');
+        print('   CreatedBy: ${newOrg.createdBy?.isNotEmpty == true ? '"${newOrg.createdBy}"' : 'EMPTY/NULL'}');
+        print('   ParentOrgId: ${newOrg.parentOrgId}');
+        print('   TenantId: ${newOrg.tenantId}');
+        
         final parentOrgId = request.parentOrgId;
 
         if (parentOrgId == null || parentOrgId.isEmpty) {
@@ -280,5 +322,112 @@ class OrganizationsApiService extends ChangeNotifier {
     } finally {
       _childLoadingParents.remove(parentOrgId);
     }
+  }
+
+  /// Log statistics about missing superAdmin and createdBy data
+  void _logMissingDataStats(List<OrganizationModel> orgs, String source) {
+    if (orgs.isEmpty) return;
+
+    final missingSuper = orgs.where((org) => org.superAdmin == null).length;
+    final missingCreatedBy = orgs.where((org) => org.isMissingCreatedBy).length;
+    final incompleteAdmin = orgs.where((org) => !org.hasCompleteAdminData).length;
+    
+    // Get unique tenant IDs for analysis
+    final tenantIds = orgs.map((org) => org.tenantId).toSet();
+    
+    print('\n📊 [OrganizationsApiService] === DATA INTEGRITY REPORT ===');
+    print('📁 Source: $source');
+    print('🏢 Total organizations: ${orgs.length}');
+    print('🔑 Unique tenants: ${tenantIds.length} (${tenantIds.join(', ')})');
+    print('🚫 Missing superAdmin: $missingSuper/${orgs.length} (${(missingSuper / orgs.length * 100).toStringAsFixed(1)}%)');
+    print('🚫 Missing createdBy: $missingCreatedBy/${orgs.length} (${(missingCreatedBy / orgs.length * 100).toStringAsFixed(1)}%)');
+    print('⚠️ Incomplete admin data: $incompleteAdmin/${orgs.length} (${(incompleteAdmin / orgs.length * 100).toStringAsFixed(1)}%)');
+    
+    // Tenant-specific analysis
+    for (final tenantId in tenantIds) {
+      final tenantOrgs = orgs.where((org) => org.tenantId == tenantId).toList();
+      final tenantMissingSuper = tenantOrgs.where((org) => org.superAdmin == null).length;
+      final tenantMissingCreated = tenantOrgs.where((org) => org.isMissingCreatedBy).length;
+      
+      print('\n🏫 Tenant $tenantId:');
+      print('   Organizations: ${tenantOrgs.length}');
+      print('   Missing superAdmin: $tenantMissingSuper/${tenantOrgs.length}');
+      print('   Missing createdBy: $tenantMissingCreated/${tenantOrgs.length}');
+      
+      if (tenantMissingSuper > 0 || tenantMissingCreated > 0) {
+        print('   ❌ PROBLEMATIC TENANT - Missing data detected!');
+      } else {
+        print('   ✅ HEALTHY TENANT - All data complete');
+      }
+    }
+      
+    // List specific organizations with missing data
+    final problematicOrgs = orgs.where((org) => org.isMissingCreatedBy || org.superAdmin == null).toList();
+    if (problematicOrgs.isNotEmpty) {
+      print('\n🔍 Organizations with missing data:');
+      for (final org in problematicOrgs.take(8)) { // Show more for debugging
+        print('   - ${org.name} (${org.code}) [Tenant: ${org.tenantId.substring(0, 8)}...]:');
+        print('     SuperAdmin: ${org.superAdmin != null ? 'PRESENT' : 'NULL'}');
+        print('     CreatedBy: ${org.createdBy?.isNotEmpty == true ? '"${org.createdBy}"' : 'EMPTY/NULL'}');
+      }
+      if (problematicOrgs.length > 8) {
+        print('   ... and ${problematicOrgs.length - 8} more');
+      }
+    } else {
+      print('\n✅ All $source have complete admin data - NO ISSUES DETECTED');
+    }
+    
+    print('=== END DATA INTEGRITY REPORT ===\n');
+  }
+  
+  /// Debug method to analyze tenant-specific data patterns
+  void debugTenantDataPatterns() async {
+    if (_organizations.isEmpty) {
+      print('🔍 [DEBUG] No organizations loaded for analysis');
+      return;
+    }
+    
+    print('\n🔬 [DEBUG] === TENANT DATA PATTERN ANALYSIS ===');
+    
+    final tenantGroups = <String, List<OrganizationModel>>{};
+    for (final org in _organizations) {
+      tenantGroups.putIfAbsent(org.tenantId, () => []).add(org);
+    }
+    
+    for (final entry in tenantGroups.entries) {
+      final tenantId = entry.key;
+      final orgs = entry.value;
+      
+      print('\n🏫 Tenant: $tenantId');
+      print('   Organizations: ${orgs.length}');
+      
+      // Check creation patterns
+      final withSuperAdmin = orgs.where((org) => org.superAdmin != null).length;
+      final withCreatedBy = orgs.where((org) => org.createdBy?.isNotEmpty == true).length;
+      final creationDates = orgs.map((org) => org.createdAt.toIso8601String().substring(0, 10)).toSet();
+      
+      print('   SuperAdmin data: $withSuperAdmin/${orgs.length}');
+      print('   CreatedBy data: $withCreatedBy/${orgs.length}');
+      print('   Creation dates: ${creationDates.join(', ')}');
+      
+      // Sample organization details
+      if (orgs.isNotEmpty) {
+        final sample = orgs.first;
+        print('   Sample org: ${sample.name}');
+        print('   Sample superAdmin: ${sample.superAdmin?.name ?? 'NULL'}');
+        print('   Sample createdBy: "${sample.createdBy ?? 'NULL'}"');
+      }
+      
+      // Identify potential issues
+      if (withSuperAdmin == 0 && withCreatedBy == 0) {
+        print('   🔴 CRITICAL: All organizations missing admin data!');
+      } else if (withSuperAdmin < orgs.length || withCreatedBy < orgs.length) {
+        print('   🟡 WARNING: Partial admin data missing');
+      } else {
+        print('   🟢 HEALTHY: Complete admin data');
+      }
+    }
+    
+    print('=== END TENANT ANALYSIS ===\n');
   }
 }

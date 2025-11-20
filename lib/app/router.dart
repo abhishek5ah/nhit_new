@@ -3,7 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:ppv_components/app/layout.dart';
 import 'package:ppv_components/features/activity/screen/activity_main_page.dart';
 import 'package:ppv_components/features/activity/screen/login_history_main_page.dart';
-import 'package:ppv_components/features/auth/presentation/pages/create_organization_page.dart';
+import 'package:ppv_components/features/auth/presentation/pages/register_organization_page.dart';
 import 'package:ppv_components/features/auth/presentation/pages/register_super_admin_page.dart';
 import 'package:ppv_components/features/auth/presentation/pages/forgot_password_page.dart';
 import 'package:ppv_components/features/auth/presentation/pages/login_page.dart';
@@ -74,7 +74,7 @@ final GoRouter router = GoRouter(
     final authRoutes = {
       '/login',
       '/tenants',
-      '/create-organization',
+      '/register-organization',
       '/forgot-password',
       '/verify-email'
     };
@@ -119,8 +119,8 @@ final GoRouter router = GoRouter(
       builder: (context, state) => const RegisterSuperAdminPage(),
     ),
     GoRoute(
-      path: '/create-organization',
-      builder: (context, state) => const CreateOrganizationScreen(),
+      path: '/register-organization',
+      builder: (context, state) => const RegisterOrganizationPage(),
     ),
     GoRoute(
       path: '/login',

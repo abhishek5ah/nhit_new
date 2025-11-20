@@ -2,14 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:ppv_components/core/services/auth_service.dart';
 
-class CreateOrganizationPage extends StatefulWidget {
-  const CreateOrganizationPage({super.key});
+class RegisterOrganizationPage extends StatefulWidget {
+  const RegisterOrganizationPage({super.key});
 
   @override
-  State<CreateOrganizationPage> createState() => _CreateOrganizationPageState();
+  State<RegisterOrganizationPage> createState() => _RegisterOrganizationPageState();
 }
 
-class _CreateOrganizationPageState extends State<CreateOrganizationPage> {
+class _RegisterOrganizationPageState extends State<RegisterOrganizationPage> {
   final _formKey = GlobalKey<FormState>();
   final _orgNameController = TextEditingController();
   final _orgCodeController = TextEditingController();
@@ -19,6 +19,10 @@ class _CreateOrganizationPageState extends State<CreateOrganizationPage> {
   ];
 
   bool _isLoading = false;
+  
+  // Error states for specific fields
+  String? _orgCodeError;
+  String? _generalError;
 
   @override
   void initState() {
@@ -60,6 +64,12 @@ class _CreateOrganizationPageState extends State<CreateOrganizationPage> {
   }
 
   Future<void> _handleCreateOrganization() async {
+    // Clear previous errors
+    setState(() {
+      _orgCodeError = null;
+      _generalError = null;
+    });
+
     // Validate form first - return early if validation fails
     if (!_formKey.currentState!.validate()) {
       print('📝 [CreateOrgPage] Form validation failed');
@@ -112,13 +122,19 @@ class _CreateOrganizationPageState extends State<CreateOrganizationPage> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(result.message ?? 'Organization created successfully! Please login to continue.'),
-            backgroundColor: Theme.of(context).colorScheme.primary,
-            duration: const Duration(seconds: 2),
+            backgroundColor: Colors.green,
+            duration: const Duration(seconds: 3),
+            behavior: SnackBarBehavior.floating,
+            action: SnackBarAction(
+              label: 'OK',
+              textColor: Colors.white,
+              onPressed: () {},
+            ),
           ),
         );
 
-        print('⏰ [CreateOrgPage] Waiting 800ms for user feedback');
-        await Future.delayed(const Duration(milliseconds: 800));
+        print('⏰ [CreateOrgPage] Waiting 1200ms for user feedback');
+        await Future.delayed(const Duration(milliseconds: 1200));
 
         // Check mounted again before navigation
         if (!mounted) {
@@ -131,13 +147,62 @@ class _CreateOrganizationPageState extends State<CreateOrganizationPage> {
         context.go('/login');
       } else {
         print('❌ [CreateOrgPage] Organization creation failed, showing error message');
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(result.message ?? 'Organization creation failed'),
-            backgroundColor: Theme.of(context).colorScheme.error,
-            duration: const Duration(seconds: 4),
-          ),
-        );
+        
+        // Handle specific error types
+        if (result.isDuplicateCode) {
+          print('🔴 [CreateOrgPage] Duplicate organization code error');
+          setState(() {
+            _orgCodeError = result.message ?? 'This organization code already exists';
+          });
+          
+          // Revalidate form to show the error
+          _formKey.currentState!.validate();
+          
+          // Show SnackBar
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(result.message ?? 'Organization code already exists'),
+              backgroundColor: Colors.red,
+              duration: const Duration(seconds: 4),
+              behavior: SnackBarBehavior.floating,
+              action: SnackBarAction(
+                label: 'OK',
+                textColor: Colors.white,
+                onPressed: () {},
+              ),
+            ),
+          );
+        } else if (result.isDuplicateEmail) {
+          print('🔴 [CreateOrgPage] Duplicate email error (super admin)');
+          setState(() {
+            _generalError = result.message ?? 'This email is already registered';
+          });
+          
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(result.message ?? 'Email already exists'),
+              backgroundColor: Colors.red,
+              duration: const Duration(seconds: 4),
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+        } else {
+          // Generic error
+          print('🔴 [CreateOrgPage] General error: ${result.message}');
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(result.message ?? 'Organization creation failed'),
+              backgroundColor: Colors.red,
+              duration: const Duration(seconds: 4),
+              behavior: SnackBarBehavior.floating,
+              action: SnackBarAction(
+                label: 'Retry',
+                textColor: Colors.white,
+                onPressed: _handleCreateOrganization,
+              ),
+            ),
+          );
+        }
       }
     } catch (e, stackTrace) {
       print('🚨 [CreateOrgPage] ERROR in _handleCreateOrganization:');
@@ -154,8 +219,9 @@ class _CreateOrganizationPageState extends State<CreateOrganizationPage> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('An unexpected error occurred: $e'),
-            backgroundColor: Theme.of(context).colorScheme.error,
+            backgroundColor: Colors.red,
             duration: const Duration(seconds: 4),
+            behavior: SnackBarBehavior.floating,
           ),
         );
       }
@@ -233,6 +299,31 @@ class _CreateOrganizationPageState extends State<CreateOrganizationPage> {
 
                         const SizedBox(height: 8),
 
+                        // Show general error if exists
+                        if (_generalError != null) ...[
+                          Container(
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: Colors.red.withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(color: Colors.red),
+                            ),
+                            child: Row(
+                              children: [
+                                Icon(Icons.error_outline, color: Colors.red, size: 20),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: Text(
+                                    _generalError!,
+                                    style: TextStyle(color: Colors.red, fontSize: 13),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                        ],
+
                         // Organization Name Field
                         TextFormField(
                           controller: _orgNameController,
@@ -299,51 +390,64 @@ class _CreateOrganizationPageState extends State<CreateOrganizationPage> {
 
                         const SizedBox(height: 8),
 
-                        // Organization Code Field
+                        // Organization Code Field with error handling
                         TextFormField(
                           controller: _orgCodeController,
                           style: TextStyle(color: colorScheme.onSurface),
                           decoration: InputDecoration(
-                            hintText: 'Organization Code',
+                            hintText: 'Organization Code (e.g., NHIT, ERP)',
                             hintStyle: TextStyle(
                               color: colorScheme.onSurfaceVariant.withOpacity(0.5),
                             ),
                             prefixIcon: Icon(
                               Icons.code,
-                              color: colorScheme.onSurfaceVariant,
+                              color: _orgCodeError != null 
+                                  ? Colors.red 
+                                  : colorScheme.onSurfaceVariant,
                               size: 20,
                             ),
+                            suffixIcon: _orgCodeError != null
+                                ? Icon(Icons.error, color: Colors.red, size: 20)
+                                : null,
                             filled: true,
-                            fillColor: colorScheme.surfaceContainerHighest,
+                            fillColor: _orgCodeError != null
+                                ? Colors.red.withOpacity(0.05)
+                                : colorScheme.surfaceContainerHighest,
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),
                               borderSide: BorderSide(
-                                color: colorScheme.outline,
+                                color: _orgCodeError != null 
+                                    ? Colors.red 
+                                    : colorScheme.outline,
                               ),
                             ),
                             enabledBorder: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),
                               borderSide: BorderSide(
-                                color: colorScheme.outline,
+                                color: _orgCodeError != null 
+                                    ? Colors.red 
+                                    : colorScheme.outline,
                               ),
                             ),
                             focusedBorder: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),
                               borderSide: BorderSide(
-                                color: colorScheme.primary,
+                                color: _orgCodeError != null 
+                                    ? Colors.red 
+                                    : colorScheme.primary,
                                 width: 2,
                               ),
                             ),
                             errorBorder: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),
                               borderSide: BorderSide(
-                                color: colorScheme.error,
+                                color: Colors.red,
                               ),
                             ),
                             focusedErrorBorder: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),
                               borderSide: BorderSide(
-                                color: colorScheme.error,
+                                color: Colors.red,
                                 width: 2,
                               ),
                             ),
@@ -352,12 +456,24 @@ class _CreateOrganizationPageState extends State<CreateOrganizationPage> {
                               horizontal: 16,
                             ),
                           ),
+                          onChanged: (value) {
+                            // Clear error when user types
+                            if (_orgCodeError != null) {
+                              setState(() {
+                                _orgCodeError = null;
+                              });
+                            }
+                          },
                           validator: (value) {
                             if (value == null || value.isEmpty) {
                               return 'Please enter organization code';
                             }
                             if (!RegExp(r'^[A-Z0-9_]+$').hasMatch(value.toUpperCase())) {
                               return 'Code must be alphanumeric and uppercase';
+                            }
+                            // Show backend error if exists
+                            if (_orgCodeError != null) {
+                              return _orgCodeError;
                             }
                             return null;
                           },
@@ -483,45 +599,62 @@ class _CreateOrganizationPageState extends State<CreateOrganizationPage> {
                           final controller = entry.value;
                           return Padding(
                             padding: const EdgeInsets.only(bottom: 12),
-                            child: TextFormField(
-                              controller: controller,
-                              style: TextStyle(color: colorScheme.onSurface),
-                              decoration: InputDecoration(
-                                hintText: 'Project ${index + 1}',
-                                hintStyle: TextStyle(
-                                  color: colorScheme.onSurfaceVariant.withOpacity(0.5),
-                                ),
-                                prefixIcon: Icon(
-                                  Icons.work_outline,
-                                  color: colorScheme.onSurfaceVariant,
-                                  size: 20,
-                                ),
-                                filled: true,
-                                fillColor: colorScheme.surfaceContainerHighest,
-                                border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                  borderSide: BorderSide(
-                                    color: colorScheme.outline,
+                            child: Row(
+                              children: [
+                                Expanded(
+                                  child: TextFormField(
+                                    controller: controller,
+                                    style: TextStyle(color: colorScheme.onSurface),
+                                    decoration: InputDecoration(
+                                      hintText: 'Project ${index + 1}',
+                                      hintStyle: TextStyle(
+                                        color: colorScheme.onSurfaceVariant.withOpacity(0.5),
+                                      ),
+                                      prefixIcon: Icon(
+                                        Icons.work_outline,
+                                        color: colorScheme.onSurfaceVariant,
+                                        size: 20,
+                                      ),
+                                      filled: true,
+                                      fillColor: colorScheme.surfaceContainerHighest,
+                                      border: OutlineInputBorder(
+                                        borderRadius: BorderRadius.circular(12),
+                                        borderSide: BorderSide(
+                                          color: colorScheme.outline,
+                                        ),
+                                      ),
+                                      enabledBorder: OutlineInputBorder(
+                                        borderRadius: BorderRadius.circular(12),
+                                        borderSide: BorderSide(
+                                          color: colorScheme.outline,
+                                        ),
+                                      ),
+                                      focusedBorder: OutlineInputBorder(
+                                        borderRadius: BorderRadius.circular(12),
+                                        borderSide: BorderSide(
+                                          color: colorScheme.primary,
+                                          width: 2,
+                                        ),
+                                      ),
+                                      contentPadding: const EdgeInsets.symmetric(
+                                        vertical: 16,
+                                        horizontal: 16,
+                                      ),
+                                    ),
                                   ),
                                 ),
-                                enabledBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                  borderSide: BorderSide(
-                                    color: colorScheme.outline,
+                                if (_projectControllers.length > 1) ...[
+                                  const SizedBox(width: 8),
+                                  IconButton(
+                                    onPressed: () => _removeProjectField(index),
+                                    icon: Icon(
+                                      Icons.remove_circle_outline,
+                                      color: Colors.red,
+                                    ),
+                                    tooltip: 'Remove project',
                                   ),
-                                ),
-                                focusedBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                  borderSide: BorderSide(
-                                    color: colorScheme.primary,
-                                    width: 2,
-                                  ),
-                                ),
-                                contentPadding: const EdgeInsets.symmetric(
-                                  vertical: 16,
-                                  horizontal: 16,
-                                ),
-                              ),
+                                ],
+                              ],
                             ),
                           );
                         }).toList(),
@@ -625,17 +758,32 @@ class _CreateOrganizationPageState extends State<CreateOrganizationPage> {
                               ),
                               elevation: 2,
                               shadowColor: colorScheme.primary.withOpacity(0.3),
+                              disabledBackgroundColor: colorScheme.primary.withOpacity(0.5),
                             ),
                             child: _isLoading
-                                ? SizedBox(
-                                    width: 20,
-                                    height: 20,
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2,
-                                      valueColor: AlwaysStoppedAnimation<Color>(
-                                        colorScheme.onPrimary,
+                                ? Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      SizedBox(
+                                        width: 20,
+                                        height: 20,
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 2,
+                                          valueColor: AlwaysStoppedAnimation<Color>(
+                                            colorScheme.onPrimary,
+                                          ),
+                                        ),
                                       ),
-                                    ),
+                                      const SizedBox(width: 12),
+                                      Text(
+                                        'Creating...',
+                                        style: TextStyle(
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.w600,
+                                          color: colorScheme.onPrimary,
+                                        ),
+                                      ),
+                                    ],
                                   )
                                 : const Text(
                                     'Create Organization',
@@ -654,7 +802,7 @@ class _CreateOrganizationPageState extends State<CreateOrganizationPage> {
                           width: double.infinity,
                           height: 56,
                           child: OutlinedButton(
-                            onPressed: _handleBack,
+                            onPressed: _isLoading ? null : _handleBack,
                             style: OutlinedButton.styleFrom(
                               side: BorderSide(
                                 color: colorScheme.outline,

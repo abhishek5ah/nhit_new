@@ -14,6 +14,8 @@ class OrganizationModel {
   final String status; // "activated" or "deactivated"
   final DateTime createdAt;
   final DateTime updatedAt;
+  final String? createdBy; 
+
 
   OrganizationModel({
     required this.orgId,
@@ -29,9 +31,32 @@ class OrganizationModel {
     required this.status,
     required this.createdAt,
     required this.updatedAt,
+    this.createdBy,
   });
 
   factory OrganizationModel.fromJson(Map<String, dynamic> json) {
+    // Enhanced debugging for API response data
+    final hasSuperAdmin = json['superAdmin'] != null;
+    final hasCreatedBy = json['createdBy'] != null && json['createdBy'].toString().trim().isNotEmpty;
+    final orgName = json['name'] ?? 'Unknown';
+    final tenantId = json['tenantId'] ?? 'Unknown';
+    
+    // Always log organization data for debugging
+    print('🔍 [OrganizationModel] Processing org: $orgName');
+    print('   TenantId: $tenantId');
+    print('   SuperAdmin: ${hasSuperAdmin ? 'PRESENT' : 'NULL'} ${hasSuperAdmin ? '(${json['superAdmin']})' : ''}');
+    print('   CreatedBy: ${hasCreatedBy ? 'PRESENT' : 'EMPTY/NULL'} ("${json['createdBy'] ?? 'null'}")');
+    
+    if (!hasSuperAdmin || !hasCreatedBy) {
+      print('❌ [OrganizationModel] DATA ISSUE for $orgName:');
+      print('   - SuperAdmin: ${hasSuperAdmin ? 'OK' : 'MISSING/NULL'}');
+      print('   - CreatedBy: ${hasCreatedBy ? 'OK' : 'EMPTY/NULL'}');
+      print('   - Raw JSON superAdmin: ${json['superAdmin']}');
+      print('   - Raw JSON createdBy: "${json['createdBy']}"');
+    } else {
+      print('✅ [OrganizationModel] Complete data for $orgName');
+    }
+
     return OrganizationModel(
       orgId: json['orgId'] ?? '',
       tenantId: json['tenantId'] ?? '',
@@ -50,6 +75,7 @@ class OrganizationModel {
       status: json['status'] ?? 'activated',
       createdAt: DateTime.parse(json['createdAt'] ?? DateTime.now().toIso8601String()),
       updatedAt: DateTime.parse(json['updatedAt'] ?? DateTime.now().toIso8601String()),
+      createdBy: json['createdBy']?.toString().trim(),
     );
   }
 
@@ -72,6 +98,53 @@ class OrganizationModel {
   }
 
   bool get isActive => status.toLowerCase() == 'activated';
+
+  /// Get display name for who created this organization with fallbacks
+  String get createdByDisplay {
+    // Priority order for fallback:
+    // 1. createdBy field (if not null/empty)
+    // 2. superAdmin name (if available)
+    // 3. 'System' as final fallback
+    
+    if (createdBy != null && createdBy!.trim().isNotEmpty) {
+      return createdBy!.trim();
+    }
+    
+    if (superAdmin != null && superAdmin!.name.trim().isNotEmpty) {
+      return superAdmin!.name.trim();
+    }
+    
+    return 'System';
+  }
+
+  /// Get super admin display name with fallback
+  String get superAdminDisplay {
+    if (superAdmin != null && superAdmin!.name.trim().isNotEmpty) {
+      return superAdmin!.name.trim();
+    }
+    return 'Not Available';
+  }
+
+  /// Get super admin email with fallback
+  String get superAdminEmailDisplay {
+    if (superAdmin != null && superAdmin!.email.trim().isNotEmpty) {
+      return superAdmin!.email.trim();
+    }
+    return 'Not Available';
+  }
+
+  /// Check if this organization has complete admin data
+  bool get hasCompleteAdminData {
+    return superAdmin != null && 
+           superAdmin!.name.trim().isNotEmpty && 
+           superAdmin!.email.trim().isNotEmpty;
+  }
+
+  /// Check if createdBy data is missing
+  bool get isMissingCreatedBy {
+    return (createdBy == null || createdBy!.trim().isEmpty) && 
+           (superAdmin == null || superAdmin!.name.trim().isEmpty);
+  }
 }
 
 class SuperAdminInfo {
@@ -149,30 +222,36 @@ class PaginationInfo {
 
 // Request models
 class CreateOrganizationRequest {
+  final String? tenantId;
   final String? parentOrgId;
   final String name;
   final String code;
   final String description;
   final SuperAdminRequest superAdmin;
   final List<String> initialProjects;
+  final String? createdBy;
 
   CreateOrganizationRequest({
+    this.tenantId,
     this.parentOrgId,
     required this.name,
     required this.code,
     required this.description,
     required this.superAdmin,
     required this.initialProjects,
+    this.createdBy,
   });
 
   Map<String, dynamic> toJson() {
     return {
+      if (tenantId != null && tenantId!.isNotEmpty) 'tenantId': tenantId,
       if (parentOrgId != null && parentOrgId!.isNotEmpty) 'parentOrgId': parentOrgId,
       'name': name,
       'code': code,
       'description': description,
       'super_admin': superAdmin.toJson(),
       'initial_projects': initialProjects,
+      if (createdBy != null && createdBy!.isNotEmpty) 'createdBy': createdBy,
     };
   }
 }
@@ -192,7 +271,7 @@ class SuperAdminRequest {
     return {
       'name': name,
       'email': email,
-      'password': password,
+      if (password.isNotEmpty) 'password': password,
     };
   }
 }

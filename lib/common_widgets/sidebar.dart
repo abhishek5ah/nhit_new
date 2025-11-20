@@ -73,7 +73,6 @@ class _SidebarState extends State<Sidebar> with SingleTickerProviderStateMixin {
         ]),
       ],
     ),
-    // The rest of your categories remain unchanged
     _SidebarCategory(
       heading: "MANAGEMENT",
       items: [

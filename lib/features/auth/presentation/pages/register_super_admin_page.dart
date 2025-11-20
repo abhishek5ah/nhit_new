@@ -83,8 +83,8 @@ class _RegisterSuperAdminPageState extends State<RegisterSuperAdminPage> {
           return;
         }
         
-        print('🧭 [RegisterPage] Navigating to /create-organization');
-        context.go('/create-organization');
+        print('🧭 [RegisterPage] Navigating to /register-organization');
+        context.go('/register-organization');
       } else {
         print('❌ [RegisterPage] Registration failed, showing error message');
         ScaffoldMessenger.of(context).showSnackBar(
@@ -127,7 +127,7 @@ class _RegisterSuperAdminPageState extends State<RegisterSuperAdminPage> {
 
     if (result.success) {
       if (mounted) {
-        context.go('/create-organization');
+        context.go('/register-organization');
       }
     } else {
       if (mounted) {

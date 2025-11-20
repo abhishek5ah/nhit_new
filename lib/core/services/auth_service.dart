@@ -15,6 +15,73 @@ import 'package:ppv_components/features/auth/data/models/user_model.dart';
 import 'package:ppv_components/features/auth/data/models/verify_email_request.dart';
 import 'package:ppv_components/features/auth/data/repositories/auth_repository.dart';
 
+// Enhanced result classes with error details
+class AuthResult {
+  final bool success;
+  final String? message;
+  final Map<String, dynamic>? errorData;
+  final ErrorType? errorType;
+
+  AuthResult({
+    required this.success,
+    this.message,
+    this.errorData,
+    this.errorType,
+  });
+
+  bool get isDuplicateEmail => errorType == ErrorType.duplicateEmail;
+  bool get isDuplicateCode => errorType == ErrorType.duplicateCode;
+  bool get isDuplicateTenant => errorType == ErrorType.duplicateTenant;
+  bool get isValidationError => errorType == ErrorType.validation;
+  bool get isServerError => errorType == ErrorType.serverError;
+}
+
+class TenantResult {
+  final bool success;
+  final String? message;
+  final TenantResponse? data;
+  final Map<String, dynamic>? errorData;
+  final ErrorType? errorType;
+
+  TenantResult({
+    required this.success,
+    this.message,
+    this.data,
+    this.errorData,
+    this.errorType,
+  });
+
+  bool get isDuplicateEmail => errorType == ErrorType.duplicateEmail;
+}
+
+class OrganizationResult {
+  final bool success;
+  final String? message;
+  final OrganizationResponse? data;
+  final Map<String, dynamic>? errorData;
+  final ErrorType? errorType;
+
+  OrganizationResult({
+    required this.success,
+    this.message,
+    this.data,
+    this.errorData,
+    this.errorType,
+  });
+
+  bool get isDuplicateCode => errorType == ErrorType.duplicateCode;
+  bool get isDuplicateEmail => errorType == ErrorType.duplicateEmail;
+}
+
+enum ErrorType {
+  duplicateEmail,
+  duplicateCode,
+  duplicateTenant,
+  validation,
+  serverError,
+  networkError,
+  unknown,
+}
 
 class AuthService extends ChangeNotifier {
   final AuthRepository _authRepository = AuthRepository();
@@ -31,7 +98,6 @@ class AuthService extends ChangeNotifier {
   String? _currentUserPassword;
   OrganizationResponse? _organizationData;
 
-
   // Getters
   bool get isAuthenticated => _isAuthenticated;
   UserModel? get currentUser => _currentUser;
@@ -43,7 +109,6 @@ class AuthService extends ChangeNotifier {
   String? get currentUserPassword => _currentUserPassword;
   OrganizationResponse? get organizationData => _organizationData;
 
-
   // Initialize auth service
   Future<void> initialize() async {
     _setLoading(true);
@@ -51,22 +116,104 @@ class AuthService extends ChangeNotifier {
     _setLoading(false);
   }
 
-
   // Set loading state
   void _setLoading(bool loading) {
     _isLoading = loading;
     notifyListeners();
   }
 
+  // Parse error message and determine error type
+  ({String message, ErrorType errorType}) _parseError(dynamic error, int? statusCode) {
+    String errorMessage = '';
+    ErrorType errorType = ErrorType.unknown;
+
+    try {
+      // Handle different error response formats
+      if (error is Map<String, dynamic>) {
+        errorMessage = error['message']?.toString() ?? 
+                      error['error']?.toString() ?? 
+                      error['details']?.toString() ?? 
+                      'An error occurred';
+      } else if (error is String) {
+        errorMessage = error;
+      } else {
+        errorMessage = error.toString();
+      }
+
+      final lowerMessage = errorMessage.toLowerCase();
+
+      // Check for duplicate key errors
+      if (lowerMessage.contains('duplicate') || lowerMessage.contains('already exists')) {
+        if (lowerMessage.contains('email')) {
+          errorType = ErrorType.duplicateEmail;
+          errorMessage = 'This email is already registered. Please use a different email or try logging in.';
+        } else if (lowerMessage.contains('code') || lowerMessage.contains('organization')) {
+          errorType = ErrorType.duplicateCode;
+          errorMessage = 'This organization code already exists. Please use a different code.';
+        } else if (lowerMessage.contains('tenant')) {
+          errorType = ErrorType.duplicateTenant;
+          errorMessage = 'This tenant already exists.';
+        } else {
+          errorMessage = 'This information already exists in the system. Please use different values.';
+        }
+      }
+      // MongoDB duplicate key error (E11000)
+      else if (lowerMessage.contains('e11000') || lowerMessage.contains('duplicate key')) {
+        if (lowerMessage.contains('email')) {
+          errorType = ErrorType.duplicateEmail;
+          errorMessage = 'This email is already registered. Please use a different email.';
+        } else if (lowerMessage.contains('code')) {
+          errorType = ErrorType.duplicateCode;
+          errorMessage = 'This organization code already exists. Please use a different code.';
+        } else {
+          errorMessage = 'This information already exists in the system.';
+        }
+      }
+      // PostgreSQL unique constraint
+      else if (lowerMessage.contains('unique constraint') || lowerMessage.contains('unique_violation')) {
+        if (lowerMessage.contains('email')) {
+          errorType = ErrorType.duplicateEmail;
+          errorMessage = 'This email is already registered.';
+        } else if (lowerMessage.contains('code')) {
+          errorType = ErrorType.duplicateCode;
+          errorMessage = 'This organization code already exists.';
+        } else {
+          errorMessage = 'This information already exists.';
+        }
+      }
+      // Validation errors
+      else if (statusCode == 400 || lowerMessage.contains('validation') || lowerMessage.contains('invalid')) {
+        errorType = ErrorType.validation;
+      }
+      // Server errors
+      else if (statusCode != null && statusCode >= 500) {
+        errorType = ErrorType.serverError;
+        if (!lowerMessage.contains('server')) {
+          errorMessage = 'Server error: $errorMessage';
+        }
+      }
+      // Network errors
+      else if (lowerMessage.contains('network') || lowerMessage.contains('connection')) {
+        errorType = ErrorType.networkError;
+        errorMessage = 'Network error. Please check your connection and try again.';
+      }
+
+    } catch (e) {
+      print('🚨 [AuthService] Error parsing error message: $e');
+      errorMessage = 'An unexpected error occurred';
+      errorType = ErrorType.unknown;
+    }
+
+    return (message: errorMessage, errorType: errorType);
+  }
 
   // Check authentication status
-  Future<({bool success, String? message})> checkAuthStatus() async {
+  Future<AuthResult> checkAuthStatus() async {
     try {
       final isAuth = await JwtTokenManager.isAuthenticated();
       final isEmailVerif = await JwtTokenManager.isEmailVerified();
       
       if (isAuth) {
-        // Try to get user info from token
         final payload = await JwtTokenManager.getTokenPayload();
         if (payload != null) {
           final email = await JwtTokenManager.getEmail();
@@ -89,19 +236,22 @@ class AuthService extends ChangeNotifier {
       _emailVerified = isEmailVerif;
       notifyListeners();
       
-      return (success: true, message: null);
+      return AuthResult(success: true);
     } catch (e) {
       _isAuthenticated = false;
       _emailVerified = false;
       _currentUser = null;
       notifyListeners();
-      return (success: false, message: 'Failed to check auth status: $e');
+      return AuthResult(
+        success: false,
+        message: 'Failed to check auth status: $e',
+        errorType: ErrorType.unknown,
+      );
     }
   }
 
-
-  // NEW STEP 1: Create Tenant (Replaces registerSuperAdmin)
-  Future<({bool success, String? message, TenantResponse? data})> createTenant(String name, String email, String password) async {
+  // STEP 1: Create Tenant with enhanced error handling
+  Future<TenantResult> createTenant(String name, String email, String password) async {
     print('🚀 [AuthService] Starting createTenant for email: $email, name: $name');
     _setLoading(true);
     
@@ -116,69 +266,79 @@ class AuthService extends ChangeNotifier {
       print('📡 [AuthService] Calling auth repository createTenant');
       final response = await _authRepository.createTenant(request);
       
-      print('📥 [AuthService] Repository response - Success: ${response.success}, Data exists: ${response.data != null}');
+      print('📥 [AuthService] Repository response - Success: ${response.success}');
+      
       if (response.success && response.data != null) {
-        print('✅ [AuthService] Tenant creation successful, processing response data');
+        print('✅ [AuthService] Tenant creation successful');
         
-        // Store tenant data for Step 2
         _currentTenantId = response.data!.tenantId;
         _currentUserName = name;
         _currentUserEmail = email;
         _currentUserPassword = password;
-        print('💾 [AuthService] Stored tenant data - ID: ${response.data!.tenantId}, Name: $name, Email: $email');
         
-        // IMPORTANT: Remember tenant ID for this email immediately
         await saveTenantIdForEmail(email, response.data!.tenantId);
-        print('📝 [AuthService] Permanently saved tenant ID mapping for email: $email');
+        print('📝 [AuthService] Saved tenant ID mapping for email: $email');
         
-        print('🔔 [AuthService] Calling notifyListeners to update UI');
         notifyListeners();
         print('🎉 [AuthService] Tenant creation completed successfully');
-        return (success: true, message: response.message ?? 'Tenant created successfully', data: response.data);
+        
+        return TenantResult(
+          success: true,
+          message: response.message ?? 'Tenant created successfully',
+          data: response.data,
+        );
       } else {
         print('❌ [AuthService] Tenant creation failed - Message: ${response.message}');
-        return (success: false, message: response.message ?? 'Tenant creation failed', data: null);
+        
+        // Parse error
+        final errorInfo = _parseError(response.message, response.statusCode);
+        
+        return TenantResult(
+          success: false,
+          message: errorInfo.message,
+          errorType: errorInfo.errorType,
+          errorData: response.errorData,
+        );
       }
     } catch (e, stackTrace) {
       print('🚨 [AuthService] ERROR in createTenant:');
       print('   Error: $e');
       print('   StackTrace: $stackTrace');
-      return (success: false, message: 'Tenant creation failed: $e', data: null);
+      
+      final errorInfo = _parseError(e, null);
+      
+      return TenantResult(
+        success: false,
+        message: errorInfo.message,
+        errorType: errorInfo.errorType,
+      );
     } finally {
       print('🏁 [AuthService] Setting loading to false');
       _setLoading(false);
     }
   }
 
-
-  // LEGACY STEP 1: Super Admin Registration (DEPRECATED - Use createTenant instead)
-  @deprecated
-  Future<({bool success, String? message})> registerSuperAdmin(String name, String email, String password) async {
-    print('⚠️  [AuthService] DEPRECATED: registerSuperAdmin called. Use createTenant instead.');
-    final result = await createTenant(name, email, password);
-    return (success: result.success, message: result.message);
-  }
-
-
-  // STEP 2: Create Organization (Updated for new flow)
-  Future<({bool success, String? message, OrganizationResponse? data})> createOrganization({
+  // STEP 2: Create Organization with enhanced error handling
+  Future<OrganizationResult> createOrganization({
     required String organizationName,
     required String organizationCode,
     required String description,
     List<String> initialProjects = const [],
   }) async {
-    print('🏢 [AuthService] Starting createOrganization for: $organizationName (Code: $organizationCode)');
+    print('🏢 [AuthService] Starting createOrganization for: $organizationName');
     _setLoading(true);
     
     try {
-      // Check if temporary data from Step 1 is available
       if (_currentTenantId == null || _currentUserEmail == null || _currentUserPassword == null || _currentUserName == null) {
         print('❌ [AuthService] Session expired - tenant data not found');
-        return (success: false, message: 'Session expired. Please start registration again.', data: null);
+        return OrganizationResult(
+          success: false,
+          message: 'Session expired. Please start registration again.',
+          errorType: ErrorType.validation,
+        );
       }
       
-      print('✅ [AuthService] Session valid - using tenant ID: $_currentTenantId, email: $_currentUserEmail');
-      print('🔄 [AuthService] Creating CreateOrganizationRequest object');
+      print('✅ [AuthService] Session valid - tenant ID: $_currentTenantId');
       
       final request = OrganizationRequest(
         tenantId: _currentTenantId!,
@@ -196,38 +356,48 @@ class AuthService extends ChangeNotifier {
       print('📡 [AuthService] Calling auth repository createOrganization');
       final response = await _authRepository.createOrganization(request);
       
-      print('📥 [AuthService] Organization response - Success: ${response.success}, Data exists: ${response.data != null}');
       if (response.success && response.data != null) {
-        print('✅ [AuthService] Organization creation successful, processing response');
+        print('✅ [AuthService] Organization creation successful');
         
-        // Store organization data
         _organizationData = response.data!;
-        print('🏛️ [AuthService] Stored organization data: ${response.data!.organization.name}');
-        
-        // NOTE: Do NOT set authenticated here - user still needs to login (Step 3)
-        print('ℹ️  [AuthService] Organization created, but user still needs to login for JWT tokens');
-        
-        print('🔔 [AuthService] Calling notifyListeners to update UI');
         notifyListeners();
-        print('🎉 [AuthService] Organization creation completed successfully');
-        return (success: true, message: response.data!.message, data: response.data);
+        
+        return OrganizationResult(
+          success: true,
+          message: response.data!.message,
+          data: response.data,
+        );
       } else {
-        print('❌ [AuthService] Organization creation failed - Message: ${response.message}');
-        return (success: false, message: response.message ?? 'Organization creation failed', data: null);
+        print('❌ [AuthService] Organization creation failed: ${response.message}');
+        
+        final errorInfo = _parseError(response.message, response.statusCode);
+        
+        return OrganizationResult(
+          success: false,
+          message: errorInfo.message,
+          errorType: errorInfo.errorType,
+          errorData: response.errorData,
+        );
       }
     } catch (e, stackTrace) {
       print('🚨 [AuthService] ERROR in createOrganization:');
       print('   Error: $e');
       print('   StackTrace: $stackTrace');
-      return (success: false, message: 'Organization creation failed: $e', data: null);
+      
+      final errorInfo = _parseError(e, null);
+      
+      return OrganizationResult(
+        success: false,
+        message: errorInfo.message,
+        errorType: errorInfo.errorType,
+      );
     } finally {
-      print('🏁 [AuthService] Setting loading to false');
       _setLoading(false);
     }
   }
 
-  // Create Organization from Logged-in State (NEW METHOD)
-  Future<({bool success, String? message, OrganizationResponse? data})> createOrganizationFromLoggedInState({
+  // Create Organization from Logged-in State with enhanced error handling
+  Future<OrganizationResult> createOrganizationFromLoggedInState({
     required String organizationName,
     required String organizationCode,
     required String description,
@@ -240,15 +410,17 @@ class AuthService extends ChangeNotifier {
     _setLoading(true);
     
     try {
-      // Get current user's tenant ID from JWT token
       final tenantId = await JwtTokenManager.getTenantId();
       if (tenantId == null || tenantId.isEmpty) {
         print('❌ [AuthService] No tenant ID found in JWT token');
-        return (success: false, message: 'User not properly authenticated. Please login again.', data: null);
+        return OrganizationResult(
+          success: false,
+          message: 'User not properly authenticated. Please login again.',
+          errorType: ErrorType.validation,
+        );
       }
       
       print('✅ [AuthService] Using tenant ID from JWT: $tenantId');
-      print('🔄 [AuthService] Creating OrganizationRequest for logged-in user');
       
       final request = OrganizationRequest(
         tenantId: tenantId,
@@ -266,30 +438,45 @@ class AuthService extends ChangeNotifier {
       print('📡 [AuthService] Calling auth repository createOrganization');
       final response = await _authRepository.createOrganization(request);
       
-      print('📥 [AuthService] Organization response - Success: ${response.success}');
       if (response.success && response.data != null) {
-        print('✅ [AuthService] Organization created successfully: ${response.data!.organization.name}');
+        print('✅ [AuthService] Organization created successfully');
         
-        // Immediately save tenant ID for this email (for future logins)
         await saveTenantIdForEmail(superAdminEmail, tenantId);
-        print('📝 [AuthService] Saved tenant ID mapping for super admin email');
         
-        return (success: true, message: response.data!.message, data: response.data);
+        return OrganizationResult(
+          success: true,
+          message: response.data!.message,
+          data: response.data,
+        );
       } else {
         print('❌ [AuthService] Organization creation failed: ${response.message}');
-        return (success: false, message: response.message ?? 'Failed to create organization', data: null);
+        
+        final errorInfo = _parseError(response.message, response.statusCode);
+        
+        return OrganizationResult(
+          success: false,
+          message: errorInfo.message,
+          errorType: errorInfo.errorType,
+          errorData: response.errorData,
+        );
       }
     } catch (e) {
       print('🚨 [AuthService] Exception in createOrganizationFromLoggedInState: $e');
-      return (success: false, message: 'Failed to create organization: $e', data: null);
+      
+      final errorInfo = _parseError(e, null);
+      
+      return OrganizationResult(
+        success: false,
+        message: errorInfo.message,
+        errorType: errorInfo.errorType,
+      );
     } finally {
       _setLoading(false);
     }
   }
 
-
   // Register new user (old method - kept for compatibility)
-  Future<({bool success, String? message})> register(RegisterRequest request) async {
+  Future<AuthResult> register(RegisterRequest request) async {
     _setLoading(true);
     
     try {
@@ -297,82 +484,78 @@ class AuthService extends ChangeNotifier {
       
       if (response.success && response.data != null) {
         await _saveAuthData(response.data!);
-        return (success: true, message: response.message);
+        return AuthResult(success: true, message: response.message);
       } else {
-        return (success: false, message: response.message);
+        final errorInfo = _parseError(response.message, response.statusCode);
+        return AuthResult(
+          success: false,
+          message: errorInfo.message,
+          errorType: errorInfo.errorType,
+        );
       }
     } catch (e) {
-      return (success: false, message: 'Registration failed: $e');
+      final errorInfo = _parseError(e, null);
+      return AuthResult(
+        success: false,
+        message: errorInfo.message,
+        errorType: errorInfo.errorType,
+      );
     } finally {
       _setLoading(false);
     }
   }
 
-
-  // STEP 3: Login user (supports global login with email + password only)
-  Future<({bool success, String? message})> login(String email, String password, {String? tenantId}) async {
+  // STEP 3: Login user
+  Future<AuthResult> login(String email, String password, {String? tenantId}) async {
     print('🔑 [AuthService] Starting login for email: $email');
-    if (tenantId != null) {
-      print('🏢 [AuthService] Using tenant-specific login with tenantId: $tenantId');
-    } else {
-      print('🌐 [AuthService] Using global login (email + password only)');
-    }
     _setLoading(true);
     
     try {
-      print('🔄 [AuthService] Creating LoginRequest object');
       final request = LoginRequest(
-        tenantId: tenantId, // Optional - backend will lookup if null
-        login: email, // Using email as login
+        tenantId: tenantId,
+        login: email,
         password: password,
       );
       
       print('📡 [AuthService] Calling auth repository login');
       final response = await _authRepository.login(request);
       
-      print('📥 [AuthService] Login response - Success: ${response.success}, Data exists: ${response.data != null}');
       if (response.success && response.data != null) {
-        print('✅ [AuthService] Login successful, processing response data');
+        print('✅ [AuthService] Login successful');
         
-        final loginData = response.data!;
-        print('🔑 [AuthService] Login data - Token present: ${loginData.token.isNotEmpty}');
-        print('👤 [AuthService] User ID: ${loginData.userId}');
-        print('🏢 [AuthService] Tenant ID: ${loginData.tenantId}');
-        print('🏛️ [AuthService] Org ID: ${loginData.orgId}');
-        
-        print('💾 [AuthService] Saving authentication data');
-        await _saveLoginData(loginData);
-        
-        // Remember tenant ID for this email for future logins (use the one from response)
-        await saveTenantIdForEmail(email, loginData.tenantId);
-        print('📝 [AuthService] Remembered tenant ID (${loginData.tenantId}) for email: $email');
-        
-        // Clear stored tenant data after successful login
+        await _saveLoginData(response.data!);
+        await saveTenantIdForEmail(email, response.data!.tenantId);
         clearStoredData();
         
-        print('🎉 [AuthService] Login completed successfully');
-        return (success: true, message: 'Login successful');
+        return AuthResult(success: true, message: 'Login successful');
       } else {
-        print('❌ [AuthService] Login failed - Message: ${response.message}');
-        return (success: false, message: response.message ?? 'Login failed');
+        print('❌ [AuthService] Login failed: ${response.message}');
+        
+        final errorInfo = _parseError(response.message, response.statusCode);
+        
+        return AuthResult(
+          success: false,
+          message: errorInfo.message,
+          errorType: errorInfo.errorType,
+        );
       }
     } catch (e, stackTrace) {
-      print('🚨 [AuthService] ERROR in login:');
-      print('   Error: $e');
-      print('   StackTrace: $stackTrace');
-      return (success: false, message: 'Login failed: $e');
+      print('🚨 [AuthService] ERROR in login: $e');
+      
+      final errorInfo = _parseError(e, null);
+      
+      return AuthResult(
+        success: false,
+        message: errorInfo.message,
+        errorType: errorInfo.errorType,
+      );
     } finally {
-      print('🏁 [AuthService] Setting loading to false');
       _setLoading(false);
     }
   }
 
-
   // Login with SSO
-  Future<({bool success, String? message})> loginWithSSO(
-    String provider,
-    String idToken,
-  ) async {
+  Future<AuthResult> loginWithSSO(String provider, String idToken) async {
     _setLoading(true);
     
     try {
@@ -380,20 +563,29 @@ class AuthService extends ChangeNotifier {
       
       if (response.success && response.data != null) {
         await _saveAuthData(response.data!);
-        return (success: true, message: response.message);
+        return AuthResult(success: true, message: response.message);
       } else {
-        return (success: false, message: response.message);
+        final errorInfo = _parseError(response.message, response.statusCode);
+        return AuthResult(
+          success: false,
+          message: errorInfo.message,
+          errorType: errorInfo.errorType,
+        );
       }
     } catch (e) {
-      return (success: false, message: 'SSO login failed: $e');
+      final errorInfo = _parseError(e, null);
+      return AuthResult(
+        success: false,
+        message: errorInfo.message,
+        errorType: errorInfo.errorType,
+      );
     } finally {
       _setLoading(false);
     }
   }
 
-
   // Verify email
-  Future<({bool success, String? message})> verifyEmail(String token) async {
+  Future<AuthResult> verifyEmail(String token) async {
     _setLoading(true);
     
     try {
@@ -407,51 +599,88 @@ class AuthService extends ChangeNotifier {
           _currentUser = _currentUser!.copyWith(emailVerified: true);
         }
         notifyListeners();
-        return (success: true, message: response.message);
+        return AuthResult(success: true, message: response.message);
       } else {
-        return (success: false, message: response.message);
+        final errorInfo = _parseError(response.message, response.statusCode);
+        return AuthResult(
+          success: false,
+          message: errorInfo.message,
+          errorType: errorInfo.errorType,
+        );
       }
     } catch (e) {
-      return (success: false, message: 'Email verification failed: $e');
+      final errorInfo = _parseError(e, null);
+      return AuthResult(
+        success: false,
+        message: errorInfo.message,
+        errorType: errorInfo.errorType,
+      );
     } finally {
       _setLoading(false);
     }
   }
 
-
   // Send verification email
-  Future<({bool success, String? message})> sendVerificationEmail() async {
+  Future<AuthResult> sendVerificationEmail() async {
     _setLoading(true);
     
     try {
       final response = await _authRepository.sendVerificationEmail();
-      return (success: response.success, message: response.message);
+      
+      if (response.success) {
+        return AuthResult(success: true, message: response.message);
+      } else {
+        final errorInfo = _parseError(response.message, response.statusCode);
+        return AuthResult(
+          success: false,
+          message: errorInfo.message,
+          errorType: errorInfo.errorType,
+        );
+      }
     } catch (e) {
-      return (success: false, message: 'Failed to send verification email: $e');
+      final errorInfo = _parseError(e, null);
+      return AuthResult(
+        success: false,
+        message: errorInfo.message,
+        errorType: errorInfo.errorType,
+      );
     } finally {
       _setLoading(false);
     }
   }
 
-
   // Forgot password
-  Future<({bool success, String? message})> forgotPassword(String email) async {
+  Future<AuthResult> forgotPassword(String email) async {
     _setLoading(true);
     
     try {
       final request = ForgotPasswordRequest(email: email);
       final response = await _authRepository.forgotPassword(request);
-      return (success: response.success, message: response.message);
+      
+      if (response.success) {
+        return AuthResult(success: true, message: response.message);
+      } else {
+        final errorInfo = _parseError(response.message, response.statusCode);
+        return AuthResult(
+          success: false,
+          message: errorInfo.message,
+          errorType: errorInfo.errorType,
+        );
+      }
     } catch (e) {
-      return (success: false, message: 'Failed to send reset email: $e');
+      final errorInfo = _parseError(e, null);
+      return AuthResult(
+        success: false,
+        message: errorInfo.message,
+        errorType: errorInfo.errorType,
+      );
     } finally {
       _setLoading(false);
     }
   }
 
-
   // Reset password
-  Future<({bool success, String? message})> resetPassword(
+  Future<AuthResult> resetPassword(
     String token,
     String password,
     String confirmPassword,
@@ -465,27 +694,38 @@ class AuthService extends ChangeNotifier {
         confirmPassword: confirmPassword,
       );
       final response = await _authRepository.resetPassword(request);
-      return (success: response.success, message: response.message);
+      
+      if (response.success) {
+        return AuthResult(success: true, message: response.message);
+      } else {
+        final errorInfo = _parseError(response.message, response.statusCode);
+        return AuthResult(
+          success: false,
+          message: errorInfo.message,
+          errorType: errorInfo.errorType,
+        );
+      }
     } catch (e) {
-      return (success: false, message: 'Password reset failed: $e');
+      final errorInfo = _parseError(e, null);
+      return AuthResult(
+        success: false,
+        message: errorInfo.message,
+        errorType: errorInfo.errorType,
+      );
     } finally {
       _setLoading(false);
     }
   }
 
-
-  // Logout user - UNIFIED METHOD
+  // Logout user
   Future<void> logout() async {
     print('🚪 [AuthService] Starting logout process');
     _setLoading(true);
     
     try {
-      // Get current token for logout request
       final token = await JwtTokenManager.getToken();
       
       if (token != null) {
-        print('📡 [AuthService] Calling backend logout endpoint');
-        // Call backend logout endpoint with token
         try {
           final response = await _authRepository.logout();
           if (response.success) {
@@ -493,22 +733,16 @@ class AuthService extends ChangeNotifier {
           }
         } catch (e) {
           print('⚠️ [AuthService] Backend logout error: $e');
-          // Continue with local cleanup even if backend fails
         }
       }
-    } catch (e) {
-      print('🚨 [AuthService] Error during logout: $e');
     } finally {
-      // ALWAYS clear local storage regardless of API response
-      print('🧹 [AuthService] Clearing local authentication data');
       await _clearAuthData();
       _setLoading(false);
-      print('🎉 [AuthService] Logout completed successfully');
+      print('🎉 [AuthService] Logout completed');
     }
   }
 
-
-  // Save authentication data (legacy method for old AuthResponse)
+  // Save authentication data
   Future<void> _saveAuthData(dynamic authData, {String? tenantId}) async {
     await JwtTokenManager.saveTokens(
       accessToken: authData.accessToken,
@@ -525,12 +759,8 @@ class AuthService extends ChangeNotifier {
     notifyListeners();
   }
 
-
-  // Save login data (new method for LoginResponse)
+  // Save login data
   Future<void> _saveLoginData(LoginResponse loginData) async {
-    print('💾 [AuthService] Saving login data to JWT token manager');
-    
-    // Save tokens and user data using new format
     await JwtTokenManager.saveLoginTokens(
       token: loginData.token,
       refreshToken: loginData.refreshToken,
@@ -547,14 +777,13 @@ class AuthService extends ChangeNotifier {
       lastLoginIp: loginData.lastLoginIp,
     );
     
-    // Update current user model
     _currentUser = UserModel(
       id: loginData.userId,
       email: loginData.email,
       name: loginData.name,
       roles: loginData.roles,
       permissions: loginData.permissions,
-      emailVerified: true, // Assume verified if login successful
+      emailVerified: true,
       tenantId: loginData.tenantId,
       organizationId: loginData.orgId.isNotEmpty ? loginData.orgId : null,
       lastLoginAt: loginData.lastLoginAt,
@@ -562,57 +791,39 @@ class AuthService extends ChangeNotifier {
     );
     
     _isAuthenticated = true;
-    _emailVerified = true; // Assume verified if login successful
-    
-    print('✅ [AuthService] Login data saved successfully');
+    _emailVerified = true;
     notifyListeners();
   }
 
-
-  // Clear stored tenant/organization data (call after successful login or on error)
+  // Clear stored data
   void clearStoredData() {
     _currentTenantId = null;
     _currentUserName = null;
     _currentUserEmail = null;
     _currentUserPassword = null;
     _organizationData = null;
-    print('🧹 [AuthService] Cleared all stored tenant/organization data');
   }
 
-
-  // Enhanced authentication check with token validation
+  // Enhanced authentication check
   Future<bool> checkIsAuthenticated() async {
     try {
-      // Check if we have a token
       final token = await JwtTokenManager.getToken();
-      if (token == null) {
-        print('❌ [AuthService] No token found');
-        return false;
-      }
+      if (token == null) return false;
 
-      // Check if token is expired
       final isExpired = await JwtTokenManager.isTokenExpired();
       if (isExpired) {
-        print('⏰ [AuthService] Token is expired');
         await _clearAuthData();
         return false;
       }
 
-      // Check if we have tenant ID (required for proper authentication)
       final tenantId = await JwtTokenManager.getTenantId();
-      if (tenantId == null || tenantId.isEmpty) {
-        print('🏢 [AuthService] No tenant ID found');
-        return false;
-      }
+      if (tenantId == null || tenantId.isEmpty) return false;
 
-      print('✅ [AuthService] User is authenticated');
       return true;
     } catch (e) {
-      print('🚨 [AuthService] Error checking authentication: $e');
       return false;
     }
   }
-
 
   // Clear authentication data
   Future<void> _clearAuthData() async {
@@ -620,12 +831,11 @@ class AuthService extends ChangeNotifier {
     _isAuthenticated = false;
     _emailVerified = false;
     _currentUser = null;
-    clearStoredData(); // Also clear tenant data
+    clearStoredData();
     notifyListeners();
   }
 
-
-  // Role-based access control helpers
+  // Role-based access control
   bool get isSuperAdmin => _currentUser?.roles.contains('superadmin') ?? false;
   bool get isAdmin => _currentUser?.roles.contains('admin') ?? false;
   bool get isUser => _currentUser?.roles.contains('user') ?? false;
@@ -643,18 +853,15 @@ class AuthService extends ChangeNotifier {
     return permissions.any((permission) => _currentUser!.permissions.contains(permission));
   }
 
-
-  // Remember tenant ID for convenience (optional feature)
+  // Remember tenant ID
   Future<void> saveTenantIdForEmail(String email, String tenantId) async {
     await JwtTokenManager.saveRememberedTenantId(email, tenantId);
   }
-
 
   Future<String?> getRememberedTenantId(String email) async {
     return await JwtTokenManager.getRememberedTenantId(email);
   }
 }
-
 
 // Global instance
 final authService = AuthService();
