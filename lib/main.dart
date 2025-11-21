@@ -3,8 +3,10 @@ import 'package:provider/provider.dart';
 import 'package:ppv_components/core/theme/theme_notifier.dart';
 import 'package:ppv_components/core/services/auth_service.dart';
 import 'package:ppv_components/core/services/api_service.dart';
-import 'package:ppv_components/features/organization/services/organization_service.dart'; // <-- ADD
+import 'package:ppv_components/features/organization/services/organization_service.dart';
 import 'package:ppv_components/features/organization/services/organizations_api_service.dart';
+import 'package:ppv_components/features/roles/services/roles_api_service.dart';
+import 'package:ppv_components/features/department/providers/department_provider.dart';
 import 'app/router.dart';
 import 'package:ppv_components/core/theme/theme.dart';
 
@@ -21,7 +23,9 @@ void main() async {
         ChangeNotifierProvider(create: (_) => ThemeNotifier()),
         ChangeNotifierProvider.value(value: authService),
         ChangeNotifierProvider(create: (_) => OrganizationsApiService()),
-        ChangeNotifierProvider(create: (_) => OrganizationService()), 
+        ChangeNotifierProvider(create: (_) => OrganizationService()),
+        ChangeNotifierProvider(create: (_) => RolesApiService()),
+        ChangeNotifierProvider(create: (_) => DepartmentProvider()),
       ],
       child: const MyApp(),
     ),

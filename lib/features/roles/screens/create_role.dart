@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
 import 'package:ppv_components/common_widgets/button/primary_button.dart';
 import 'package:ppv_components/common_widgets/button/secondary_button.dart';
+import 'package:ppv_components/features/roles/data/models/role_models.dart';
+import 'package:ppv_components/features/roles/services/roles_api_service.dart';
 
 class CreateRoleScreen extends StatefulWidget {
   const CreateRoleScreen({super.key});
@@ -17,9 +20,20 @@ class _CreateRoleScreenState extends State<CreateRoleScreen> {
   @override
   void initState() {
     super.initState();
+    _loadPermissions();
+  }
+
+  Future<void> _loadPermissions() async {
+    final rolesService = context.read<RolesApiService>();
+    await rolesService.loadPermissions();
+    
     // Initialize all permissions with a 'false' value
-    for (var permission in _allPermissions) {
-      _permissions[permission] = false;
+    for (var permission in rolesService.availablePermissions) {
+      _permissions[permission.name] = false;
+    }
+    
+    if (mounted) {
+      setState(() {});
     }
   }
 
@@ -29,244 +43,7 @@ class _CreateRoleScreenState extends State<CreateRoleScreen> {
     super.dispose();
   }
 
-  // A comprehensive list of all available permissions in the system.
-  final List<String> _allPermissions = [
-    'manage-users',
-    'manage-roles',
-    'manage-permissions',
-    'manage-tickets',
-    'manage-vendors',
-    'view-beneficiaries',
-    'manage-beneficiaries',
-    'view-dashboard',
-    'manage-settings',
-    'view-reports',
-    'export-data',
-    'import-data',
-    'view-user',
-    'create-user',
-    'edit-user',
-    'delete-user',
-    'manage-user-roles',
-    'view-user-activity',
-    'reset-user-password',
-    'activate-user',
-    'deactivate-user',
-    'view-role',
-    'create-role',
-    'edit-role',
-    'delete-role',
-    'assign-permissions',
-    'view-permissions',
-    'create-permissions',
-    'edit-permissions',
-    'delete-permissions',
-    'view-department',
-    'create-department',
-    'edit-department',
-    'delete-department',
-    'manage-department-users',
-    'view-designation',
-    'create-designation',
-    'edit-designation',
-    'delete-designation',
-    'view-note',
-    'create-note',
-    'edit-note',
-    'delete-note',
-    'approve-note',
-    'reject-note',
-    'hold-note',
-    'release-note',
-    'view-note-history',
-    'export-notes',
-    'bulk-approve-notes',
-    'view-all-notes',
-    'edit-any-note',
-    'view-payment-note',
-    'create-payment-note',
-    'edit-payment-note',
-    'delete-payment-note',
-    'approve-payment-note',
-    'reject-payment-note',
-    'hold-payment-note',
-    'release-payment-note',
-    'view-payment-note-history',
-    'view-all-payment-notes',
-    'edit-any-payment-note',
-    'create-draft-payment-note',
-    'edit-draft-payment-note',
-    'delete-draft-payment-note',
-    'view-reimbursement-note',
-    'create-reimbursement-note',
-    'edit-reimbursement-note',
-    'delete-reimbursement-note',
-    'approve-reimbursement-note',
-    'reject-reimbursement-note',
-    'hold-reimbursement-note',
-    'release-reimbursement-note',
-    'view-reimbursement-note-history',
-    'view-all-reimbursement-notes',
-    'bulk-approve-reimbursement-notes',
-    'edit-any-reimbursement-note',
-    'create-all-user-reimbursement-note',
-    'all-reimbursement-note',
-    'approver-reimbursement-note',
-    'view-vendors',
-    'create-vendors',
-    'edit-vendors',
-    'delete-vendors',
-    'activate-vendors',
-    'deactivate-vendors',
-    'view-vendor-history',
-    'export-vendors',
-    'approve-vendors',
-    'view-vendors-excel',
-    'manage-vendor-accounts',
-    'create-vendor',
-    'view-vendor',
-    'view-vendor-accounts',
-    'create-vendor-accounts',
-    'edit-vendor-accounts',
-    'delete-vendor-accounts',
-    'set-primary-account',
-    'activate-vendor-account',
-    'deactivate-vendor-account',
-    'view-beneficiary',
-    'create-beneficiary',
-    'edit-beneficiary',
-    'delete-beneficiary',
-    'approve-beneficiary',
-    'deactivate-beneficiary',
-    'manage-beneficiaries',
-    'import-beneficiaries',
-    'view-payment',
-    'create-payment',
-    'edit-payment',
-    'delete-payment',
-    'approve-payment',
-    'reject-payment',
-    'process-payment',
-    'cancel-payment',
-    'view-payment-history',
-    'export-payments',
-    'import-payment-excel',
-    'bulk-process-payments',
-    'view-payments',
-    'manage-payments',
-    'update-payment',
-    'create-rule',
-    'edit-rule',
-    'delete-rule',
-    'activate-rule',
-    'deactivate-rule',
-    'test-rule',
-    'duplicate-rule',
-    'view-rule-statistics',
-    'payment-note-view-rule',
-    'payment-note-create-rule',
-    'payment-note-edit-rule',
-    'payment-note-delete-rule',
-    'view-escrow-accounts',
-    'create-escrow-accounts',
-    'edit-escrow-accounts',
-    'delete-escrow-accounts',
-    'activate-escrow-account',
-    'deactivate-escrow-account',
-    'view-escrow-balance',
-    'view-escrow-signatories',
-    'view-escrow-transfers',
-    'create-account-transfers',
-    'edit-account-transfers',
-    'delete-account-transfers',
-    'approve-account-transfer',
-    'reject-account-transfer',
-    'process-account-transfer',
-    'cancel-account-transfer',
-    'view-transfer-history',
-    'view-bank-letters',
-    'create-bank-letters',
-    'edit-bank-letters',
-    'delete-bank-letters',
-    'approve-bank-letter',
-    'manage-bank-letter',
-    'view-bank-letter-pdf',
-    'send-bank-letter',
-    'view-bank-letter-history',
-    'view-organizations',
-    'create-organizations',
-    'edit-organizations',
-    'delete-organizations',
-    'switch-organizations',
-    'manage-organization-users',
-    'view-organization-settings',
-    'edit-organization-settings',
-    'view-audit-logs',
-    'export-audit-logs',
-    'delete-audit-logs',
-    'edit-tickets',
-    'delete-tickets',
-    'assign-tickets',
-    'close-tickets',
-    'reopen-tickets',
-    'view-ticket-comments',
-    'create-ticket-comments',
-    'edit-ticket-comments',
-    'delete-ticket-comments',
-    'view-templates',
-    'create-templates',
-    'edit-templates',
-    'delete-templates',
-    'manage-supporting-docs',
-    'upload-supporting-docs',
-    'download-supporting-docs',
-    'delete-supporting-docs',
-    'view-accounts',
-    'manage-accounts',
-    'view-ratios',
-    'manage-ratios',
-    'superadmin-access',
-    'system-configuration',
-    'backup-system',
-    'restore-system',
-    'view-system-logs',
-    'manage-system-maintenance',
-    'level-1-approver',
-    'level-2-approver',
-    'level-3-approver',
-    'level-4-approver',
-    'level-5-approver',
-    'final-approver',
-    'emergency-approver',
-    'bypass-approval',
-    'view-financial-reports',
-    'generate-financial-reports',
-    'export-financial-data',
-    'view-budget-reports',
-    'manage-budget-allocation',
-    'view-expense-analytics',
-    'view-payment-analytics',
-    'bulk-approve',
-    'bulk-reject',
-    'bulk-delete',
-    'bulk-export',
-    'bulk-import',
-    'bulk-update',
-    'view-sensitive-data',
-    'edit-sensitive-data',
-    'access-all-departments',
-    'cross-department-access',
-    'emergency-access',
-    'after-hours-access',
-    'view-product',
-    'create-product',
-    'edit-product',
-    'delete-product',
-    'view-notes',
-    'manage-notes',
-    'view-approvals',
-    'manage-approvals',
-  ];
+  // Permissions are now loaded from API
 
   void _selectAllPermissions() {
     setState(() {
@@ -284,7 +61,7 @@ class _CreateRoleScreenState extends State<CreateRoleScreen> {
     });
   }
 
-  void _createRole() {
+  Future<void> _createRole() async {
     final colorScheme = Theme.of(context).colorScheme;
 
     if (_roleNameController.text.isEmpty) {
@@ -318,22 +95,67 @@ class _CreateRoleScreenState extends State<CreateRoleScreen> {
       return;
     }
 
-    // Placeholder for your API call logic
-    print('Role Name: ${_roleNameController.text}');
-    print('Selected Permissions: $selectedPermissions');
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          'Role "${_roleNameController.text}" created successfully!',
-          style: TextStyle(color: colorScheme.onPrimary),
-        ),
-        backgroundColor: Colors.green, // Explicitly using green for success
-      ),
+    // Show loading
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => Center(child: CircularProgressIndicator()),
     );
 
-    // Optionally, navigate back after successful creation
-    // Navigator.of(context).pop();
+    try {
+      final rolesService = context.read<RolesApiService>();
+      final request = CreateRoleRequest(
+        name: _roleNameController.text,
+        permissions: selectedPermissions,
+      );
+
+      final result = await rolesService.createRole(request);
+
+      // Close loading dialog
+      if (mounted) Navigator.of(context).pop();
+
+      if (result.success) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                'Role "${_roleNameController.text}" created successfully!',
+                style: TextStyle(color: colorScheme.onPrimary),
+              ),
+              backgroundColor: Colors.green,
+            ),
+          );
+          context.pop(true); // Return true to indicate success
+        }
+      } else {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                result.message ?? 'Failed to create role',
+                style: TextStyle(color: colorScheme.onError),
+              ),
+              backgroundColor: colorScheme.error,
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      // Close loading dialog
+      if (mounted) Navigator.of(context).pop();
+      
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Error: $e',
+              style: TextStyle(color: colorScheme.onError),
+            ),
+            backgroundColor: colorScheme.error,
+          ),
+        );
+      }
+    }
   }
 
   @override
@@ -544,29 +366,44 @@ class _CreateRoleScreenState extends State<CreateRoleScreen> {
                   const SizedBox(height: 24),
 
                   // Permissions Grid
-                  LayoutBuilder(
-                    builder: (context, constraints) {
-                      final columns = constraints.maxWidth > 1200
-                          ? 4
-                          : constraints.maxWidth > 800
-                          ? 3
-                          : constraints.maxWidth > 600
-                          ? 2
-                          : 1;
+                  Consumer<RolesApiService>(
+                    builder: (context, rolesService, child) {
+                      if (rolesService.availablePermissions.isEmpty) {
+                        return Center(
+                          child: Padding(
+                            padding: const EdgeInsets.all(24.0),
+                            child: CircularProgressIndicator(),
+                          ),
+                        );
+                      }
 
-                      return GridView.builder(
+                      // Group permissions by module
+                      final permissionsByModule = rolesService.getPermissionsByModule();
+                      
+                      return ListView.builder(
                         shrinkWrap: true,
                         physics: const NeverScrollableScrollPhysics(),
-                        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: columns,
-                          childAspectRatio: 8,
-                          crossAxisSpacing: 16,
-                          mainAxisSpacing: 12,
-                        ),
-                        itemCount: _allPermissions.length,
+                        itemCount: permissionsByModule.length,
                         itemBuilder: (context, index) {
-                          final permission = _allPermissions[index];
-                          return _buildPermissionCheckbox(permission);
+                          final module = permissionsByModule.keys.elementAt(index);
+                          final permissions = permissionsByModule[module]!;
+                          
+                          return ExpansionTile(
+                            title: Text(
+                              module.toUpperCase(),
+                              style: textTheme.titleSmall?.copyWith(
+                                fontWeight: FontWeight.bold,
+                                color: colorScheme.primary,
+                              ),
+                            ),
+                            subtitle: Text('${permissions.length} permissions'),
+                            children: permissions.map((permission) {
+                              return _buildPermissionCheckbox(
+                                permission.name,
+                                permission.description,
+                              );
+                            }).toList(),
+                          );
                         },
                       );
                     },
@@ -595,7 +432,7 @@ class _CreateRoleScreenState extends State<CreateRoleScreen> {
     );
   }
 
-  Widget _buildPermissionCheckbox(String permission) {
+  Widget _buildPermissionCheckbox(String permissionName, String permissionDescription) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
     final textTheme = theme.textTheme;
@@ -603,7 +440,7 @@ class _CreateRoleScreenState extends State<CreateRoleScreen> {
     return InkWell(
       onTap: () {
         setState(() {
-          _permissions[permission] = !_permissions[permission]!;
+          _permissions[permissionName] = !(_permissions[permissionName] ?? false);
         });
       },
       borderRadius: BorderRadius.circular(4),
@@ -613,10 +450,10 @@ class _CreateRoleScreenState extends State<CreateRoleScreen> {
             width: 20,
             height: 20,
             child: Checkbox(
-              value: _permissions[permission],
+              value: _permissions[permissionName] ?? false,
               onChanged: (value) {
                 setState(() {
-                  _permissions[permission] = value ?? false;
+                  _permissions[permissionName] = value ?? false;
                 });
               },
               activeColor: colorScheme.primary,
@@ -629,12 +466,25 @@ class _CreateRoleScreenState extends State<CreateRoleScreen> {
           ),
           const SizedBox(width: 8),
           Expanded(
-            child: Text(
-              permission,
-              style: textTheme.bodyMedium?.copyWith(
-                color: colorScheme.onSurface,
-              ),
-              overflow: TextOverflow.ellipsis,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  permissionDescription,
+                  style: textTheme.bodyMedium?.copyWith(
+                    color: colorScheme.onSurface,
+                    fontWeight: FontWeight.w500,
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                ),
+                Text(
+                  permissionName,
+                  style: textTheme.bodySmall?.copyWith(
+                    color: colorScheme.onSurface.withOpacity(0.6),
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
             ),
           ),
         ],

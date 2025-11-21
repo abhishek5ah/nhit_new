@@ -128,7 +128,7 @@ class _ViewDepartmentPageState extends State<ViewDepartmentPage> {
                     ],
                   ),
                   const SizedBox(height: 24),
-                  _buildReadOnlyField(context, 'Department ID', widget.department.id.toString()),
+                  _buildReadOnlyField(context, 'Department ID', widget.department.id),
                   const SizedBox(height: 16),
                   _buildReadOnlyField(context, 'Department Name', widget.department.name),
                   const SizedBox(height: 16),

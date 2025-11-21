@@ -299,8 +299,8 @@ class _OrganizationMainPageState extends State<OrganizationMainPage> {
             ),
             const SizedBox(height: 16),
             Text(
-              'Error Loading Organizations',
-              style: theme.textTheme.headlineSmall?.copyWith(
+              'Oops! Organizations didn’t load. Please refresh.',
+              style: theme.textTheme.headlineMedium?.copyWith(
                 color: colorScheme.error,
               ),
             ),

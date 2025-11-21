@@ -251,9 +251,30 @@ class AuthInterceptor extends QueuedInterceptor {
       if (accessToken != null) {
         options.headers['Authorization'] = 'Bearer $accessToken';
       }
+
+      // Attach tenant context header only for endpoints that require it.
+      if (_shouldAttachTenantHeader(options.path)) {
+        final tenantId = await JwtTokenManager.getTenantId();
+        if (tenantId != null && tenantId.isNotEmpty) {
+          options.headers['tenant_id'] = tenantId;
+          options.headers['tenant-id'] = tenantId;
+        }
+      }
+
     }
 
     handler.next(options);
+  }
+
+  bool _shouldAttachTenantHeader(String path) {
+    // Skip tenant headers for endpoints that have CORS issues
+    const skipTenantHeaderPaths = [
+      '/permissions',
+      '/departments',  // Backend CORS doesn't allow tenant_id header
+    ];
+
+    final shouldSkip = skipTenantHeaderPaths.any((skipPath) => path.contains(skipPath));
+    return !shouldSkip;
   }
 
   @override

@@ -4,22 +4,22 @@ import 'package:ppv_components/common_widgets/badge.dart';
 import 'package:ppv_components/common_widgets/button/primary_button.dart';
 import 'package:ppv_components/common_widgets/custom_table.dart';
 import 'package:ppv_components/common_widgets/custom_pagination.dart';
-import 'package:ppv_components/features/roles/model/roles_model.dart';
+import 'package:ppv_components/features/roles/data/models/role_models.dart';
 import 'package:ppv_components/features/roles/screens/view_role.dart';
 import 'package:ppv_components/features/roles/widgets/roles_grid.dart';
 import 'package:ppv_components/features/roles/screens/edit_role.dart';
 import 'package:ppv_components/features/roles/screens/create_role.dart';
 
 class RoleTableView extends StatefulWidget {
-  final List<Role> roleData;
-  final void Function(Role) onDelete;
-  final void Function(Role) onEdit;
+  final List<RoleModel> roleData;
+  final Future<void> Function(RoleModel) onDelete;
+  final Future<void> Function() onRefresh;
 
   const RoleTableView({
     super.key,
     required this.roleData,
     required this.onDelete,
-    required this.onEdit,
+    required this.onRefresh,
   });
 
   @override
@@ -30,7 +30,7 @@ class _RoleTableViewState extends State<RoleTableView> {
   int toggleIndex = 0;
   int rowsPerPage = 10;
   int currentPage = 0;
-  late List<Role> paginatedRoles;
+  late List<RoleModel> paginatedRoles;
 
   @override
   void initState() {
@@ -74,13 +74,13 @@ class _RoleTableViewState extends State<RoleTableView> {
     });
   }
 
-  Future<void> deleteRole(Role role) async {
+  Future<void> deleteRole(RoleModel role) async {
     final shouldDelete = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Text('Confirm Delete'),
         content: Text(
-          'Are you sure you want to delete role "${role.roleName}"?',
+          'Are you sure you want to delete role "${role.name}"?',
         ),
         actions: [
           TextButton(
@@ -95,43 +95,47 @@ class _RoleTableViewState extends State<RoleTableView> {
       ),
     );
     if (shouldDelete == true) {
-      widget.onDelete(role);
+      await widget.onDelete(role);
+      await widget.onRefresh();
     }
   }
 
-  Future<void> onEditRole(Role role) async {
+  Future<void> onEditRole(RoleModel role) async {
+    if (role.roleId == null) return;
+    
     final result = await Navigator.push(
       context,
       MaterialPageRoute(
         builder: (context) => EditRoleScreen(
-          roleId: role.id.toString(),
-          roleName: role.roleName,
+          roleId: role.roleId!,
+          roleName: role.name,
           selectedPermissions: role.permissions,
         ),
       ),
     );
 
-    if (result != null && result is Role) {
-      widget.onEdit(result);
+    if (result != null && result == true) {
+      await widget.onRefresh();
     }
   }
 
   Future<void> onCreateRole() async {
-    final result = await context.push<Role>('/roles/create');
+    final result = await context.push<bool>('/roles/create');
 
-    if (result != null) {
-      widget.onEdit(result);
+    if (result == true) {
+      await widget.onRefresh();
     }
   }
 
 
-  Future<void> onViewRole(Role role) async {
+  Future<void> onViewRole(RoleModel role) async {
+    if (role.roleId == null) return;
     await Navigator.push(
       context,
       MaterialPageRoute(
         builder: (context) => ViewRoleScreen(
-          roleId: role.id.toString(),
-          roleName: role.roleName,
+          roleId: role.roleId!,
+          roleName: role.name,
           selectedPermissions: role.permissions,
         ),
       ),
@@ -194,12 +198,12 @@ class _RoleTableViewState extends State<RoleTableView> {
         cells: [
           DataCell(
             Text(
-              role.id.toString(),
+              role.roleId?.substring(0, 8) ?? 'N/A',
               style: TextStyle(color: colorScheme.onSurface),
             ),
           ),
           DataCell(
-            Text(role.roleName, style: TextStyle(color: colorScheme.onSurface)),
+            Text(role.name, style: TextStyle(color: colorScheme.onSurface)),
           ),
           DataCell(Wrap(spacing: 6, runSpacing: 4, children: permissionBadges)),
           DataCell(

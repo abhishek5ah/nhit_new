@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:ppv_components/features/department/model/department_model.dart';
 import 'package:ppv_components/features/department/widgets/add_department.dart';
 import 'package:ppv_components/features/department/widgets/department_header.dart';
 import 'package:ppv_components/features/department/widgets/department_table.dart';
-import 'package:ppv_components/features/department/data/department_mockdb.dart';
+import 'package:ppv_components/features/department/providers/department_provider.dart';
 
 class DepartmentMainPage extends StatefulWidget {
   const DepartmentMainPage({super.key});
@@ -14,51 +15,79 @@ class DepartmentMainPage extends StatefulWidget {
 
 class _DepartmentMainPageState extends State<DepartmentMainPage> {
   String searchQuery = '';
-  late List<Department> filteredDepartments;
-  List<Department> allDepartments = List<Department>.from(departmentData);
+  late List<Department> filteredDepartments = [];
 
   @override
   void initState() {
     super.initState();
-    filteredDepartments = List<Department>.from(allDepartments);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _loadDepartments();
+    });
+  }
+
+  Future<void> _loadDepartments() async {
+    final provider = context.read<DepartmentProvider>();
+    await provider.loadDepartments();
+    _updateFilteredList();
+  }
+
+  void _updateFilteredList() {
+    final provider = context.read<DepartmentProvider>();
+    setState(() {
+      filteredDepartments = provider.searchDepartments(searchQuery);
+    });
   }
 
   void updateSearch(String query) {
     setState(() {
       searchQuery = query.toLowerCase();
-      filteredDepartments = allDepartments.where((department) {
-        final name = department.name.toLowerCase();
-        final description = department.description.toLowerCase();
-        return name.contains(searchQuery) || description.contains(searchQuery);
-      }).toList();
+      _updateFilteredList();
     });
   }
 
-  void onDeleteDepartment(Department department) {
-    setState(() {
-      allDepartments.removeWhere((d) => d.id == department.id);
-      updateSearch(searchQuery);
-    });
-  }
-
-  void onEditDepartment(Department department) {
-    final index = allDepartments.indexWhere((d) => d.id == department.id);
-    if (index != -1) {
-      setState(() {
-        allDepartments[index] = department;
-        updateSearch(searchQuery);
-      });
+  Future<void> onDeleteDepartment(Department department) async {
+    final provider = context.read<DepartmentProvider>();
+    final result = await provider.deleteDepartment(department.id);
+    
+    if (result.success) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(result.message ?? 'Department deleted successfully'),
+            backgroundColor: Colors.green,
+          ),
+        );
+        _updateFilteredList();
+      }
+    } else {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(result.message ?? 'Failed to delete department'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
   }
 
-  void onAddDepartment() {
-    showDialog(
+  Future<void> onEditDepartment(Department department) async {
+    await _loadDepartments();
+  }
+
+  Future<void> onAddDepartment() async {
+    await showDialog(
       context: context,
-      builder: (context) => const Dialog(
+      builder: (context) => Dialog(
         child: SizedBox(
           width: 600,
           height: 600,
-          child: AddDepartmentPage(),
+          child: AddDepartmentPage(
+            onDepartmentAdded: () {
+              Navigator.of(context).pop();
+              _loadDepartments();
+            },
+          ),
         ),
       ),
     );

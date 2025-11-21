@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
 import 'package:ppv_components/features/department/model/department_model.dart';
 import 'package:ppv_components/common_widgets/button/primary_button.dart';
 import 'package:ppv_components/common_widgets/button/secondary_button.dart';
+import 'package:ppv_components/features/department/providers/department_provider.dart';
 
 class CreateDepartmentScreen extends StatefulWidget {
   const CreateDepartmentScreen({super.key});
@@ -37,30 +39,41 @@ class _CreateDepartmentScreenState extends State<CreateDepartmentScreen> {
     return null;
   }
 
-  void _submitForm() {
+  Future<void> _submitForm() async {
     if (_formKey.currentState!.validate()) {
-      // Create the Department object
-      final newDepartment = Department(
-        id: DateTime.now().millisecondsSinceEpoch,
+      final provider = context.read<DepartmentProvider>();
+      
+      final result = await provider.createDepartment(
         name: _nameController.text.trim(),
         description: _descriptionController.text.trim(),
       );
 
-      // Show success message
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Department created successfully!'),
-          backgroundColor: Colors.green,
-          duration: Duration(seconds: 2),
-        ),
-      );
+      if (mounted) {
+        if (result.success) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(result.message ?? 'Department created successfully!'),
+              backgroundColor: Colors.green,
+              duration: const Duration(seconds: 2),
+            ),
+          );
 
-      // Navigate back
-      Future.delayed(const Duration(milliseconds: 500), () {
-        if (mounted) {
-          _handleNavigation(newDepartment);
+          // Navigate back
+          Future.delayed(const Duration(milliseconds: 500), () {
+            if (mounted) {
+              _handleNavigation(result.department);
+            }
+          });
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(result.message ?? 'Failed to create department'),
+              backgroundColor: Colors.red,
+              duration: const Duration(seconds: 2),
+            ),
+          );
         }
-      });
+      }
     }
   }
 

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:ppv_components/features/department/model/department_model.dart';
+import 'package:ppv_components/features/department/providers/department_provider.dart';
 
 class EditDepartmentPage extends StatefulWidget {
   final Department department;
@@ -32,21 +34,35 @@ class _EditDepartmentPageState extends State<EditDepartmentPage> {
     super.dispose();
   }
 
-  void _submitForm() {
+  Future<void> _submitForm() async {
     if (_formKey.currentState!.validate()) {
-      final updatedDepartment = widget.department.copyWith(
-        name: _nameController.text,
-        description: _descriptionController.text,
+      final provider = context.read<DepartmentProvider>();
+      
+      final result = await provider.updateDepartment(
+        id: widget.department.id,
+        name: _nameController.text.trim(),
+        description: _descriptionController.text.trim(),
       );
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Department updated successfully!'),
-          backgroundColor: Colors.green,
-        ),
-      );
+      if (mounted) {
+        if (result.success) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(result.message ?? 'Department updated successfully!'),
+              backgroundColor: Colors.green,
+            ),
+          );
 
-      Navigator.pop(context, updatedDepartment);
+          Navigator.pop(context, result.department);
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(result.message ?? 'Failed to update department'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
     }
   }
 

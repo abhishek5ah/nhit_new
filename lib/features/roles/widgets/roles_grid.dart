@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:ppv_components/common_widgets/profile_card.dart';
-import 'package:ppv_components/features/roles/model/roles_model.dart';
+import 'package:ppv_components/features/roles/data/models/role_models.dart';
 import 'package:ppv_components/core/utils/responsive.dart';
 import 'package:ppv_components/core/utils/status_utils.dart'; // import your status colors here
 
 class RolesGridView extends StatefulWidget {
-  final List<Role> roleList;
+  final List<RoleModel> roleList;
   final int rowsPerPage;
   final int currentPage;
   final ValueChanged<int> onPageChanged;
@@ -22,6 +22,15 @@ class RolesGridView extends StatefulWidget {
 
   @override
   State<RolesGridView> createState() => _RolesGridViewState();
+}
+
+String _resolveRoleId(RoleModel role) {
+  final id = role.roleId;
+  if (id == null || id.isEmpty) {
+    return '#Role-N/A';
+  }
+  final trimmed = id.length > 6 ? id.substring(0, 6) : id;
+  return '#Role-$trimmed';
 }
 
 class _RolesGridViewState extends State<RolesGridView> {
@@ -98,10 +107,10 @@ class _RolesGridViewState extends State<RolesGridView> {
                       color: colorScheme.surface,
                     ),
                     child: ProfileCard(
-                      invoiceId: '#Role-${role.id.toString().padLeft(3, '0')}',
+                      invoiceId: _resolveRoleId(role),
                       topBarColor: roleColor,
                       fields: {
-                        'Role Name': role.roleName,
+                        'Role Name': role.name,
                         'Permissions': role.permissions.join(', '),
                       },
                     ),

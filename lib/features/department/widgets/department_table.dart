@@ -138,7 +138,7 @@ class _DepartmentTableViewState extends State<DepartmentTableView> {
       final rows = paginatedDepartments.map((department) {
         return DataRow(
           cells: [
-            DataCell(Text(department.id.toString(), style: TextStyle(color: colorScheme.onSurface))),
+            DataCell(Text(department.id, style: TextStyle(color: colorScheme.onSurface))),
             DataCell(Text(department.name, style: TextStyle(color: colorScheme.onSurface))),
             DataCell(Text(department.description, style: TextStyle(color: colorScheme.onSurface))),
             DataCell(
