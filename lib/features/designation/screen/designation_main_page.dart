@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:ppv_components/features/designation/data/designation_mockdb.dart';
+import 'package:provider/provider.dart';
 import 'package:ppv_components/features/designation/model/designation_model.dart';
 import 'package:ppv_components/features/designation/widgets/designation_header.dart';
 import 'package:ppv_components/features/designation/widgets/designation_table.dart';
+import 'package:ppv_components/features/designation/providers/designation_provider.dart';
 
 class DesignationMainPage extends StatefulWidget {
   const DesignationMainPage({super.key});
@@ -13,42 +14,64 @@ class DesignationMainPage extends StatefulWidget {
 
 class _DesignationMainPageState extends State<DesignationMainPage> {
   String searchQuery = '';
-  late List<Designation> filteredDesignations;
-  List<Designation> allDesignations = List<Designation>.from(designationData);
+  late List<Designation> filteredDesignations = [];
 
   @override
   void initState() {
     super.initState();
-    filteredDesignations = List<Designation>.from(allDesignations);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _loadDesignations();
+    });
+  }
+
+  Future<void> _loadDesignations() async {
+    final provider = context.read<DesignationProvider>();
+    await provider.loadDesignations();
+    _updateFilteredList();
+  }
+
+  void _updateFilteredList() {
+    final provider = context.read<DesignationProvider>();
+    setState(() {
+      filteredDesignations = provider.searchDesignations(searchQuery);
+    });
   }
 
   void updateSearch(String query) {
     setState(() {
       searchQuery = query.toLowerCase();
-      filteredDesignations = allDesignations.where((designation) {
-        final name = designation.name.toLowerCase();
-        final description = designation.description.toLowerCase();
-        return name.contains(searchQuery) ||
-            description.contains(searchQuery);
-      }).toList();
+      _updateFilteredList();
     });
   }
 
-  void onDeleteDesignation(Designation designation) {
-    setState(() {
-      allDesignations.removeWhere((d) => d.id == designation.id);
-      updateSearch(searchQuery);
-    });
-  }
-
-  void onEditDesignation(Designation designation) {
-    final index = allDesignations.indexWhere((d) => d.id == designation.id);
-    if (index != -1) {
-      setState(() {
-        allDesignations[index] = designation;
-        updateSearch(searchQuery);
-      });
+  Future<void> onDeleteDesignation(Designation designation) async {
+    final provider = context.read<DesignationProvider>();
+    final result = await provider.deleteDesignation(designation.id);
+    
+    if (result.success) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(result.message ?? 'Designation deleted successfully'),
+            backgroundColor: Colors.green,
+          ),
+        );
+        _updateFilteredList();
+      }
+    } else {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(result.message ?? 'Failed to delete designation'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
+  }
+
+  Future<void> onEditDesignation(Designation designation) async {
+    await _loadDesignations();
   }
 
   @override

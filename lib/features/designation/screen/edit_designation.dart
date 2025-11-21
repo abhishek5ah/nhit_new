@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
 import 'package:ppv_components/features/designation/model/designation_model.dart';
+import 'package:ppv_components/features/designation/providers/designation_provider.dart';
 
 class EditDesignationScreen extends StatefulWidget {
   final Designation designation;
@@ -40,26 +42,41 @@ class _EditDesignationScreenState extends State<EditDesignationScreen> {
     return null;
   }
 
-  void _submitForm() {
+  Future<void> _submitForm() async {
     if (_formKey.currentState!.validate()) {
-      final updatedDesignation = widget.designation.copyWith(
+      final provider = context.read<DesignationProvider>();
+      
+      final result = await provider.updateDesignation(
+        id: widget.designation.id,
         name: _nameController.text.trim(),
         description: _descriptionController.text.trim(),
       );
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Designation updated successfully!'),
-          backgroundColor: Colors.green,
-          duration: Duration(seconds: 2),
-        ),
-      );
+      if (mounted) {
+        if (result.success) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(result.message ?? 'Designation updated successfully!'),
+              backgroundColor: Colors.green,
+              duration: const Duration(seconds: 2),
+            ),
+          );
 
-      Future.delayed(const Duration(milliseconds: 500), () {
-        if (mounted) {
-          _handleNavigation(updatedDesignation);
+          Future.delayed(const Duration(milliseconds: 500), () {
+            if (mounted) {
+              _handleNavigation(result.designation);
+            }
+          });
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(result.message ?? 'Failed to update designation'),
+              backgroundColor: Colors.red,
+              duration: const Duration(seconds: 2),
+            ),
+          );
         }
-      });
+      }
     }
   }
 

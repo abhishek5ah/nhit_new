@@ -270,7 +270,9 @@ class AuthInterceptor extends QueuedInterceptor {
     // Skip tenant headers for endpoints that have CORS issues
     const skipTenantHeaderPaths = [
       '/permissions',
-      '/departments',  // Backend CORS doesn't allow tenant_id header
+      '/departments',   // Backend CORS doesn't allow tenant_id header
+      '/designations',  // Backend CORS doesn't allow tenant_id header
+      '/roles',         // Backend CORS doesn't allow tenant_id header
     ];
 
     final shouldSkip = skipTenantHeaderPaths.any((skipPath) => path.contains(skipPath));

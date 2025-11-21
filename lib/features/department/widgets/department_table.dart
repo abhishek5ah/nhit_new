@@ -129,16 +129,19 @@ class _DepartmentTableViewState extends State<DepartmentTableView> {
     final colorScheme = Theme.of(context).colorScheme;
 
     final columns = [
-      DataColumn(label: Text('ID', style: TextStyle(color: colorScheme.onSurface))),
+      DataColumn(label: Text('#', style: TextStyle(color: colorScheme.onSurface))),
       DataColumn(label: Text('Name', style: TextStyle(color: colorScheme.onSurface))),
       DataColumn(label: Text('Description', style: TextStyle(color: colorScheme.onSurface))),
       DataColumn(label: Text('Actions', style: TextStyle(color: colorScheme.onSurface))),
     ];
 
-      final rows = paginatedDepartments.map((department) {
+    int rowIndex = 0;
+    final rows = paginatedDepartments.map((department) {
+        final displayIndex = currentPage * rowsPerPage + rowIndex + 1;
+        rowIndex++;
         return DataRow(
           cells: [
-            DataCell(Text(department.id, style: TextStyle(color: colorScheme.onSurface))),
+            DataCell(Text(displayIndex.toString(), style: TextStyle(color: colorScheme.onSurface))),
             DataCell(Text(department.name, style: TextStyle(color: colorScheme.onSurface))),
             DataCell(Text(department.description, style: TextStyle(color: colorScheme.onSurface))),
             DataCell(

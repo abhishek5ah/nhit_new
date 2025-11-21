@@ -105,7 +105,7 @@ class ViewDesignationScreen extends StatelessWidget {
                 _buildDetailRow(
                   context: context,
                   label: 'Designation ID',
-                  value: designation.id.toString(),
+                  value: designation.id,
                 ),
                 const SizedBox(height: 16),
                 _buildDetailRow(

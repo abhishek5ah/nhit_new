@@ -7,6 +7,7 @@ import 'package:ppv_components/features/organization/services/organization_servi
 import 'package:ppv_components/features/organization/services/organizations_api_service.dart';
 import 'package:ppv_components/features/roles/services/roles_api_service.dart';
 import 'package:ppv_components/features/department/providers/department_provider.dart';
+import 'package:ppv_components/features/designation/providers/designation_provider.dart';
 import 'app/router.dart';
 import 'package:ppv_components/core/theme/theme.dart';
 
@@ -26,6 +27,7 @@ void main() async {
         ChangeNotifierProvider(create: (_) => OrganizationService()),
         ChangeNotifierProvider(create: (_) => RolesApiService()),
         ChangeNotifierProvider(create: (_) => DepartmentProvider()),
+        ChangeNotifierProvider(create: (_) => DesignationProvider()),
       ],
       child: const MyApp(),
     ),

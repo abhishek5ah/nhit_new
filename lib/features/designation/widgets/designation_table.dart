@@ -131,16 +131,19 @@ class _DesignationTableViewState extends State<DesignationTableView> {
     final colorScheme = Theme.of(context).colorScheme;
 
     final columns = [
-      DataColumn(label: Text('ID', style: TextStyle(color: colorScheme.onSurface))),
+      DataColumn(label: Text('#', style: TextStyle(color: colorScheme.onSurface))),
       DataColumn(label: Text('Name', style: TextStyle(color: colorScheme.onSurface))),
       DataColumn(label: Text('Description', style: TextStyle(color: colorScheme.onSurface))),
       DataColumn(label: Text('Actions', style: TextStyle(color: colorScheme.onSurface))),
     ];
 
+    int rowIndex = 0;
     final rows = paginatedDesignations.map((designation) {
+      final displayIndex = currentPage * rowsPerPage + rowIndex + 1;
+      rowIndex++;
       return DataRow(
         cells: [
-          DataCell(Text(designation.id.toString(), style: TextStyle(color: colorScheme.onSurface))),
+          DataCell(Text(displayIndex.toString(), style: TextStyle(color: colorScheme.onSurface))),
           DataCell(Text(designation.name, style: TextStyle(color: colorScheme.onSurface))),
           DataCell(Text(designation.description, style: TextStyle(color: colorScheme.onSurface))),
           DataCell(

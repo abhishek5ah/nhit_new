@@ -41,6 +41,7 @@ class DepartmentProvider extends ChangeNotifier {
 
       if (response.success && response.data != null) {
         _departments = response.data!.departments;
+        _sortDepartments();
         print('✅ [DepartmentProvider] Loaded ${_departments.length} departments');
         _setLoading(false);
         return (success: true, message: response.message);
@@ -75,6 +76,7 @@ class DepartmentProvider extends ChangeNotifier {
 
       if (response.success && response.data != null) {
         _departments.add(response.data!);
+        _sortDepartments();
         print('✅ [DepartmentProvider] Department created successfully');
         _setLoading(false);
         notifyListeners();
@@ -123,6 +125,7 @@ class DepartmentProvider extends ChangeNotifier {
         if (index != -1) {
           _departments[index] = response.data!;
         }
+        _sortDepartments();
         print('✅ [DepartmentProvider] Department updated successfully');
         _setLoading(false);
         notifyListeners();
@@ -160,6 +163,7 @@ class DepartmentProvider extends ChangeNotifier {
 
       if (response.success) {
         _departments.removeWhere((d) => d.id == id);
+        _sortDepartments();
         print('✅ [DepartmentProvider] Department deleted successfully');
         _setLoading(false);
         notifyListeners();
@@ -198,5 +202,22 @@ class DepartmentProvider extends ChangeNotifier {
     _error = null;
     _isLoading = false;
     notifyListeners();
+  }
+
+  void _sortDepartments() {
+    _departments.sort((a, b) {
+      final aTime = a.createdAt ?? a.updatedAt;
+      final bTime = b.createdAt ?? b.updatedAt;
+
+      if (aTime != null && bTime != null) {
+        return bTime.compareTo(aTime); // Newest first
+      } else if (aTime != null) {
+        return -1;
+      } else if (bTime != null) {
+        return 1;
+      }
+
+      return a.name.toLowerCase().compareTo(b.name.toLowerCase());
+    });
   }
 }

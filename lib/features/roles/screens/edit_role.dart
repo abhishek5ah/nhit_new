@@ -1,7 +1,10 @@
 // lib/screens/edit_role_screen.dart
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:ppv_components/common_widgets/button/primary_button.dart';
 import 'package:ppv_components/common_widgets/button/secondary_button.dart';
+import 'package:ppv_components/features/roles/data/models/role_models.dart';
+import 'package:ppv_components/features/roles/services/roles_api_service.dart';
 
 class EditRoleScreen extends StatefulWidget {
   final String roleId;
@@ -28,10 +31,16 @@ class _EditRoleScreenState extends State<EditRoleScreen> {
     super.initState();
     // Initialize role name
     _roleNameController.text = widget.roleName;
+    _loadPermissions();
+  }
 
+  Future<void> _loadPermissions() async {
+    final rolesService = context.read<RolesApiService>();
+    await rolesService.loadPermissions();
+    
     // Initialize all permissions with false
-    for (var permission in _allPermissions) {
-      _permissions[permission] = false;
+    for (var permission in rolesService.availablePermissions) {
+      _permissions[permission.name] = false;
     }
 
     // Set selected permissions to true
@@ -40,6 +49,10 @@ class _EditRoleScreenState extends State<EditRoleScreen> {
         _permissions[permission] = true;
       }
     }
+    
+    if (mounted) {
+      setState(() {});
+    }
   }
 
   @override
@@ -47,123 +60,6 @@ class _EditRoleScreenState extends State<EditRoleScreen> {
     _roleNameController.dispose();
     super.dispose();
   }
-
-  // All permissions from the image
- final List<String> _allPermissions = [
-    // Dashboard & Reports
-    'view-dashboard',
-    'view-reports',
-    'export-data',
-    
-    // User Management
-    'view-user',
-    'create-user',
-    'edit-user',
-    'delete-user',
-    
-    // Role Management
-    'view-role',
-    'create-role',
-    'edit-role',
-    'delete-role',
-    
-    // Department Management
-    'view-department',
-    'create-department',
-    'edit-department',
-    'delete-department',
-    
-    // Designation Management
-    'view-designation',
-    'create-designation',
-    'edit-designation',
-    'delete-designation',
-    
-    // Note Management
-    'view-note',
-    'create-note',
-    'edit-note',
-    'delete-note',
-    'approve-note',
-    'reject-note',
-    'view-all-notes',
-    'export-notes',
-    
-    // Payment Note Management
-    'view-payment-note',
-    'create-payment-note',
-    'edit-payment-note',
-    'delete-payment-note',
-    'approve-payment-note',
-    'reject-payment-note',
-    'view-all-payment-notes',
-    'export-payment-notes',
-    
-    // Reimbursement Note Management
-    'view-reimbursement-note',
-    'create-reimbursement-note',
-    'edit-reimbursement-note',
-    'delete-reimbursement-note',
-    'approve-reimbursement-note',
-    'reject-reimbursement-note',
-    'view-all-reimbursement-notes',
-    'export-reimbursement-notes',
-    
-    // Vendor Management
-    'view-vendors',
-    'create-vendors',
-    'edit-vendors',
-    'delete-vendors',
-    
-    // Payment Management
-    'view-payment',
-    'create-payment',
-    'edit-payment',
-    'delete-payment',
-    'approve-payment',
-    'import-payment-excel',
-    
-    // Rule Management
-    'view-rule',
-    'create-rule',
-    'edit-rule',
-    'delete-rule',
-    
-    // Bank Letters
-    'view-bank-letters',
-    'create-bank-letters',
-    'edit-bank-letters',
-    'delete-bank-letters',
-    'approve-bank-letter',
-    
-    // Organization Management
-    'view-organizations',
-    'create-organizations',
-    'edit-organizations',
-    'delete-organizations',
-    'switch-organizations',
-    
-    // Logs & Audits
-    'view-activity-logs',
-    'view-audit-trail',
-    
-    // Ticket Management
-    'view-tickets',
-    'create-tickets',
-    'edit-tickets',
-    'delete-tickets',
-    'assign-tickets',
-    
-    // Approvers
-    'level-1-approver',
-    'level-2-approver',
-    'level-3-approver',
-    'final-approver',
-    
-    // System
-    'system-configuration',
-    'view-system-logs',
-  ];
 
   void _selectAllPermissions() {
     setState(() {
@@ -181,7 +77,7 @@ class _EditRoleScreenState extends State<EditRoleScreen> {
     });
   }
 
-  void _updateRole() {
+  Future<void> _updateRole() async {
     final colorScheme = Theme.of(context).colorScheme;
 
     if (_roleNameController.text.isEmpty) {
@@ -190,10 +86,10 @@ class _EditRoleScreenState extends State<EditRoleScreen> {
           content: Text(
             'Please enter role name',
             style: TextStyle(
-              color: colorScheme.onPrimary,
+              color: colorScheme.onError,
             ),
           ),
-          backgroundColor: colorScheme.primary,
+          backgroundColor: colorScheme.error,
         ),
       );
       return;
@@ -210,31 +106,76 @@ class _EditRoleScreenState extends State<EditRoleScreen> {
           content: Text(
             'Please select at least one permission',
             style: TextStyle(
-              color: colorScheme.onPrimary,
+              color: colorScheme.onError,
             ),
           ),
-          backgroundColor: colorScheme.primary,
+          backgroundColor: colorScheme.error,
         ),
       );
       return;
     }
 
-    // TODO: Implement your API call here
-    print('Role ID: ${widget.roleId}');
-    print('Updated Role Name: ${_roleNameController.text}');
-    print('Updated Permissions: $selectedPermissions');
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          'Role updated with ${selectedPermissions.length} permissions',
-          style: TextStyle(
-            color: colorScheme.onPrimary,
-          ),
-        ),
-        backgroundColor: colorScheme.primary,
-      ),
+    // Show loading
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => Center(child: CircularProgressIndicator()),
     );
+
+    try {
+      final rolesService = context.read<RolesApiService>();
+      final request = UpdateRoleRequest(
+        name: _roleNameController.text,
+        permissions: selectedPermissions,
+      );
+
+      final result = await rolesService.updateRole(widget.roleId, request);
+
+      // Close loading dialog
+      if (mounted) Navigator.of(context).pop();
+
+      if (result.success) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                'Role "${_roleNameController.text}" updated successfully!',
+                style: TextStyle(color: colorScheme.onPrimary),
+              ),
+              backgroundColor: Colors.green,
+            ),
+          );
+          Navigator.of(context).pop(true); // Return true to indicate success
+        }
+      } else {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                result.message ?? 'Failed to update role',
+                style: TextStyle(color: colorScheme.onError),
+              ),
+              backgroundColor: colorScheme.error,
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      // Close loading dialog
+      if (mounted) Navigator.of(context).pop();
+      
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Error: $e',
+              style: TextStyle(color: colorScheme.onError),
+            ),
+            backgroundColor: colorScheme.error,
+          ),
+        );
+      }
+    }
   }
 
   @override
@@ -518,6 +459,8 @@ class _EditRoleScreenState extends State<EditRoleScreen> {
                           ? 2
                           : 1;
 
+                      final permissionsList = _permissions.keys.toList();
+                      
                       return GridView.builder(
                         shrinkWrap: true,
                         physics: const NeverScrollableScrollPhysics(),
@@ -527,9 +470,9 @@ class _EditRoleScreenState extends State<EditRoleScreen> {
                           crossAxisSpacing: 16,
                           mainAxisSpacing: 12,
                         ),
-                        itemCount: _allPermissions.length,
+                        itemCount: permissionsList.length,
                         itemBuilder: (context, index) {
-                          final permission = _allPermissions[index];
+                          final permission = permissionsList[index];
                           return _buildPermissionCheckbox(permission);
                         },
                       );
