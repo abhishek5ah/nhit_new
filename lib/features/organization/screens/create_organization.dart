@@ -700,7 +700,7 @@ class _CreateOrganizationScreenState extends State<CreateOrganizationScreen> {
               text,
               style: TextStyle(color: Colors.blue[900], fontSize: 13),
             ),
-          ),
+          ),  
         ],
       ),
     );

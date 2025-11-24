@@ -148,7 +148,7 @@ class _RoleTableViewState extends State<RoleTableView> {
 
     final columns = [
       DataColumn(
-        label: Text('ID', style: TextStyle(color: colorScheme.onSurface)),
+        label: Text('S.No.', style: TextStyle(color: colorScheme.onSurface)),
       ),
       DataColumn(
         label: Text(
@@ -167,7 +167,10 @@ class _RoleTableViewState extends State<RoleTableView> {
       ),
     ];
 
+    int rowIndex = 0;
     final rows = paginatedRoles.map((role) {
+      final displayIndex = currentPage * rowsPerPage + rowIndex + 1;
+      rowIndex++;
       final limitedPermissions = role.permissions.take(2).toList();
       final additionalCount =
           role.permissions.length - limitedPermissions.length;
@@ -198,7 +201,7 @@ class _RoleTableViewState extends State<RoleTableView> {
         cells: [
           DataCell(
             Text(
-              role.roleId?.substring(0, 8) ?? 'N/A',
+              displayIndex.toString(),
               style: TextStyle(color: colorScheme.onSurface),
             ),
           ),
