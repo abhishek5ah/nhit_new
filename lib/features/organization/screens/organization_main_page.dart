@@ -97,7 +97,10 @@ class _OrganizationMainPageState extends State<OrganizationMainPage> {
     final result = await Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => EditOrganizationScreen(organization: _convertToLegacyOrganization(org)),
+        builder: (context) => EditOrganizationScreen(
+          organization: _convertToLegacyOrganization(org),
+          organizationModel: org,
+        ),
       ),
     );
     if (result != null) _loadOrganizations();
@@ -107,7 +110,9 @@ class _OrganizationMainPageState extends State<OrganizationMainPage> {
     await Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => ViewOrganizationScreen(organization: _convertToLegacyOrganization(org)),
+        builder: (context) => ViewOrganizationScreen(
+          organization: _convertToLegacyOrganization(org),
+        ),
       ),
     );
   }
