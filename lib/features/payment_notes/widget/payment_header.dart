@@ -1,29 +1,18 @@
 import 'package:flutter/material.dart';
 
 class PaymentHeader extends StatelessWidget {
-  final int tabIndex;
-
-  const PaymentHeader({super.key, required this.tabIndex});
+  const PaymentHeader({super.key});
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
-    final List<_HeaderData> headerData = [
-      _HeaderData(
-        title: 'Payments',
-        subtitle: 'Manage your payment notes here',
-        icon: Icons.payment,
-      ),
-      _HeaderData(
-        title: 'Approval Notes',
-        subtitle: 'Manage your approver notes',
-        icon: Icons.approval,
-      ),
-    ];
-
-    final header = headerData[tabIndex];
+    const _HeaderData header = _HeaderData(
+      title: 'Payments',
+      subtitle: 'Manage your payment notes here',
+      icon: Icons.payment,
+    );
 
     return Container(
       width: double.infinity,
@@ -83,7 +72,7 @@ class _HeaderData {
   final String subtitle;
   final IconData icon;
 
-  _HeaderData({
+  const _HeaderData({
     required this.title,
     required this.subtitle,
     required this.icon,

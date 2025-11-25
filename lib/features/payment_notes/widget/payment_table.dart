@@ -263,7 +263,7 @@ class _PaymentTableViewState extends State<PaymentTableView> {
       ),
       DataColumn(
         label: Text(
-          'Invoice Value',
+          'Amount',
           style: TextStyle(color: colorScheme.onSurface),
         ),
       ),
