@@ -723,17 +723,23 @@ class AuthService extends ChangeNotifier {
     _setLoading(true);
     
     try {
-      final token = await JwtTokenManager.getToken();
+      final refreshToken = await JwtTokenManager.getRefreshToken();
       
-      if (token != null) {
+      if (refreshToken != null && refreshToken.isNotEmpty) {
         try {
-          final response = await _authRepository.logout();
+          print('📤 [AuthService] Sending logout request with refresh token');
+          final response = await _authRepository.logout(refreshToken);
           if (response.success) {
             print('✅ [AuthService] Backend logout successful');
+          } else {
+            print('⚠️ [AuthService] Backend logout failed: ${response.message}');
           }
         } catch (e) {
           print('⚠️ [AuthService] Backend logout error: $e');
+          // Continue with local cleanup even if backend logout fails
         }
+      } else {
+        print('⚠️ [AuthService] No refresh token found, skipping backend logout');
       }
     } finally {
       await _clearAuthData();

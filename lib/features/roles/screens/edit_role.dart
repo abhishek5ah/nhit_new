@@ -243,35 +243,7 @@ class _EditRoleScreenState extends State<EditRoleScreen> {
                   ),
                   Row(
                     children: [
-                      OutlinedButton.icon(
-                        onPressed: () {
-                          // Show permissions guide
-                          showDialog(
-                            context: context,
-                            builder: (context) => AlertDialog(
-                              title: const Text('Permissions Guide'),
-                              content: const SingleChildScrollView(
-                                child: Text(
-                                  'Permissions define what actions a user with this role can perform in the system.',
-                                ),
-                              ),
-                              actions: [
-                                TextButton(
-                                  onPressed: () => Navigator.pop(context),
-                                  child: const Text('Close'),
-                                ),
-                              ],
-                            ),
-                          );
-                        },
-                        icon: const Icon(Icons.info_outline, size: 18),
-                        label: const Text('Permissions Guide'),
-                        style: OutlinedButton.styleFrom(
-                          foregroundColor: Colors.blue[600],
-                          side: BorderSide(color: Colors.blue[600]!),
-                        ),
-                      ),
-                      const SizedBox(width: 12),
+                    const SizedBox(width: 12),
                       OutlinedButton.icon(
                         onPressed: () => Navigator.pop(context),
                         icon: const Icon(Icons.arrow_back, size: 18),
@@ -440,7 +412,7 @@ class _EditRoleScreenState extends State<EditRoleScreen> {
                           );
                         },
                         child: Text(
-                          'What do these permissions mean?',
+                          'Manage Permissions',
                           style: TextStyle(color: colorScheme.primary),
                         ),
                       ),

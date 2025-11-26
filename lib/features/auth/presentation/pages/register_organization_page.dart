@@ -251,7 +251,7 @@ class _RegisterOrganizationPageState extends State<RegisterOrganizationPage> {
               ),
               child: Card(
                 elevation: 8,
-                shadowColor: colorScheme.shadow.withOpacity(0.1),
+                shadowColor: colorScheme.shadow.withValues(alpha: 0.1),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(16),
                 ),
@@ -304,7 +304,7 @@ class _RegisterOrganizationPageState extends State<RegisterOrganizationPage> {
                           Container(
                             padding: const EdgeInsets.all(12),
                             decoration: BoxDecoration(
-                              color: Colors.red.withOpacity(0.1),
+                              color: Colors.red.withValues(alpha: 0.1),
                               borderRadius: BorderRadius.circular(8),
                               border: Border.all(color: Colors.red),
                             ),
@@ -331,7 +331,7 @@ class _RegisterOrganizationPageState extends State<RegisterOrganizationPage> {
                           decoration: InputDecoration(
                             hintText: 'Organization Name',
                             hintStyle: TextStyle(
-                              color: colorScheme.onSurfaceVariant.withOpacity(0.5),
+                              color: colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
                             ),
                             prefixIcon: Icon(
                               Icons.business_outlined,
@@ -397,7 +397,7 @@ class _RegisterOrganizationPageState extends State<RegisterOrganizationPage> {
                           decoration: InputDecoration(
                             hintText: 'Organization Code (e.g., NHIT, ERP)',
                             hintStyle: TextStyle(
-                              color: colorScheme.onSurfaceVariant.withOpacity(0.5),
+                              color: colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
                             ),
                             prefixIcon: Icon(
                               Icons.code,
@@ -411,7 +411,7 @@ class _RegisterOrganizationPageState extends State<RegisterOrganizationPage> {
                                 : null,
                             filled: true,
                             fillColor: _orgCodeError != null
-                                ? Colors.red.withOpacity(0.05)
+                                ? Colors.red.withValues(alpha: 0.05)
                                 : colorScheme.surfaceContainerHighest,
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),
@@ -489,7 +489,7 @@ class _RegisterOrganizationPageState extends State<RegisterOrganizationPage> {
                           decoration: InputDecoration(
                             hintText: 'Organization Description',
                             hintStyle: TextStyle(
-                              color: colorScheme.onSurfaceVariant.withOpacity(0.5),
+                              color: colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
                             ),
                             prefixIcon: Padding(
                               padding: const EdgeInsets.only(bottom: 50),
@@ -608,7 +608,7 @@ class _RegisterOrganizationPageState extends State<RegisterOrganizationPage> {
                                     decoration: InputDecoration(
                                       hintText: 'Project ${index + 1}',
                                       hintStyle: TextStyle(
-                                        color: colorScheme.onSurfaceVariant.withOpacity(0.5),
+                                        color: colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
                                       ),
                                       prefixIcon: Icon(
                                         Icons.work_outline,
@@ -732,7 +732,7 @@ class _RegisterOrganizationPageState extends State<RegisterOrganizationPage> {
                                     Text(
                                       authService.currentUserEmail ?? 'N/A',
                                       style: theme.textTheme.bodySmall?.copyWith(
-                                        color: colorScheme.onSurfaceVariant,
+                                        color: colorScheme.onSurface,
                                       ),
                                     ),
                                   ],
@@ -757,8 +757,8 @@ class _RegisterOrganizationPageState extends State<RegisterOrganizationPage> {
                                 borderRadius: BorderRadius.circular(12),
                               ),
                               elevation: 2,
-                              shadowColor: colorScheme.primary.withOpacity(0.3),
-                              disabledBackgroundColor: colorScheme.primary.withOpacity(0.5),
+                              shadowColor: colorScheme.primary.withValues(alpha: 0.3),
+                              disabledBackgroundColor: colorScheme.primary.withValues(alpha: 0.5),
                             ),
                             child: _isLoading
                                 ? Row(

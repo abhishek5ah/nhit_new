@@ -3,25 +3,21 @@ import 'package:go_router/go_router.dart';
 import 'package:ppv_components/core/services/auth_service.dart';
 import 'package:ppv_components/core/services/google_auth_service.dart';
 
-
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
-
 
   @override
   State<LoginPage> createState() => _LoginPageState();
 }
 
-
 class _LoginPageState extends State<LoginPage> {
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
-  
+
   bool _isLoading = false;
   bool _isGoogleLoading = false;
   bool _obscurePassword = true;
-
 
   @override
   void dispose() {
@@ -30,7 +26,6 @@ class _LoginPageState extends State<LoginPage> {
     super.dispose();
   }
 
-
   Future<void> _handleLogin() async {
     // Validate form first - return early if validation fails
     if (!_formKey.currentState!.validate()) {
@@ -38,29 +33,30 @@ class _LoginPageState extends State<LoginPage> {
       return;
     }
 
-
     // Set loading state
     setState(() => _isLoading = true);
     print('⏳ [LoginPage] Set loading state to true');
-
 
     try {
       // Get form values
       final email = _emailController.text.trim();
       final password = _passwordController.text; // Don't trim password
-      
-      print('🔑 [LoginPage] Starting GLOBAL login for user: $email (email + password only)');
-      
+
+      print(
+        '🔑 [LoginPage] Starting GLOBAL login for user: $email (email + password only)',
+      );
+
       // 🌍 GLOBAL LOGIN: Backend will find tenant automatically
       // No tenant ID needed - backend does GetByEmailGlobal lookup
       final result = await authService.login(email, password);
-      
-      print('📥 [LoginPage] AuthService result - Success: ${result.success}, Message: ${result.message}');
-      
+
+      print(
+        '📥 [LoginPage] AuthService result - Success: ${result.success}, Message: ${result.message}',
+      );
+
       // Set loading to false
       setState(() => _isLoading = false);
       print('⏳ [LoginPage] Set loading state to false');
-
 
       // Check if widget is still mounted before UI operations
       if (!mounted) {
@@ -68,10 +64,9 @@ class _LoginPageState extends State<LoginPage> {
         return;
       }
 
-
       if (result.success) {
         print('✅ [LoginPage] Login successful, showing success message');
-        
+
         // Show success SnackBar
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -80,16 +75,18 @@ class _LoginPageState extends State<LoginPage> {
             duration: const Duration(seconds: 2),
           ),
         );
-        
+
         print('⏰ [LoginPage] Waiting 500ms for user feedback');
         await Future.delayed(const Duration(milliseconds: 500));
-        
+
         // Check mounted again before navigation
         if (!mounted) {
-          print('⚠️  [LoginPage] Widget not mounted after delay, skipping navigation');
+          print(
+            '⚠️  [LoginPage] Widget not mounted after delay, skipping navigation',
+          );
           return;
         }
-        
+
         print('🧭 [LoginPage] Navigating to /dashboard');
         context.go('/dashboard');
       } else {
@@ -106,12 +103,12 @@ class _LoginPageState extends State<LoginPage> {
       print('🚨 [LoginPage] ERROR in _handleLogin:');
       print('   Error: $e');
       print('   StackTrace: $stackTrace');
-      
+
       // Ensure loading is set to false
       if (mounted) {
         setState(() => _isLoading = false);
       }
-      
+
       // Show error SnackBar if widget is still mounted
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -125,32 +122,33 @@ class _LoginPageState extends State<LoginPage> {
     }
   }
 
-
   Future<void> _handleGoogleLogin() async {
-    setState(() => _isGoogleLoading = true);
+  setState(() => _isGoogleLoading = true);
 
+  final result = await GoogleAuthService.signInWithGoogle();
 
-    final result = await GoogleAuthService.signInWithGoogle();
+  setState(() => _isGoogleLoading = false);
 
-
-    setState(() => _isGoogleLoading = false);
-
-
-    if (result.success) {
-      if (mounted) {
-        context.go('/dashboard');
-      }
-    } else {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(result.message ?? 'Google login failed'),
-            backgroundColor: Theme.of(context).colorScheme.error,
+  if (result.success) {
+    if (mounted) {
+      context.go('/dashboard');
+    }
+  } else {
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            result.message ?? 'Google login failed',
+            style: TextStyle(color: Theme.of(context).colorScheme.onPrimary),
           ),
-        );
-      }
+          backgroundColor: Theme.of(context).colorScheme.primary,
+          behavior: SnackBarBehavior.floating,
+          duration: Duration(seconds: 2), // Optional
+        ),
+      );
     }
   }
+}
 
 
   @override
@@ -159,7 +157,6 @@ class _LoginPageState extends State<LoginPage> {
     final colorScheme = theme.colorScheme;
     final screenWidth = MediaQuery.of(context).size.width;
     final isDesktop = screenWidth > 900;
-
 
     return Scaffold(
       backgroundColor: colorScheme.surfaceContainerLowest,
@@ -215,9 +212,7 @@ class _LoginPageState extends State<LoginPage> {
                         ],
                       ),
 
-
                       const SizedBox(height: 32),
-
 
                       // Login Form
                       Form(
@@ -274,17 +269,16 @@ class _LoginPageState extends State<LoginPage> {
                                 if (value == null || value.isEmpty) {
                                   return 'Please enter your email';
                                 }
-                                if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$')
-                                    .hasMatch(value)) {
+                                if (!RegExp(
+                                  r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$',
+                                ).hasMatch(value)) {
                                   return 'Please enter a valid email';
                                 }
                                 return null;
                               },
                             ),
 
-
                             const SizedBox(height: 16),
-
 
                             // Password Field
                             TextFormField(
@@ -356,9 +350,7 @@ class _LoginPageState extends State<LoginPage> {
                               },
                             ),
 
-
                             const SizedBox(height: 12),
-
 
                             // Forgot Password Link
                             Align(
@@ -379,9 +371,7 @@ class _LoginPageState extends State<LoginPage> {
                               ),
                             ),
 
-
                             const SizedBox(height: 24),
-
 
                             // Sign In Button
                             SizedBox(
@@ -396,7 +386,9 @@ class _LoginPageState extends State<LoginPage> {
                                     borderRadius: BorderRadius.circular(12),
                                   ),
                                   elevation: 2,
-                                  shadowColor: colorScheme.primary.withOpacity(0.3),
+                                  shadowColor: colorScheme.primary.withOpacity(
+                                    0.3,
+                                  ),
                                 ),
                                 child: _isLoading
                                     ? SizedBox(
@@ -404,9 +396,10 @@ class _LoginPageState extends State<LoginPage> {
                                         height: 20,
                                         child: CircularProgressIndicator(
                                           strokeWidth: 2,
-                                          valueColor: AlwaysStoppedAnimation<Color>(
-                                            colorScheme.onPrimary,
-                                          ),
+                                          valueColor:
+                                              AlwaysStoppedAnimation<Color>(
+                                                colorScheme.onPrimary,
+                                              ),
                                         ),
                                       )
                                     : const Text(
@@ -422,9 +415,7 @@ class _LoginPageState extends State<LoginPage> {
                         ),
                       ),
 
-
                       const SizedBox(height: 24),
-
 
                       // OR Divider
                       Row(
@@ -454,9 +445,7 @@ class _LoginPageState extends State<LoginPage> {
                         ],
                       ),
 
-
                       const SizedBox(height: 24),
-
 
                       // Social Login Buttons
                       Column(
@@ -466,11 +455,11 @@ class _LoginPageState extends State<LoginPage> {
                             width: double.infinity,
                             height: 50,
                             child: OutlinedButton(
-                              onPressed: _isGoogleLoading ? null : _handleGoogleLogin,
+                              onPressed: _isGoogleLoading
+                                  ? null
+                                  : _handleGoogleLogin,
                               style: OutlinedButton.styleFrom(
-                                side: BorderSide(
-                                  color: colorScheme.outline,
-                                ),
+                                side: BorderSide(color: colorScheme.outline),
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(12),
                                 ),
@@ -485,7 +474,8 @@ class _LoginPageState extends State<LoginPage> {
                                       ),
                                     )
                                   : Row(
-                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
                                       children: [
                                         Image.network(
                                           'https://lh3.googleusercontent.com/aida-public/AB6AXuDICQ3Gup2R71OCmbx5mEnXMa_-nFtzVMxE--Im0OeaHbXxsxEyCINHzrOf64IdixxS42cAIqCmDEK1hlMCWXDh-7teI9fyTFXUdLj6ot4iD92ldCED5_CvY8-0LWlV9qDjGqekeAi_guYwnQkZ8G7_10PMoabYh8sYESF7u8Q6unvafAtX9Tm9hkYJSCltWdzz9IFJrqf4m8k5BcReALPIAFtSNCj-9eHzvWjK2QcE0XAQeG645V1wwd8o89Li5DVjXv3o8RpV7fM',
@@ -506,9 +496,7 @@ class _LoginPageState extends State<LoginPage> {
                             ),
                           ),
 
-
                           const SizedBox(height: 12),
-
 
                           // Microsoft Login Button
                           SizedBox(
@@ -517,15 +505,19 @@ class _LoginPageState extends State<LoginPage> {
                             child: OutlinedButton(
                               onPressed: () {
                                 ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                    content: Text('Microsoft login coming soon'),
+                                   SnackBar(
+                                    content: Text('Microsoft sign-in is not yet implemented. Please use email/password login.'),
+                                    backgroundColor: colorScheme.primary,
+                                    behavior: SnackBarBehavior
+                                        .floating, //  makes the bar float instead of fixed
+                                    duration: Duration(
+                                      seconds: 2,
+                                    ), // Optional: how long to show the notification
                                   ),
                                 );
                               },
                               style: OutlinedButton.styleFrom(
-                                side: BorderSide(
-                                  color: colorScheme.outline,
-                                ),
+                                side: BorderSide(color: colorScheme.outline),
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(12),
                                 ),
@@ -590,9 +582,7 @@ class _LoginPageState extends State<LoginPage> {
                         ],
                       ),
 
-
                       const SizedBox(height: 32),
-
 
                       // Sign Up Link
                       Row(

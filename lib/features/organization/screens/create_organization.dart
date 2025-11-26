@@ -1,9 +1,7 @@
-import 'dart:io';
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:go_router/go_router.dart';
-import 'package:path_provider/path_provider.dart';
-import 'package:path/path.dart' as path;
 import 'package:ppv_components/common_widgets/button/primary_button.dart';
 import 'package:ppv_components/common_widgets/button/secondary_button.dart';
 import 'package:provider/provider.dart';
@@ -29,7 +27,7 @@ class _CreateOrganizationScreenState extends State<CreateOrganizationScreen> {
 
   bool _isLoading = false;
 
-  File? _logoFile;
+  Uint8List? _logoBytes;
   String? _logoFileName;
 
   @override
@@ -65,12 +63,12 @@ class _CreateOrganizationScreenState extends State<CreateOrganizationScreen> {
         type: FileType.custom,
         allowedExtensions: ['jpg', 'jpeg', 'png', 'gif'],
         allowMultiple: false,
+        withData: true,
       );
 
-      if (result != null && result.files.single.path != null) {
-        File file = File(result.files.single.path!);
-        int fileSizeInBytes = await file.length();
-        double fileSizeInMB = fileSizeInBytes / (1024 * 1024);
+      if (result != null) {
+        final pickedFile = result.files.single;
+        final fileSizeInMB = pickedFile.size / (1024 * 1024);
 
         // Check file size (max 2MB)
         if (fileSizeInMB > 2) {
@@ -85,29 +83,21 @@ class _CreateOrganizationScreenState extends State<CreateOrganizationScreen> {
           return;
         }
 
-        // Copy file to permanent location
-        final Directory appDir = await getApplicationDocumentsDirectory();
-        final String organizationLogosDir = '${appDir.path}/organization_logos';
-
-        // Create directory if it doesn't exist
-        final Directory logosDirectory = Directory(organizationLogosDir);
-        if (!await logosDirectory.exists()) {
-          await logosDirectory.create(recursive: true);
+        if (pickedFile.bytes == null) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Unable to read the selected file. Please try another logo.'),
+                backgroundColor: Colors.red,
+              ),
+            );
+          }
+          return;
         }
 
-        // Create unique filename
-        final String timestamp = DateTime.now().millisecondsSinceEpoch
-            .toString();
-        final String extension = path.extension(result.files.single.name);
-        final String newFileName = 'logo_$timestamp$extension';
-        final String permanentPath = '$organizationLogosDir/$newFileName';
-
-        // Copy file to permanent location
-        final File permanentFile = await file.copy(permanentPath);
-
         setState(() {
-          _logoFile = permanentFile;
-          _logoFileName = result.files.single.name;
+          _logoBytes = pickedFile.bytes;
+          _logoFileName = pickedFile.name;
         });
       }
     } catch (e) {
@@ -428,12 +418,12 @@ class _CreateOrganizationScreenState extends State<CreateOrganizationScreen> {
                                 overflow: TextOverflow.ellipsis,
                               ),
                             ),
-                            if (_logoFile != null)
+                            if (_logoBytes != null)
                               IconButton(
                                 icon: const Icon(Icons.close, size: 18),
                                 onPressed: () {
                                   setState(() {
-                                    _logoFile = null;
+                                    _logoBytes = null;
                                     _logoFileName = null;
                                   });
                                 },
@@ -453,7 +443,7 @@ class _CreateOrganizationScreenState extends State<CreateOrganizationScreen> {
                         ),
                       ),
                       // Preview the uploaded logo
-                      if (_logoFile != null) ...[
+                      if (_logoBytes != null) ...[
                         const SizedBox(height: 12),
                         Container(
                           width: 100,
@@ -466,7 +456,7 @@ class _CreateOrganizationScreenState extends State<CreateOrganizationScreen> {
                           ),
                           child: ClipRRect(
                             borderRadius: BorderRadius.circular(8),
-                            child: Image.file(_logoFile!, fit: BoxFit.cover),
+                            child: Image.memory(_logoBytes!, fit: BoxFit.cover),
                           ),
                         ),
                       ],

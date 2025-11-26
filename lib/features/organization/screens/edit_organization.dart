@@ -1,14 +1,13 @@
-import 'dart:io';
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:file_picker/file_picker.dart';
-import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as path;
 import 'package:provider/provider.dart';
 import 'package:ppv_components/common_widgets/button/secondary_button.dart';
 import 'package:ppv_components/features/organization/model/organization_model.dart';
 import 'package:ppv_components/features/organization/data/models/organization_api_models.dart';
 import 'package:ppv_components/common_widgets/button/primary_button.dart';
-import 'package:ppv_components/common_widgets/button/outlined_button.dart';
 import 'package:ppv_components/common_widgets/dropdown.dart';
 import 'package:ppv_components/features/organization/services/organizations_api_service.dart';
 
@@ -34,7 +33,7 @@ class _EditOrganizationScreenState extends State<EditOrganizationScreen> {
   late String _selectedStatus;
   final List<String> _statusOptions = ['Active', 'Inactive'];
 
-  File? _logoFile;
+  Uint8List? _logoBytes;
   String? _logoFileName;
   String? _permanentLogoPath;
   bool _isSubmitting = false;
@@ -51,7 +50,6 @@ class _EditOrganizationScreenState extends State<EditOrganizationScreen> {
 
     // Initialize logo file if path exists
     if (_permanentLogoPath != null && _permanentLogoPath!.isNotEmpty) {
-      _logoFile = File(_permanentLogoPath!);
       _logoFileName = path.basename(_permanentLogoPath!);
     }
   }
@@ -77,12 +75,12 @@ class _EditOrganizationScreenState extends State<EditOrganizationScreen> {
         type: FileType.custom,
         allowedExtensions: ['jpg', 'jpeg', 'png', 'gif'],
         allowMultiple: false,
+        withData: true,
       );
 
-      if (result != null && result.files.single.path != null) {
-        File file = File(result.files.single.path!);
-        int fileSizeInBytes = await file.length();
-        double fileSizeInMB = fileSizeInBytes / (1024 * 1024);
+      if (result != null) {
+        final pickedFile = result.files.single;
+        final fileSizeInMB = pickedFile.size / (1024 * 1024);
 
         if (fileSizeInMB > 2) {
           if (mounted) {
@@ -96,25 +94,23 @@ class _EditOrganizationScreenState extends State<EditOrganizationScreen> {
           return;
         }
 
-        final Directory appDir = await getApplicationDocumentsDirectory();
-        final String organizationLogosDir = '${appDir.path}/organization_logos';
-
-        final Directory logosDirectory = Directory(organizationLogosDir);
-        if (!await logosDirectory.exists()) {
-          await logosDirectory.create(recursive: true);
+        if (pickedFile.bytes == null) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Unable to read the selected file. Please try another logo.'),
+                backgroundColor: Colors.red,
+              ),
+            );
+          }
+          return;
         }
 
-        final String timestamp = DateTime.now().millisecondsSinceEpoch.toString();
-        final String extension = path.extension(result.files.single.name);
-        final String newFileName = 'logo_$timestamp$extension';
-        final String permanentPath = '$organizationLogosDir/$newFileName';
-
-        final File permanentFile = await file.copy(permanentPath);
-
         setState(() {
-          _logoFile = permanentFile;
-          _logoFileName = result.files.single.name;
-          _permanentLogoPath = permanentPath;
+          _logoBytes = pickedFile.bytes;
+          _logoFileName = pickedFile.name;
+          // Note: Local file display only - cannot upload without backend endpoint
+          // Logo URL will remain unchanged in the update request
         });
       }
     } catch (e) {
@@ -147,12 +143,14 @@ class _EditOrganizationScreenState extends State<EditOrganizationScreen> {
       setState(() => _isSubmitting = true);
 
       final service = context.read<OrganizationsApiService>();
+      // Keep existing logo URL - local file upload requires backend endpoint
+      final logoUrl = _permanentLogoPath ?? organizationModel.logo;
       final request = UpdateOrganizationRequest(
         orgId: organizationModel.orgId,
         name: _nameController.text.trim(),
         code: _codeController.text.trim().toUpperCase(),
         description: _descriptionController.text.trim(),
-        logo: _permanentLogoPath ?? organizationModel.logo,
+        logo: logoUrl,
         status: _selectedStatus == 'Active' ? 'activated' : 'deactivated',
       );
 
@@ -191,65 +189,93 @@ class _EditOrganizationScreenState extends State<EditOrganizationScreen> {
     }
   }
 
- Widget _buildOrganizationLogo() {
-  final colorScheme = Theme.of(context).colorScheme;
-  final nameText = _nameController.text.trim();
-  String badgeText;
-  if (nameText.isEmpty) {
-    badgeText = 'O'; // Fallback badge
-  } else if (nameText.length == 1) {
-    badgeText = nameText[0];
-  } else {
-    final nameParts = nameText.split(' ');
-    if (nameParts.length >= 2 && nameParts[0].isNotEmpty && nameParts[1].isNotEmpty) {
-      badgeText = nameParts[0][0] + nameParts[1][0];
+  Widget _buildOrganizationLogo() {
+    final colorScheme = Theme.of(context).colorScheme;
+    final nameText = _nameController.text.trim();
+    String badgeText;
+    if (nameText.isEmpty) {
+      badgeText = 'O';
+    } else if (nameText.length == 1) {
+      badgeText = nameText[0];
     } else {
-      badgeText = nameText.substring(0, 2);
+      final nameParts = nameText.split(' ');
+      if (nameParts.length >= 2 && nameParts[0].isNotEmpty && nameParts[1].isNotEmpty) {
+        badgeText = nameParts[0][0] + nameParts[1][0];
+      } else {
+        badgeText = nameText.substring(0, 2);
+      }
     }
-  }
 
-  if (_logoFile != null && _logoFile!.existsSync()) {
-    return Container(
-      width: 80,
-      height: 80,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: colorScheme.outline.withValues(alpha: 0.2),
-          width: 1,
+    Widget buildBadge() {
+      return Container(
+        width: 80,
+        height: 80,
+        decoration: BoxDecoration(
+          color: colorScheme.primary,
+          borderRadius: BorderRadius.circular(12),
         ),
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(12),
-        child: Image.file(
-          _logoFile!,
-          width: 80,
-          height: 80,
-          fit: BoxFit.cover,
+        child: Center(
+          child: Text(
+            badgeText.toUpperCase(),
+            style: TextStyle(
+              color: colorScheme.onPrimary,
+              fontWeight: FontWeight.bold,
+              fontSize: 32,
+            ),
+          ),
         ),
-      ),
-    );
-  }
+      );
+    }
 
-  return Container(
-    width: 80,
-    height: 80,
-    decoration: BoxDecoration(
-      color: colorScheme.primary,
-      borderRadius: BorderRadius.circular(12),
-    ),
-    child: Center(
-      child: Text(
-        badgeText.toUpperCase(),
-        style: TextStyle(
-          color: colorScheme.onPrimary,
-          fontWeight: FontWeight.bold,
-          fontSize: 32,
+    if (_logoBytes != null) {
+      return Container(
+        width: 80,
+        height: 80,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: colorScheme.outline.withValues(alpha: 0.2),
+            width: 1,
+          ),
         ),
-      ),
-    ),
-  );
-}
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(12),
+          child: Image.memory(
+            _logoBytes!,
+            width: 80,
+            height: 80,
+            fit: BoxFit.cover,
+          ),
+        ),
+      );
+    }
+
+    if (_permanentLogoPath != null && _permanentLogoPath!.startsWith('http')) {
+      return Container(
+        width: 80,
+        height: 80,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: colorScheme.outline.withValues(alpha: 0.2),
+            width: 1,
+          ),
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(12),
+          child: Image.network(
+            _permanentLogoPath!,
+            width: 80,
+            height: 80,
+            fit: BoxFit.cover,
+            errorBuilder: (_, __, ___) => buildBadge(),
+          ),
+        ),
+      );
+    }
+
+    return buildBadge();
+  }
 
 
   @override
@@ -494,12 +520,12 @@ class _EditOrganizationScreenState extends State<EditOrganizationScreen> {
                           overflow: TextOverflow.ellipsis,
                         ),
                       ),
-                      if (_logoFile != null)
+                      if (_logoBytes != null)
                         IconButton(
                           icon: const Icon(Icons.close, size: 18),
                           onPressed: () {
                             setState(() {
-                              _logoFile = null;
+                              _logoBytes = null;
                               _logoFileName = null;
                               _permanentLogoPath = null;
                             });

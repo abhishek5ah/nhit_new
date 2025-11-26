@@ -184,9 +184,10 @@ class AuthRepository {
   }
 
   // Logout user
-  Future<ApiResponse<void>> logout() async {
+  Future<ApiResponse<void>> logout(String refreshToken) async {
     return await ApiService.post<void>(
       ApiConstants.logout,
+      data: {'refresh_token': refreshToken},
     );
   }
 
