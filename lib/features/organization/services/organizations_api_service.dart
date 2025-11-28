@@ -45,36 +45,8 @@ class OrganizationsApiService extends ChangeNotifier {
 
     try {
       final parentOrgId = await JwtTokenManager.getParentOrgId();
-
-      if (parentOrgId != null && parentOrgId.isNotEmpty) {
-        print('🌿 [OrganizationsApiService] Loading child orgs for parent: $parentOrgId');
-        print('🔗 [OrganizationsApiService] API Call: GET /organizations/$parentOrgId/children');
-        final childResponse = await _repository.getChildOrganizations(parentOrgId);
-
-        if (childResponse.success && childResponse.data != null) {
-          _organizations = childResponse.data!.organizations;
-          _currentOrganization = _organizations.isNotEmpty ? _organizations.first : null;
-          _childOrganizations[parentOrgId] = _organizations;
-          
-          print('📊 [OrganizationsApiService] Child orgs loaded: ${_organizations.length} organizations');
-          
-          // Log missing data statistics
-          _logMissingDataStats(_organizations, 'child organizations');
-          
-          // Run detailed tenant analysis for debugging
-          debugTenantDataPatterns();
-          
-          _setLoading(false);
-          return (success: true, message: childResponse.message);
-        } else {
-          _setError(childResponse.message ?? 'Failed to load child organizations');
-          _setLoading(false);
-          return (success: false, message: childResponse.message);
-        }
-      }
-
-      // Fallback: tenant-filtered fetch (legacy support)
       final tenantId = await JwtTokenManager.getTenantId();
+
       if (tenantId == null || tenantId.isEmpty) {
         _setError('No tenant ID found. Please login again.');
         _setLoading(false);
@@ -82,7 +54,24 @@ class OrganizationsApiService extends ChangeNotifier {
       }
 
       _currentTenantId = tenantId;
-      print('🔑 [OrganizationsApiService] Falling back to tenant ID: $tenantId');
+
+      // Load child organizations (if parent org exists) for diagnostics & caches,
+      // but always fetch tenant-level list for main UI.
+      if (parentOrgId != null && parentOrgId.isNotEmpty) {
+        print('🌿 [OrganizationsApiService] Loading child orgs for parent: $parentOrgId');
+        print('🔗 [OrganizationsApiService] API Call: GET /organizations/$parentOrgId/children');
+        final childResponse = await _repository.getChildOrganizations(parentOrgId);
+
+        if (childResponse.success && childResponse.data != null) {
+          _childOrganizations[parentOrgId] = childResponse.data!.organizations;
+          print('📊 [OrganizationsApiService] Child orgs cached: ${childResponse.data!.organizations.length} organizations');
+          _logMissingDataStats(childResponse.data!.organizations, 'child organizations');
+        } else {
+          print('⚠️ [OrganizationsApiService] Failed to load child orgs: ${childResponse.message}');
+        }
+      }
+
+      print('🔑 [OrganizationsApiService] Loading tenant organizations for tenant: $tenantId');
       print('🔗 [OrganizationsApiService] API Call: GET /tenants/$tenantId/organizations');
 
       final response = await _repository.getOrganizationsByTenant(tenantId);

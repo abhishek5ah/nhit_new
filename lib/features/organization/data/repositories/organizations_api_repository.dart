@@ -31,10 +31,16 @@ class OrganizationsApiRepository {
       await _addAuthHeader();
       
       final response = await _dio.get('/tenants/$tenantId/organizations');
-      
+
       if (response.statusCode == 200) {
         print('✅ [OrganizationsApiRepository] Organizations retrieved successfully');
-        final organizationsResponse = OrganizationsListResponse.fromJson(response.data);
+        final rawBody = response.data;
+        final payload = rawBody is Map<String, dynamic> && rawBody.containsKey('data')
+            ? rawBody['data']
+            : rawBody;
+        final organizationsResponse = OrganizationsListResponse.fromJson(
+          payload ?? <String, dynamic>{},
+        );
         return ApiResponse.success(
           message: 'Organizations retrieved successfully',
           data: organizationsResponse,
@@ -159,7 +165,13 @@ class OrganizationsApiRepository {
       final response = await _dio.get('/organizations/$parentOrgId/children');
 
       if (response.statusCode == 200) {
-        final children = OrganizationsListResponse.fromJson(response.data);
+        final rawBody = response.data;
+        final payload = rawBody is Map<String, dynamic> && rawBody.containsKey('data')
+            ? rawBody['data']
+            : rawBody;
+        final children = OrganizationsListResponse.fromJson(
+          payload ?? <String, dynamic>{},
+        );
         return ApiResponse.success(
           message: response.data['message'] ?? 'Child organizations retrieved successfully',
           data: children,
