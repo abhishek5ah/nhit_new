@@ -111,7 +111,8 @@ class _OrganizationMainPageState extends State<OrganizationMainPage> {
       context,
       MaterialPageRoute(
         builder: (context) => ViewOrganizationScreen(
-          organization: _convertToLegacyOrganization(org),
+          orgId: org.orgId,
+          initialOrganization: org,
         ),
       ),
     );

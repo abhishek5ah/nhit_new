@@ -43,6 +43,7 @@ class ApiConstants {
   static const String createTenant = '/tenants';  // Register user (first = Super Admin)
   static const String users = '/users';
   static const String userRoles = '/users'; // /users/{id}/roles
+  static const String userLoginHistory = '/users/me/login-history';
   
   // ============ ORGANIZATION SERVICE ENDPOINTS (Port 8053) ============
   static const String createOrganization = '/organizations';

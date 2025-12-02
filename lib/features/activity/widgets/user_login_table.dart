@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:ppv_components/common_widgets/custom_table.dart';
 import 'package:ppv_components/common_widgets/custom_pagination.dart';
 import 'package:ppv_components/features/activity/model/user_login_history.dart';
@@ -61,24 +62,42 @@ class _UserLoginTableViewState extends State<UserLoginTableView> {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
+    final dateFormatter = DateFormat('dd MMM yyyy, hh:mm a');
+    final startSerial = currentPage * rowsPerPage;
     final columns = [
-      DataColumn(label: Text('ID', style: TextStyle(color: colorScheme.onSurface))),
+      DataColumn(label: Text('S.No', style: TextStyle(color: colorScheme.onSurface))),
       DataColumn(label: Text('User', style: TextStyle(color: colorScheme.onSurface))),
-      DataColumn(label: Text('Login At', style: TextStyle(color: colorScheme.onSurface))),
-      DataColumn(label: Text('Login IP', style: TextStyle(color: colorScheme.onSurface))),
+      DataColumn(label: Text('Login Time', style: TextStyle(color: colorScheme.onSurface))),
+      DataColumn(label: Text('IP Address', style: TextStyle(color: colorScheme.onSurface))),
       DataColumn(label: Text('User Agent', style: TextStyle(color: colorScheme.onSurface))),
-      DataColumn(label: Text('Created At', style: TextStyle(color: colorScheme.onSurface))),
     ];
-    final rows = paginated
-        .map((log) => DataRow(cells: [
-      DataCell(Text(log.id.toString(), style: TextStyle(color: colorScheme.onSurface))),
-      DataCell(Text(log.user, style: TextStyle(color: colorScheme.onSurface))),
-      DataCell(Text(log.loginAt, style: TextStyle(color: colorScheme.onSurface))),
-      DataCell(Text(log.loginIp, style: TextStyle(color: colorScheme.onSurface))),
-      DataCell(Text(log.userAgent, style: TextStyle(color: colorScheme.onSurface))),
-      DataCell(Text(log.createdAt, style: TextStyle(color: colorScheme.onSurface))),
-    ]))
-        .toList();
+    final rows = paginated.asMap().entries.map((entry) {
+      final index = entry.key;
+      final log = entry.value;
+      final serialNumber = startSerial + index + 1;
+      final loginTimeText = dateFormatter.format(log.loginTime);
+
+      return DataRow(cells: [
+        DataCell(Text(serialNumber.toString(), style: TextStyle(color: colorScheme.onSurface))),
+        DataCell(Text(log.userLabel, style: TextStyle(color: colorScheme.onSurface))),
+        DataCell(Text(loginTimeText, style: TextStyle(color: colorScheme.onSurface))),
+        DataCell(Text(log.ipAddress, style: TextStyle(color: colorScheme.onSurface))),
+        DataCell(
+          Tooltip(
+            message: log.userAgent,
+            child: SizedBox(
+              width: 250,
+              child: Text(
+                log.userAgent,
+                style: TextStyle(color: colorScheme.onSurface),
+                overflow: TextOverflow.ellipsis,
+                maxLines: 2,
+              ),
+            ),
+          ),
+        ),
+      ]);
+    }).toList();
 
     return Container(
       padding: const EdgeInsets.all(24),

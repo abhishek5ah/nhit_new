@@ -57,6 +57,21 @@ class OrganizationModel {
       print('✅ [OrganizationModel] Complete data for $orgName');
     }
 
+    List<String> _parseProjects(Map<String, dynamic> source) {
+      final possibleKeys = ['initialProjects', 'projects', 'initial_projects'];
+      for (final key in possibleKeys) {
+        if (source[key] != null) {
+          final value = source[key];
+          if (value is List) {
+            return value.map((e) => e.toString()).toList();
+          }
+        }
+      }
+      return <String>[];
+    }
+
+    final parsedProjects = _parseProjects(json);
+
     return OrganizationModel(
       orgId: json['orgId'] ?? '',
       tenantId: json['tenantId'] ?? '',
@@ -69,9 +84,7 @@ class OrganizationModel {
       superAdmin: json['superAdmin'] != null 
           ? SuperAdminInfo.fromJson(json['superAdmin'])
           : null,
-      initialProjects: json['initialProjects'] != null
-          ? List<String>.from(json['initialProjects'])
-          : [],
+      initialProjects: parsedProjects,
       status: json['status'] ?? 'activated',
       createdAt: DateTime.parse(json['createdAt'] ?? DateTime.now().toIso8601String()),
       updatedAt: DateTime.parse(json['updatedAt'] ?? DateTime.now().toIso8601String()),

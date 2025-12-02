@@ -70,11 +70,18 @@ class OrganizationsApiRepository {
       print('🏢 [OrganizationsApiRepository] Getting organization by ID: $orgId');
       await _addAuthHeader();
       
-      final response = await _dio.get('/organizations/$orgId');
+      final response = await _dio.get('/organizations/$orgId/with-projects');
       
       if (response.statusCode == 200) {
         print('✅ [OrganizationsApiRepository] Organization retrieved successfully');
-        final organization = OrganizationModel.fromJson(response.data['organization'] ?? response.data);
+        final rawBody = response.data;
+        final payload = rawBody is Map<String, dynamic> && rawBody.containsKey('data')
+            ? rawBody['data']
+            : rawBody;
+        final organizationJson = payload is Map<String, dynamic>
+            ? (payload['organization'] ?? payload)
+            : payload;
+        final organization = OrganizationModel.fromJson(organizationJson);
         return ApiResponse.success(
           message: 'Organization retrieved successfully',
           data: organization,

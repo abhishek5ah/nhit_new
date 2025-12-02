@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:ppv_components/features/activity/data/user_login_mockdb.dart';
+import 'package:intl/intl.dart';
+import 'package:provider/provider.dart';
 import 'package:ppv_components/features/activity/model/user_login_history.dart';
+import 'package:ppv_components/features/activity/services/user_login_history_service.dart';
 import 'package:ppv_components/features/activity/widgets/login_header.dart';
 import 'package:ppv_components/features/activity/widgets/user_login_table.dart';
 
@@ -14,14 +16,14 @@ class LoginHistoryMainPage extends StatefulWidget {
 class _LoginHistoryMainPageState extends State<LoginHistoryMainPage> {
   //Create the controller as a final variable.
   final TextEditingController _searchController = TextEditingController();
-  late List<UserLoginHistory> filteredLoginLogs;
-  final List<UserLoginHistory> allLoginLogs =
-  List<UserLoginHistory>.from(userLoginHistoryData);
+  String _searchQuery = '';
 
   @override
   void initState() {
     super.initState();
-    filteredLoginLogs = List<UserLoginHistory>.from(allLoginLogs);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _loadLoginHistory();
+    });
   }
 
   // Dispose of the controller when the widget is removed.
@@ -31,23 +33,36 @@ class _LoginHistoryMainPageState extends State<LoginHistoryMainPage> {
     super.dispose();
   }
 
+  Future<void> _loadLoginHistory() async {
+    await context.read<UserLoginHistoryService>().loadHistories();
+  }
+
   void updateLoginSearch(String query) {
     setState(() {
-      final searchQuery = query.toLowerCase();
-      filteredLoginLogs = allLoginLogs.where((log) {
-        return log.user.toLowerCase().contains(searchQuery) ||
-            log.loginIp.toLowerCase().contains(searchQuery) ||
-            log.userAgent.toLowerCase().contains(searchQuery) ||
-            log.loginAt.toLowerCase().contains(searchQuery) ||
-            log.createdAt.toLowerCase().contains(searchQuery) ||
-            log.id.toString().contains(searchQuery);
-      }).toList();
+      _searchQuery = query.trim().toLowerCase();
     });
+  }
+
+  List<UserLoginHistory> _filterHistories(List<UserLoginHistory> histories) {
+    if (_searchQuery.isEmpty) return histories;
+
+    final dateFormatter = DateFormat('dd MMM yyyy, hh:mm a');
+    return histories.where((log) {
+      final loginTimeText = dateFormatter.format(log.loginTime).toLowerCase();
+      return log.userLabel.toLowerCase().contains(_searchQuery) ||
+          log.ipAddress.toLowerCase().contains(_searchQuery) ||
+          log.userAgent.toLowerCase().contains(_searchQuery) ||
+          loginTimeText.contains(_searchQuery) ||
+          log.historyId.toLowerCase().contains(_searchQuery);
+    }).toList();
   }
 
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
+    final loginHistoryService = context.watch<UserLoginHistoryService>();
+    final filteredLoginLogs =
+        _filterHistories(loginHistoryService.histories);
 
     Widget searchBar() {
       return SizedBox(
@@ -73,6 +88,60 @@ class _LoginHistoryMainPageState extends State<LoginHistoryMainPage> {
       );
     }
 
+    Future<void> onRefresh() async {
+      await loginHistoryService.loadHistories();
+    }
+
+    Widget body() {
+      if (loginHistoryService.isLoading) {
+        return const Center(child: CircularProgressIndicator());
+      }
+
+      if (loginHistoryService.error != null) {
+        return Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                loginHistoryService.error!,
+                style: TextStyle(color: colorScheme.error),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 12),
+              FilledButton.icon(
+                onPressed: onRefresh,
+                icon: const Icon(Icons.refresh),
+                label: const Text('Retry'),
+              ),
+            ],
+          ),
+        );
+      }
+
+      if (filteredLoginLogs.isEmpty) {
+        return Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(Icons.history, size: 48),
+              const SizedBox(height: 12),
+              const Text('No login history found'),
+              const SizedBox(height: 8),
+              TextButton.icon(
+                onPressed: onRefresh,
+                icon: const Icon(Icons.refresh),
+                label: const Text('Reload'),
+              ),
+            ],
+          ),
+        );
+      }
+
+      return UserLoginTableView(
+        loginData: filteredLoginLogs,
+      );
+    }
+
     return Scaffold(
       backgroundColor: colorScheme.surface,
       body: Padding(
@@ -88,6 +157,11 @@ class _LoginHistoryMainPageState extends State<LoginHistoryMainPage> {
               padding: const EdgeInsets.only(right: 12),
               child: Row(
                 children: [
+                  IconButton(
+                    onPressed: loginHistoryService.isLoading ? null : onRefresh,
+                    tooltip: 'Refresh',
+                    icon: const Icon(Icons.refresh),
+                  ),
                   const Spacer(),
                   searchBar(),
                 ],
@@ -95,8 +169,9 @@ class _LoginHistoryMainPageState extends State<LoginHistoryMainPage> {
             ),
             const SizedBox(height: 12),
             Expanded(
-              child: UserLoginTableView(
-                loginData: filteredLoginLogs,
+              child: RefreshIndicator(
+                onRefresh: onRefresh,
+                child: body(),
               ),
             ),
           ],

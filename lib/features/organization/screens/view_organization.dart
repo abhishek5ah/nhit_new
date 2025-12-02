@@ -1,55 +1,117 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
+import 'package:ppv_components/common_widgets/button/outlined_button.dart';
 import 'package:ppv_components/common_widgets/button/primary_button.dart';
 import 'package:ppv_components/common_widgets/button/secondary_button.dart';
-import 'package:ppv_components/common_widgets/button/outlined_button.dart';
-import 'package:ppv_components/features/organization/model/organization_model.dart';
+import 'package:ppv_components/features/organization/data/models/organization_api_models.dart'
+    as api;
+import 'package:ppv_components/features/organization/model/organization_model.dart'
+    as legacy_org;
 import 'package:ppv_components/features/organization/screens/edit_organization.dart';
+import 'package:ppv_components/features/organization/services/organizations_api_service.dart';
 
-class ViewOrganizationScreen extends StatelessWidget {
-  final Organization organization;
+class ViewOrganizationScreen extends StatefulWidget {
+  final String orgId;
+  final api.OrganizationModel? initialOrganization;
 
   const ViewOrganizationScreen({
     super.key,
-    required this.organization,
+    required this.orgId,
+    this.initialOrganization,
   });
 
-  Widget _buildOrganizationLogo(BuildContext context) {
+  @override
+  State<ViewOrganizationScreen> createState() => _ViewOrganizationScreenState();
+}
+
+class _ViewOrganizationScreenState extends State<ViewOrganizationScreen> {
+  api.OrganizationModel? _organization;
+  bool _isLoading = true;
+  String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    _organization = widget.initialOrganization;
+    _isLoading = _organization == null;
+    WidgetsBinding.instance.addPostFrameCallback((_) => _fetchOrganization());
+  }
+
+  Future<void> _fetchOrganization() async {
+    setState(() {
+      _isLoading = true;
+      _error = null;
+    });
+
+    final orgService = context.read<OrganizationsApiService>();
+    final result = await orgService.getOrganizationById(widget.orgId);
+
+    if (!mounted) return;
+
+    if (result.success && result.organization != null) {
+      setState(() {
+        _organization = result.organization;
+        _isLoading = false;
+      });
+    } else {
+      setState(() {
+        _error = result.message ?? 'Unable to load organization details.';
+        _isLoading = false;
+      });
+    }
+  }
+
+  legacy_org.Organization? _convertToLegacyOrganization(api.OrganizationModel org) {
+    return legacy_org.Organization(
+      id: org.orgId.hashCode,
+      name: org.name,
+      code: org.code,
+      status: org.status == 'activated' ? 'Active' : 'Inactive',
+      createdBy: org.createdByDisplay,
+      createdDate:
+          '${org.createdAt.day}/${org.createdAt.month}/${org.createdAt.year}',
+      description: org.description,
+      logoPath: org.logo,
+      projects: org.initialProjects,
+    );
+  }
+
+  Widget _buildOrganizationLogo(BuildContext context, api.OrganizationModel org) {
     final colorScheme = Theme.of(context).colorScheme;
-    final nameParts = organization.name.split(' ');
+    final nameParts = org.name.split(' ');
     final badgeText = nameParts.length >= 2
         ? nameParts[0][0] + nameParts[1][0]
-        : organization.name.substring(0, 2.clamp(0, organization.name.length));
+        : org.name.substring(0, 2.clamp(0, org.name.length));
 
-    // If logo path exists, show the image
-    if (organization.logoPath != null && organization.logoPath!.isNotEmpty) {
-      final logoFile = File(organization.logoPath!);
-      if (logoFile.existsSync()) {
-        return Container(
-          width: 80,
-          height: 80,
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(
-              color: colorScheme.outline.withValues(alpha: 0.2),
-              width: 1,
-            ),
+    if (org.logo.isNotEmpty) {
+      return Container(
+        width: 80,
+        height: 80,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: colorScheme.outline.withValues(alpha: 0.2),
+            width: 1,
           ),
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(12),
-            child: Image.file(
-              logoFile,
-              width: 80,
-              height: 80,
-              fit: BoxFit.cover,
-            ),
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(12),
+          child: Image.network(
+            org.logo,
+            width: 80,
+            height: 80,
+            fit: BoxFit.cover,
+            errorBuilder: (_, __, ___) => _buildInitialsBadge(badgeText, colorScheme),
           ),
-        );
-      }
+        ),
+      );
     }
 
-    // Otherwise show initials badge
+    return _buildInitialsBadge(badgeText, colorScheme);
+  }
+
+  Widget _buildInitialsBadge(String text, ColorScheme colorScheme) {
     return Container(
       width: 80,
       height: 80,
@@ -59,7 +121,7 @@ class ViewOrganizationScreen extends StatelessWidget {
       ),
       child: Center(
         child: Text(
-          badgeText.toUpperCase(),
+          text.toUpperCase(),
           style: TextStyle(
             color: colorScheme.onPrimary,
             fontWeight: FontWeight.bold,
@@ -70,20 +132,57 @@ class ViewOrganizationScreen extends StatelessWidget {
     );
   }
 
+  String _formatStatus(api.OrganizationModel org) {
+    return org.status == 'activated' ? 'Active' : 'Inactive';
+  }
+
+  String _formatDate(DateTime date) {
+    return '${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year}';
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
-    final textTheme = theme.textTheme;
 
-    return Scaffold(
-      backgroundColor: colorScheme.surface,
-      body: SingleChildScrollView(
+    Widget buildBody() {
+      if (_isLoading && _organization == null) {
+        return const Center(child: CircularProgressIndicator());
+      }
+
+      if (_error != null && _organization == null) {
+        return Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.error_outline, size: 48, color: colorScheme.error),
+              const SizedBox(height: 12),
+              Text(
+                _error!,
+                style: theme.textTheme.titleMedium?.copyWith(
+                  color: colorScheme.error,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 16),
+              PrimaryButton(
+                onPressed: _fetchOrganization,
+                label: 'Retry',
+                icon: Icons.refresh,
+              ),
+            ],
+          ),
+        );
+      }
+
+      final org = _organization!;
+      final statusText = _formatStatus(org);
+
+      return SingleChildScrollView(
         padding: const EdgeInsets.all(24),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Header with Logo, Name, Code, Status, and Action Buttons
             Container(
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
@@ -95,15 +194,15 @@ class ViewOrganizationScreen extends StatelessWidget {
               ),
               child: Row(
                 children: [
-                  _buildOrganizationLogo(context),
+                  _buildOrganizationLogo(context, org),
                   const SizedBox(width: 16),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          organization.name,
-                          style: textTheme.headlineSmall?.copyWith(
+                          org.name,
+                          style: theme.textTheme.headlineSmall?.copyWith(
                             fontWeight: FontWeight.bold,
                             color: colorScheme.onSurface,
                           ),
@@ -121,8 +220,8 @@ class ViewOrganizationScreen extends StatelessWidget {
                                 borderRadius: BorderRadius.circular(20),
                               ),
                               child: Text(
-                                organization.code.toUpperCase(),
-                                style: textTheme.bodySmall?.copyWith(
+                                org.code.toUpperCase(),
+                                style: theme.textTheme.bodySmall?.copyWith(
                                   fontWeight: FontWeight.bold,
                                   color: colorScheme.onPrimaryContainer,
                                 ),
@@ -135,14 +234,13 @@ class ViewOrganizationScreen extends StatelessWidget {
                                 vertical: 6,
                               ),
                               decoration: BoxDecoration(
-                                color: organization.status == 'Active'
-                                    ? Colors.green
-                                    : Colors.red,
+                                color:
+                                    statusText == 'Active' ? Colors.green : Colors.red,
                                 borderRadius: BorderRadius.circular(20),
                               ),
                               child: Text(
-                                organization.status,
-                                style: textTheme.bodySmall?.copyWith(
+                                statusText,
+                                style: theme.textTheme.bodySmall?.copyWith(
                                   fontWeight: FontWeight.bold,
                                   color: Colors.white,
                                 ),
@@ -157,11 +255,13 @@ class ViewOrganizationScreen extends StatelessWidget {
                     children: [
                       PrimaryButton(
                         onPressed: () {
+                          final legacy = _convertToLegacyOrganization(org);
+                          if (legacy == null) return;
                           Navigator.push(
                             context,
                             MaterialPageRoute(
                               builder: (context) => EditOrganizationScreen(
-                                organization: organization,
+                                organization: legacy,
                               ),
                             ),
                           );
@@ -169,11 +269,9 @@ class ViewOrganizationScreen extends StatelessWidget {
                         label: 'Edit',
                         icon: Icons.edit_outlined,
                       ),
-
-
                       const SizedBox(width: 8),
-
-                      SecondaryButton(label: 'Back',
+                      SecondaryButton(
+                        label: 'Back',
                         onPressed: () => Navigator.pop(context),
                         icon: Icons.arrow_back,
                       )
@@ -185,37 +283,37 @@ class ViewOrganizationScreen extends StatelessWidget {
 
             const SizedBox(height: 24),
 
-            // Two Column Layout
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Left Column - Basic Information
                 Expanded(
                   flex: 2,
                   child: Column(
                     children: [
-                      _buildInfoCard(context),
+                      _buildInfoCard(context, org, statusText),
                       const SizedBox(height: 24),
-                      _buildStatisticsCard(context),
+                      _buildStatisticsCard(context, org, statusText),
                     ],
                   ),
                 ),
-
                 const SizedBox(width: 24),
-
-                // Right Column - Projects
                 Expanded(
-                  child: _buildProjectsCard(context),
+                  child: _buildProjectsCard(context, org),
                 ),
               ],
             ),
           ],
         ),
-      ),
+      );
+    }
+
+    return Scaffold(
+      backgroundColor: colorScheme.surface,
+      body: buildBody(),
     );
   }
 
-  Widget _buildInfoCard(BuildContext context) {
+  Widget _buildInfoCard(BuildContext context, api.OrganizationModel organization, String statusText) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
     final textTheme = theme.textTheme;
@@ -248,10 +346,10 @@ class ViewOrganizationScreen extends StatelessWidget {
           const SizedBox(height: 24),
           _buildInfoRow(context, 'Organization Name:', organization.name),
           _buildInfoRow(context, 'Code:', organization.code.toUpperCase()),
-          _buildInfoRow(context, 'Status:', organization.status),
-          _buildInfoRow(context, 'Created By:', organization.createdBy),
-          _buildInfoRow(context, 'Created At:', organization.createdDate),
-          _buildInfoRow(context, 'Last Updated:', organization.createdDate),
+          _buildInfoRow(context, 'Status:', statusText),
+          _buildInfoRow(context, 'Created By:', organization.createdByDisplay),
+          _buildInfoRow(context, 'Created At:', _formatDate(organization.createdAt)),
+          _buildInfoRow(context, 'Last Updated:', _formatDate(organization.updatedAt)),
         ],
       ),
     );
@@ -290,13 +388,12 @@ class ViewOrganizationScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildProjectsCard(BuildContext context) {
+  Widget _buildProjectsCard(BuildContext context, api.OrganizationModel organization) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
     final textTheme = theme.textTheme;
 
-    // Mock projects data - replace with actual data from organization
-    final List<String> projects = []; // Empty for now
+    final List<String> projects = organization.initialProjects;
 
     return Container(
       decoration: BoxDecoration(
@@ -310,12 +407,14 @@ class ViewOrganizationScreen extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // Header row
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Row(
                 children: [
-                  Icon(Icons.folder_outlined, size: 20, color: colorScheme.primary),
+                  Icon(Icons.folder_outlined,
+                      size: 20, color: colorScheme.primary),
                   const SizedBox(width: 8),
                   Text(
                     'Projects',
@@ -337,7 +436,7 @@ class ViewOrganizationScreen extends StatelessWidget {
           ),
           const SizedBox(height: 24),
 
-          // Empty state or project list
+          // Empty state or project grid-style rows
           if (projects.isEmpty)
             Center(
               child: Column(
@@ -366,45 +465,56 @@ class ViewOrganizationScreen extends StatelessWidget {
               ),
             )
           else
-            ...projects.map((project) {
-              return Padding(
-                padding: const EdgeInsets.only(bottom: 12),
-                child: Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(
-                      color: colorScheme.outline.withValues(alpha: 0.2),
-                    ),
-                  ),
-                  child: Row(
-                    children: [
-                      Icon(
-                        Icons.folder_outlined,
-                        size: 20,
-                        color: colorScheme.primary,
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: projects.map((project) {
+                return SizedBox(
+                  width: (MediaQuery.of(context).size.width -
+                          24 /*page padding left*/ -
+                          24 /*page padding right*/ -
+                          24 /*gap between columns*/ -
+                          24 /*card padding left+right*/) /
+                      2,
+                  child: Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: colorScheme.surfaceContainerHighest
+                          .withValues(alpha: 0.3),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(
+                        color: colorScheme.outline.withValues(alpha: 0.2),
                       ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Text(
-                          project,
-                          style: textTheme.bodyMedium?.copyWith(
-                            color: colorScheme.onSurface,
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.folder_outlined,
+                          size: 20,
+                          color: colorScheme.primary,
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Text(
+                            project,
+                            style: textTheme.bodyMedium?.copyWith(
+                              color: colorScheme.onSurface,
+                            ),
+                            overflow: TextOverflow.ellipsis,
                           ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
-                ),
-              );
-            }).toList(),
+                );
+              }).toList(),
+            ),
         ],
       ),
     );
   }
 
-  Widget _buildStatisticsCard(BuildContext context) {
+  Widget _buildStatisticsCard(BuildContext context, api.OrganizationModel organization, String statusText) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
     final textTheme = theme.textTheme;
@@ -423,7 +533,8 @@ class ViewOrganizationScreen extends StatelessWidget {
         children: [
           Row(
             children: [
-              Icon(Icons.bar_chart_outlined, size: 20, color: colorScheme.primary),
+              Icon(Icons.bar_chart_outlined,
+                  size: 20, color: colorScheme.primary),
               const SizedBox(width: 8),
               Text(
                 'Statistics',
@@ -435,7 +546,6 @@ class ViewOrganizationScreen extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 24),
-
           Row(
             children: [
               Expanded(
@@ -453,7 +563,7 @@ class ViewOrganizationScreen extends StatelessWidget {
                   context: context,
                   icon: Icons.folder_outlined,
                   label: 'Projects',
-                  value: '0',
+                  value: organization.initialProjects.length.toString(),
                   color: Colors.cyan,
                 ),
               ),
@@ -467,7 +577,7 @@ class ViewOrganizationScreen extends StatelessWidget {
                   context: context,
                   icon: Icons.calendar_today_outlined,
                   label: 'Days Active',
-                  value: '7',
+                  value: DateTime.now().difference(organization.createdAt).inDays.toString(),
                   color: Colors.orange,
                 ),
               ),
@@ -477,8 +587,8 @@ class ViewOrganizationScreen extends StatelessWidget {
                   context: context,
                   icon: Icons.check_circle_outline,
                   label: 'Status',
-                  value: organization.status,
-                  color: organization.status == 'Active' ? Colors.green : Colors.red,
+                  value: statusText,
+                  color: statusText == 'Active' ? Colors.green : Colors.red,
                 ),
               ),
             ],
