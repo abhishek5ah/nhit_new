@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
+import 'package:ppv_components/core/accessibility/accessibility_constants.dart';
+import 'package:ppv_components/core/accessibility/accessibility_utils.dart';
 import 'package:ppv_components/features/roles/data/models/role_models.dart';
 import 'package:ppv_components/features/roles/services/roles_api_service.dart';
 import 'package:ppv_components/features/roles/widgets/roles_header.dart';
@@ -15,11 +18,34 @@ class RoleMainPage extends StatefulWidget {
 class _RoleMainPageState extends State<RoleMainPage> {
   String searchQuery = '';
   bool _isInitialized = false;
+  final FocusNode _skipToMainFocusNode = FocusNode();
+  final FocusNode _searchFocusNode = FocusNode();
+  final GlobalKey _mainContentKey = GlobalKey();
 
   @override
   void initState() {
     super.initState();
     _loadData();
+  }
+
+  @override
+  void dispose() {
+    _skipToMainFocusNode.dispose();
+    _searchFocusNode.dispose();
+    super.dispose();
+  }
+
+  void _skipToMainContent() {
+    if (_mainContentKey.currentContext != null) {
+      Scrollable.ensureVisible(
+        _mainContentKey.currentContext!,
+        duration: const Duration(milliseconds: 300),
+      );
+      AccessibilityUtils.announceToScreenReader(
+        context,
+        'Navigated to roles list',
+      );
+    }
   }
 
   Future<void> _loadData() async {
@@ -72,9 +98,13 @@ class _RoleMainPageState extends State<RoleMainPage> {
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
 
-    return Scaffold(
-      backgroundColor: colorScheme.surface,
-      body: Consumer<RolesApiService>(
+    return Semantics(
+      label: 'Roles management page',
+      container: true,
+      explicitChildNodes: true,
+      child: Scaffold(
+        backgroundColor: colorScheme.surface,
+        body: Consumer<RolesApiService>(
         builder: (context, rolesService, child) {
           // Filter roles based on search query
           final filteredRoles = searchQuery.isEmpty
@@ -113,13 +143,34 @@ class _RoleMainPageState extends State<RoleMainPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                Focus(
+                  focusNode: _skipToMainFocusNode,
+                  onKeyEvent: (node, event) {
+                    if (event is KeyDownEvent &&
+                        event.logicalKey == LogicalKeyboardKey.enter) {
+                      _skipToMainContent();
+                      return KeyEventResult.handled;
+                    }
+                    return KeyEventResult.ignored;
+                  },
+                  child: Semantics(
+                    button: true,
+                    label: AccessibilityConstants.skipToMainContent,
+                    child: Offstage(
+                      child: ElevatedButton(
+                        onPressed: _skipToMainContent,
+                        child: Text(AccessibilityConstants.skipToMainContent),
+                      ),
+                    ),
+                  ),
+                ),
                 Padding(
                   padding: const EdgeInsets.only(left: 12, bottom: 12, right: 12),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
+                    children: const [
                       RoleHeader(),
-                      const SizedBox(height: 12),
+                      SizedBox(height: 12),
                     ],
                   ),
                 ),
@@ -131,22 +182,46 @@ class _RoleMainPageState extends State<RoleMainPage> {
                       const Spacer(),
                       SizedBox(
                         width: 250,
-                        child: TextField(
-                          decoration: InputDecoration(
-                            contentPadding:
-                            const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
-                            hintText: 'Search roles',
-                            prefixIcon: const Icon(Icons.search),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(20),
-                              borderSide: BorderSide(
-                                color: colorScheme.outline,
-                                width: 0.25,
+                        child: Semantics(
+                          textField: true,
+                          label: 'Search roles by name or permission',
+                          hint: 'Type to filter roles list',
+                          child: Focus(
+                            focusNode: _searchFocusNode,
+                            child: TextField(
+                              decoration: InputDecoration(
+                                contentPadding:
+                                const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
+                                hintText: 'Search roles',
+                                labelText: 'Search',
+                                prefixIcon: const Icon(Icons.search),
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(20),
+                                  borderSide: BorderSide(
+                                    color: colorScheme.outline,
+                                    width: 0.25,
+                                  ),
+                                ),
+                                focusedBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(20),
+                                  borderSide: BorderSide(
+                                    color: colorScheme.primary,
+                                    width: AccessibilityConstants.focusIndicatorWidth,
+                                  ),
+                                ),
+                                isDense: true,
                               ),
+                              onChanged: (value) {
+                                updateSearch(value);
+                                AccessibilityUtils.announceToScreenReader(
+                                  context,
+                                  filteredRoles.isEmpty
+                                      ? 'No roles found matching $value'
+                                      : 'Found ${filteredRoles.length} roles matching $value',
+                                );
+                              },
                             ),
-                            isDense: true,
                           ),
-                          onChanged: updateSearch,
                         ),
                       ),
                     ],
@@ -154,16 +229,24 @@ class _RoleMainPageState extends State<RoleMainPage> {
                 ),
                 const SizedBox(height: 12),
                 Expanded(
-                  child: RoleTableView(
-                    roleData: filteredRoles,
-                    onDelete: onDeleteRole,
-                    onRefresh: onRefresh,
+                  child: Semantics(
+                    label: 'Roles data table',
+                    container: true,
+                    child: Container(
+                      key: _mainContentKey,
+                      child: RoleTableView(
+                        roleData: filteredRoles,
+                        onDelete: onDeleteRole,
+                        onRefresh: onRefresh,
+                      ),
+                    ),
                   ),
                 ),
               ],
             ),
           );
         },
+      ),
       ),
     );
   }

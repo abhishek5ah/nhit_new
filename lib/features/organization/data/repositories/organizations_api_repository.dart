@@ -78,9 +78,44 @@ class OrganizationsApiRepository {
         final payload = rawBody is Map<String, dynamic> && rawBody.containsKey('data')
             ? rawBody['data']
             : rawBody;
-        final organizationJson = payload is Map<String, dynamic>
-            ? (payload['organization'] ?? payload)
-            : payload;
+
+        Map<String, dynamic> organizationJson;
+        List<dynamic>? projectsRaw;
+
+        if (payload is Map<String, dynamic>) {
+          organizationJson = Map<String, dynamic>.from(
+            payload['organization'] is Map<String, dynamic>
+                ? payload['organization'] as Map<String, dynamic>
+                : payload,
+          );
+          if (payload['projects'] is List<dynamic>) {
+            projectsRaw = payload['projects'] as List<dynamic>;
+          }
+        } else if (payload is Map) {
+          organizationJson = Map<String, dynamic>.from(payload.cast<String, dynamic>());
+        } else {
+          organizationJson = {};
+        }
+
+        if (projectsRaw != null && projectsRaw!.isNotEmpty) {
+          final projectNames = projectsRaw!
+              .map((project) {
+                if (project is Map<String, dynamic>) {
+                  return project['projectName']?.toString() ??
+                      project['name']?.toString() ??
+                      project.toString();
+                }
+                return project.toString();
+              })
+              .where((name) => name.trim().isNotEmpty)
+              .toList();
+
+          if (projectNames.isNotEmpty) {
+            organizationJson['projects'] = projectNames;
+            organizationJson['initialProjects'] = projectNames;
+          }
+        }
+
         final organization = OrganizationModel.fromJson(organizationJson);
         return ApiResponse.success(
           message: 'Organization retrieved successfully',

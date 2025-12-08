@@ -63,7 +63,15 @@ class OrganizationModel {
         if (source[key] != null) {
           final value = source[key];
           if (value is List) {
-            return value.map((e) => e.toString()).toList();
+            return value.map((entry) {
+              if (entry is Map<String, dynamic>) {
+                return entry['projectName']?.toString() ??
+                    entry['project_name']?.toString() ??
+                    entry['name']?.toString() ??
+                    entry.toString();
+              }
+              return entry.toString();
+            }).where((name) => name.trim().isNotEmpty).toList();
           }
         }
       }

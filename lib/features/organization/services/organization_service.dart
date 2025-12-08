@@ -81,7 +81,7 @@ class OrganizationService extends ChangeNotifier {
     _setError(null);
 
     try {
-      final response = await _repository.switchOrganization(organization.orgId);
+      final response = await _repository.switchOrganization(organization);
       
       if (response.success) {
         _currentOrganization = organization;

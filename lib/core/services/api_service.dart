@@ -209,7 +209,7 @@ class ApiService {
           );
         default:
           return ApiResponse.error(
-            message: 'An unexpected error occurred',
+            message: 'Service is temporarily unavailable. Please try again later.',
           );
       }
     }

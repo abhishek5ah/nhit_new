@@ -34,20 +34,41 @@ class LoginResponse {
     print('📋 [LoginResponse] JSON keys present: ${json.keys.toList()}');
     
     try {
+      String _stringValue(dynamic value) => value?.toString() ?? '';
+      List<String> _listValue(dynamic value) {
+        if (value == null) return [];
+        if (value is List) {
+          return value.map((item) => item.toString()).toList();
+        }
+        return value.toString().isNotEmpty ? [value.toString()] : [];
+      }
+
+      dynamic _pick(List<String> keys) {
+        for (final key in keys) {
+          if (json.containsKey(key)) {
+            final value = json[key];
+            if (value != null && value.toString().isNotEmpty) {
+              return value;
+            }
+          }
+        }
+        return null;
+      }
+
       final response = LoginResponse(
-        token: json['token'] ?? '',
-        refreshToken: json['refreshToken'] ?? '',
-        userId: json['userId'] ?? '',
-        email: json['email'] ?? '',
-        name: json['name'] ?? '',
-        roles: List<String>.from(json['roles'] ?? []),
-        permissions: List<String>.from(json['permissions'] ?? []),
-        lastLoginAt: json['lastLoginAt'] ?? '',
-        lastLoginIp: json['lastLoginIp'] ?? '',
-        tenantId: json['tenantId'] ?? '',
-        orgId: json['orgId'] ?? '',
-        tokenExpiresAt: json['tokenExpiresAt'] ?? '',
-        refreshExpiresAt: json['refreshExpiresAt'] ?? '',
+        token: _stringValue(_pick(['token', 'access_token'])),
+        refreshToken: _stringValue(_pick(['refreshToken', 'refresh_token'])),
+        userId: _stringValue(_pick(['userId', 'user_id'])),
+        email: _stringValue(json['email']),
+        name: _stringValue(json['name']),
+        roles: _listValue(json['roles']),
+        permissions: _listValue(json['permissions']),
+        lastLoginAt: _stringValue(_pick(['lastLoginAt', 'last_login_at'])),
+        lastLoginIp: _stringValue(_pick(['lastLoginIp', 'last_login_ip'])),
+        tenantId: _stringValue(_pick(['tenantId', 'tenant_id'])),
+        orgId: _stringValue(_pick(['orgId', 'org_id'])),
+        tokenExpiresAt: _stringValue(_pick(['tokenExpiresAt', 'token_expires_at'])),
+        refreshExpiresAt: _stringValue(_pick(['refreshExpiresAt', 'refresh_expires_at'])),
       );
       
       print('✅ [LoginResponse] LoginResponse parsing completed successfully');

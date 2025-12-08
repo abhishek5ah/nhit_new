@@ -230,8 +230,9 @@ class AuthService extends ChangeNotifier {
             organizationId: payload['orgId'],
           );
         }
-      }
-      
+      } 
+
+        
       _isAuthenticated = isAuth;
       _emailVerified = isEmailVerif;
       notifyListeners();

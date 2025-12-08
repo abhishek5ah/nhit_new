@@ -4,6 +4,7 @@ import 'package:ppv_components/core/theme/theme_notifier.dart';
 import 'package:ppv_components/core/services/auth_service.dart';
 import 'package:ppv_components/core/services/api_service.dart';
 import 'package:ppv_components/features/activity/services/user_login_history_service.dart';
+import 'package:ppv_components/features/activity/services/activity_logs_service.dart';
 import 'package:ppv_components/features/organization/services/organization_service.dart';
 import 'package:ppv_components/features/organization/services/organizations_api_service.dart';
 import 'package:ppv_components/features/roles/services/roles_api_service.dart';
@@ -24,6 +25,7 @@ void main() async {
       providers: [
         ChangeNotifierProvider(create: (_) => ThemeNotifier()),
         ChangeNotifierProvider.value(value: authService),
+        ChangeNotifierProvider(create: (_) => ActivityLogsService()),
         ChangeNotifierProvider(create: (_) => UserLoginHistoryService()),
         ChangeNotifierProvider(create: (_) => OrganizationsApiService()),
         ChangeNotifierProvider(create: (_) => OrganizationService()),

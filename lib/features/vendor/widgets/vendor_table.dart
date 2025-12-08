@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:ppv_components/common_widgets/button/toggle_button.dart';
 import 'package:ppv_components/common_widgets/custom_table.dart';
 import 'package:ppv_components/common_widgets/custom_pagination.dart';
+import 'package:ppv_components/core/accessibility/accessible_widgets.dart';
 import 'package:ppv_components/features/vendor/models/vendor_model.dart';
 import 'package:ppv_components/features/vendor/screen/edit_vendor.dart';
 import 'package:ppv_components/features/vendor/screen/view_vendor.dart';
@@ -132,6 +133,18 @@ class _VendorTableViewState extends State<VendorTableView> {
       DataColumn(label: Text('Actions', style: TextStyle(color: colorScheme.onSurface))),
     ];
 
+    final semanticallyLabeledColumns = columns
+        .map(
+          (column) => DataColumn(
+            label: Semantics(
+              label: '${column.label.runtimeType == Text ? (column.label as Text?)?.data : 'Column'} header',
+              header: true,
+              child: column.label,
+            ),
+          ),
+        )
+        .toList();
+
     final rows = paginatedVendors.map((vendor) {
       final primaryAccount = vendor.bankAccounts.isNotEmpty
           ? vendor.bankAccounts.firstWhere((acc) => acc.isPrimary, orElse: () => vendor.bankAccounts.first)
@@ -139,51 +152,42 @@ class _VendorTableViewState extends State<VendorTableView> {
 
       return DataRow(
         cells: [
-          DataCell(Text(vendor.id.toString(), style: TextStyle(color: colorScheme.onSurface))),
-          DataCell(Text(vendor.code, style: TextStyle(color: colorScheme.onSurface))),
-          DataCell(Text(vendor.name, style: TextStyle(color: colorScheme.onSurface))),
-          DataCell(Text(vendor.email, style: TextStyle(color: colorScheme.onSurface))),
-          DataCell(Text(vendor.mobile, style: TextStyle(color: colorScheme.onSurface))),
-          DataCell(Text(primaryAccount?.beneficiaryName ?? 'N/A', style: TextStyle(color: colorScheme.onSurface))),
-          DataCell(Text(vendor.status, style: TextStyle(color: colorScheme.onSurface))),
+          DataCell(Semantics(label: 'Vendor ID ${vendor.id}', child: Text(vendor.id.toString(), style: TextStyle(color: colorScheme.onSurface)))),
+          DataCell(Semantics(label: 'Vendor code ${vendor.code}', child: Text(vendor.code, style: TextStyle(color: colorScheme.onSurface)))),
+          DataCell(Semantics(label: 'Vendor name ${vendor.name}', child: Text(vendor.name, style: TextStyle(color: colorScheme.onSurface)))),
+          DataCell(Semantics(label: 'Vendor email ${vendor.email}', child: Text(vendor.email, style: TextStyle(color: colorScheme.onSurface)))),
+          DataCell(Semantics(label: 'Vendor mobile ${vendor.mobile}', child: Text(vendor.mobile, style: TextStyle(color: colorScheme.onSurface)))),
+          DataCell(Semantics(label: 'Beneficiary ${primaryAccount?.beneficiaryName ?? 'Not available'}', child: Text(primaryAccount?.beneficiaryName ?? 'N/A', style: TextStyle(color: colorScheme.onSurface)))),
+          DataCell(Semantics(label: 'Status ${vendor.status}', child: Text(vendor.status, style: TextStyle(color: colorScheme.onSurface)))),
           DataCell(
             Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                // View Icon Button
-                IconButton(
+                AccessibleIconButton(
+                  icon: Icons.visibility_outlined,
+                  semanticLabel: 'View vendor ${vendor.name}',
+                  tooltip: 'View vendor details',
                   onPressed: () => onViewVendor(vendor),
-                  icon: const Icon(Icons.visibility_outlined),
                   color: colorScheme.primary,
-                  iconSize: 20,
-                  tooltip: 'View',
-                  style: IconButton.styleFrom(
-                    backgroundColor: colorScheme.primary.withValues(alpha: 0.1),
-                  ),
+                  backgroundColor: colorScheme.primary.withValues(alpha: 0.1),
                 ),
                 const SizedBox(width: 4),
-                // Edit Icon Button
-                IconButton(
+                AccessibleIconButton(
+                  icon: Icons.edit_outlined,
+                  semanticLabel: 'Edit vendor ${vendor.name}',
+                  tooltip: 'Edit vendor information',
                   onPressed: () => onEditVendor(vendor),
-                  icon: const Icon(Icons.edit_outlined),
                   color: colorScheme.tertiary,
-                  iconSize: 20,
-                  tooltip: 'Edit',
-                  style: IconButton.styleFrom(
-                    backgroundColor: colorScheme.tertiary.withValues(alpha: 0.1),
-                  ),
+                  backgroundColor: colorScheme.tertiary.withValues(alpha: 0.1),
                 ),
                 const SizedBox(width: 4),
-                // Delete Icon Button
-                IconButton(
+                AccessibleIconButton(
+                  icon: Icons.delete_outline,
+                  semanticLabel: 'Delete vendor ${vendor.name}',
+                  tooltip: 'Delete vendor',
                   onPressed: () => deleteVendor(vendor),
-                  icon: const Icon(Icons.delete_outline),
                   color: colorScheme.error,
-                  iconSize: 20,
-                  tooltip: 'Delete',
-                  style: IconButton.styleFrom(
-                    backgroundColor: colorScheme.error.withValues(alpha: 0.1),
-                  ),
+                  backgroundColor: colorScheme.error.withValues(alpha: 0.1),
                 ),
               ],
             ),
@@ -192,78 +196,90 @@ class _VendorTableViewState extends State<VendorTableView> {
       );
     }).toList();
 
-    return Scaffold(
-      backgroundColor: colorScheme.surface,
-      body: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Expanded(
-              child: Container(
-                padding: const EdgeInsets.all(24),
-                decoration: BoxDecoration(
-                  color: colorScheme.surfaceContainerHigh,
-                  borderRadius: BorderRadius.circular(22),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          'Vendors',
-                          style: TextStyle(color: colorScheme.onSurface, fontSize: 26, fontWeight: FontWeight.bold),
-                        ),
-                        ToggleBtn(
-                          labels: ['Table', 'Grid'],
-                          selectedIndex: toggleIndex,
-                          onChanged: (index) => setState(() => toggleIndex = index),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 16),
-                    Expanded(
-                      child: toggleIndex == 0
-                          ? Column(
+    return Semantics(
+      label: 'Vendor management table',
+      explicitChildNodes: true,
+      child: Scaffold(
+        backgroundColor: colorScheme.surface,
+        body: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: Container(
+                  padding: const EdgeInsets.all(24),
+                  decoration: BoxDecoration(
+                    color: colorScheme.surfaceContainerHigh,
+                    borderRadius: BorderRadius.circular(22),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Expanded(
-                            child: CustomTable(columns: columns, rows: rows),
+                          Text(
+                            'Vendors',
+                            style: TextStyle(color: colorScheme.onSurface, fontSize: 24, fontWeight: FontWeight.bold),
                           ),
-                          CustomPaginationBar(
-                            totalItems: widget.vendorData.length,
-                            currentPage: currentPage,
-                            rowsPerPage: rowsPerPage,
-                            onPageChanged: gotoPage,
-                            onRowsPerPageChanged: changeRowsPerPage,
+                          Semantics(
+                            button: true,
+                            label: 'Toggle between table or grid view',
+                            child: ToggleBtn(
+                              labels: const ['Table', 'Grid'],
+                              selectedIndex: toggleIndex,
+                              onChanged: (index) => setState(() => toggleIndex = index),
+                            ),
                           ),
                         ],
-                      )
-                          : VendorGridView(
-                        vendorList: widget.vendorData,
-                        rowsPerPage: rowsPerPage,
-                        currentPage: currentPage,
-                        onPageChanged: (page) {
-                          setState(() {
-                            currentPage = page;
-                            _updatePagination();
-                          });
-                        },
-                        onRowsPerPageChanged: (rows) {
-                          setState(() {
-                            rowsPerPage = rows ?? rowsPerPage;
-                            currentPage = 0;
-                            _updatePagination();
-                          });
-                        },
                       ),
-                    ),
-                  ],
+                      const SizedBox(height: 16),
+                      Expanded(
+                        child: toggleIndex == 0
+                            ? Column(
+                                children: [
+                                  Expanded(
+                                    child: Semantics(
+                                      label: 'Vendor data table view',
+                                      container: true,
+                                      child: CustomTable(columns: semanticallyLabeledColumns, rows: rows),
+                                    ),
+                                  ),
+                                  CustomPaginationBar(
+                                    totalItems: widget.vendorData.length,
+                                    currentPage: currentPage,
+                                    rowsPerPage: rowsPerPage,
+                                    onPageChanged: gotoPage,
+                                    onRowsPerPageChanged: changeRowsPerPage,
+                                  ),
+                                ],
+                              )
+                            : VendorGridView(
+                                vendorList: widget.vendorData,
+                                rowsPerPage: rowsPerPage,
+                                currentPage: currentPage,
+                                onPageChanged: (page) {
+                                  setState(() {
+                                    currentPage = page;
+                                    _updatePagination();
+                                  });
+                                },
+                                onRowsPerPageChanged: (rows) {
+                                  setState(() {
+                                    rowsPerPage = rows ?? rowsPerPage;
+                                    currentPage = 0;
+                                    _updatePagination();
+                                  });
+                                },
+                              ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

@@ -16,26 +16,38 @@ class CustomTable extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final modifiedColumns = columns
-        .map((col) => DataColumn(
-      label: Flexible(
-        child: Container(
-          constraints: const BoxConstraints(maxWidth: 180),
-          child: Text(
-            (col.label is Text) ? (col.label as Text).data ?? '' : '',
-            style: (col.label is Text)
-                ? (col.label as Text).style
-                : null,
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
+    final modifiedColumns = columns.map((col) {
+      // --- Extract text & style even when wrapped in Semantics ---
+      String text = '';
+      TextStyle? style;
+
+      final label = col.label;
+      if (label is Text) {
+        text = label.data ?? '';
+        style = label.style;
+      } else if (label is Semantics && label.child is Text) {
+        final childText = label.child as Text;
+        text = childText.data ?? '';
+        style = childText.style;
+      }
+
+      return DataColumn(
+        label: Flexible(
+          child: Container(
+            constraints: const BoxConstraints(maxWidth: 180),
+            child: Text(
+              text,
+              style: style,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+            ),
           ),
         ),
-      ),
-      numeric: col.numeric,
-      tooltip: col.tooltip,
-      onSort: col.onSort,
-    ))
-        .toList();
+        numeric: col.numeric,
+        tooltip: col.tooltip,
+        onSort: col.onSort,
+      );
+    }).toList();
 
     return LayoutBuilder(
       builder: (context, constraints) {
@@ -48,7 +60,7 @@ class CustomTable extends StatelessWidget {
             scrollDirection: Axis.vertical,
             child: DataTable(
               headingRowColor: WidgetStateProperty.resolveWith(
-                    (states) => Theme.of(context).colorScheme.surface,
+                (states) => Theme.of(context).colorScheme.surface,
               ),
               headingTextStyle: const TextStyle(
                 fontWeight: FontWeight.bold,
@@ -81,9 +93,9 @@ class CustomTable extends StatelessWidget {
                 padding: const EdgeInsets.only(left: 1),
                 child: needsHorizontalScroll
                     ? SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  child: dataTableWidget,
-                )
+                        scrollDirection: Axis.horizontal,
+                        child: dataTableWidget,
+                      )
                     : dataTableWidget,
               ),
             ),

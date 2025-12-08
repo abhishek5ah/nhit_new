@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:ppv_components/common_widgets/profile_card.dart';
+import 'package:ppv_components/core/accessibility/accessibility_utils.dart';
 import 'package:ppv_components/features/roles/data/models/role_models.dart';
 import 'package:ppv_components/core/utils/responsive.dart';
 import 'package:ppv_components/core/utils/status_utils.dart'; // import your status colors here
@@ -86,33 +87,44 @@ class _RolesGridViewState extends State<RolesGridView> {
 
                 final Color roleColor = gridStatusColors[globalIndex % gridStatusColors.length];
 
+                final roleLabel = 'Role ${role.name}, ${role.permissions.length} permissions';
                 return MouseRegion(
                   onEnter: (_) => setState(() => _hoveredCardIndex = globalIndex),
                   onExit: (_) => setState(() => _hoveredCardIndex = null),
-                  child: AnimatedContainer(
-                    duration: const Duration(milliseconds: 150),
-                    decoration: BoxDecoration(
-                      border: isHovered
-                          ? Border(
-                        top: BorderSide(color: roleColor, width: 6),
-                        left: BorderSide(color: roleColor, width: 6),
-                      )
-                          : null,
-                      borderRadius: const BorderRadius.only(
-                        topLeft: Radius.circular(24),
-                        topRight: Radius.circular(22),
-                        bottomLeft: Radius.circular(18),
-                        bottomRight: Radius.circular(18),
+                  child: FocusableActionDetector(
+                    autofocus: index == 0 && widget.currentPage == 0,
+                    actions: {},
+                    onShowFocusHighlight: (_) {},
+                    child: Semantics(
+                      label: roleLabel,
+                      container: true,
+                      child: AnimatedContainer(
+                        duration: AccessibilityUtils.getAnimationDuration(context),
+                        decoration: BoxDecoration(
+                          border: isHovered
+                              ? Border(
+                                  top: BorderSide(color: roleColor, width: 6),
+                                  left: BorderSide(color: roleColor, width: 6),
+                                )
+                              : null,
+                          borderRadius: const BorderRadius.only(
+                            topLeft: Radius.circular(24),
+                            topRight: Radius.circular(22),
+                            bottomLeft: Radius.circular(18),
+                            bottomRight: Radius.circular(18),
+                          ),
+                          color: colorScheme.surface,
+                        ),
+                        child: ProfileCard(
+                          invoiceId: _resolveRoleId(role),
+                          topBarColor: roleColor,
+                          fields: {
+                            'Role Name': role.name,
+                            'Permissions':
+                                role.permissions.isEmpty ? 'No permissions assigned' : role.permissions.join(', '),
+                          },
+                        ),
                       ),
-                      color: colorScheme.surface,
-                    ),
-                    child: ProfileCard(
-                      invoiceId: _resolveRoleId(role),
-                      topBarColor: roleColor,
-                      fields: {
-                        'Role Name': role.name,
-                        'Permissions': role.permissions.join(', '),
-                      },
                     ),
                   ),
                 );
@@ -133,6 +145,7 @@ class _RolesGridViewState extends State<RolesGridView> {
                 children: [
                   IconButton(
                     icon: const Icon(Icons.arrow_back),
+                    tooltip: 'Previous page',
                     onPressed: widget.currentPage > 0
                         ? () => widget.onPageChanged(widget.currentPage - 1)
                         : null,
@@ -141,6 +154,14 @@ class _RolesGridViewState extends State<RolesGridView> {
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 2.0),
                       child: ElevatedButton(
+                        onFocusChange: (hasFocus) {
+                          if (hasFocus) {
+                            AccessibilityUtils.announceToScreenReader(
+                              context,
+                              'Page ${i + 1} of $totalPages',
+                            );
+                          }
+                        },
                         style: ElevatedButton.styleFrom(
                           backgroundColor: i == widget.currentPage
                               ? colorScheme.primary
@@ -151,12 +172,18 @@ class _RolesGridViewState extends State<RolesGridView> {
                           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                           minimumSize: const Size(0, 36),
                         ),
-                        child: Text("${i + 1}"),
+                        child: Semantics(
+                          button: true,
+                          label: 'Go to page ${i + 1}',
+                          selected: i == widget.currentPage,
+                          child: Text('${i + 1}'),
+                        ),
                         onPressed: () => widget.onPageChanged(i),
                       ),
                     ),
                   IconButton(
                     icon: const Icon(Icons.arrow_forward),
+                    tooltip: 'Next page',
                     onPressed: widget.currentPage < totalPages - 1
                         ? () => widget.onPageChanged(widget.currentPage + 1)
                         : null,
@@ -164,15 +191,18 @@ class _RolesGridViewState extends State<RolesGridView> {
                   const SizedBox(width: 12),
                   DropdownButton<int>(
                     value: widget.rowsPerPage,
+                    underline: const SizedBox(),
+                    dropdownColor: colorScheme.surface,
                     items: [5, 10, 20, 50]
                         .map((count) => DropdownMenuItem<int>(
                       value: count,
-                      child: Text('$count'),
+                      child: Text('$count rows per page',
+                          style: Theme.of(context).textTheme.bodyLarge),
                     ))
                         .toList(),
                     onChanged: widget.onRowsPerPageChanged,
                     style: Theme.of(context).textTheme.bodyLarge,
-                    underline: const SizedBox(),
+                    hint: const Text('Rows per page'),
                   ),
                   Text("page", style: Theme.of(context).textTheme.bodySmall),
                 ],

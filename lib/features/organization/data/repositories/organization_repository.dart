@@ -4,6 +4,7 @@ import 'package:ppv_components/core/services/jwt_token_manager.dart';
 import 'package:ppv_components/core/constants/api_constants.dart';
 import 'package:ppv_components/features/organization/data/models/organization_model.dart';
 import 'package:ppv_components/core/utils/api_response.dart';
+import 'package:ppv_components/features/auth/data/models/login_response.dart';
 
 class OrganizationRepository {
   final ApiService _apiService = ApiService();
@@ -114,9 +115,9 @@ class OrganizationRepository {
   }
 
   // Switch to organization - Uses Auth Service
-  Future<ApiResponse<Map<String, dynamic>>> switchOrganization(String orgId) async {
+  Future<ApiResponse<LoginResponse?>> switchOrganization(OrganizationModel organization) async {
     try {
-      print('🔄 [OrganizationRepository] Switching to organization: $orgId');
+      print('🔄 [OrganizationRepository] Switching to organization: ${organization.name}');
       
       // Use Auth Service (port 8051) for organization switching
       final dio = Dio(BaseOptions(
@@ -130,36 +131,81 @@ class OrganizationRepository {
         dio.options.headers['Authorization'] = 'Bearer $token';
       }
       
+      final payload = {
+        'org_name': organization.name,
+        'organization_id': organization.orgId,
+        'org_id': organization.orgId,
+        'tenant_id': organization.tenantId,
+      }..removeWhere((key, value) => value == null || value.toString().isEmpty);
+      
       final response = await dio.post(
         ApiConstants.switchOrganization,
-        data: {'organization_id': orgId},
+        data: payload,
       );
       
       if (response.statusCode == 200) {
         print('✅ [OrganizationRepository] Organization switched successfully');
         
-        // Update stored org ID
-        await JwtTokenManager.saveOrgId(orgId);
+        final loginResponse = LoginResponse.fromJson(response.data as Map<String, dynamic>);
+        
+        await JwtTokenManager.saveLoginTokens(
+          token: loginResponse.token,
+          refreshToken: loginResponse.refreshToken,
+          userId: loginResponse.userId,
+          email: loginResponse.email,
+          name: loginResponse.name,
+          tenantId: loginResponse.tenantId,
+          orgId: loginResponse.orgId,
+          tokenExpiresAt: loginResponse.tokenExpiresAt,
+          refreshExpiresAt: loginResponse.refreshExpiresAt,
+          roles: loginResponse.roles,
+          permissions: loginResponse.permissions,
+          lastLoginAt: loginResponse.lastLoginAt,
+          lastLoginIp: loginResponse.lastLoginIp,
+        );
+        
+        await JwtTokenManager.saveOrgId(loginResponse.orgId);
         
         return ApiResponse.success(
-          message: 'Organization switched successfully',
-          data: response.data ?? {
-            'message': 'Organization switched successfully',
-            'orgId': orgId,
-          },
+          message: response.data['message'] ?? 'Organization switched successfully',
+          data: loginResponse,
+          statusCode: response.statusCode,
         );
       } else {
         print('❌ [OrganizationRepository] Failed to switch organization: ${response.statusCode}');
-        return ApiResponse.error(message: 'Failed to switch organization');
+        return ApiResponse.error(
+          message: response.data['message'] ?? 'Failed to switch organization',
+          statusCode: response.statusCode,
+          errorData: response.data is Map<String, dynamic> ? response.data : null,
+        );
       }
+    } on DioException catch (e) {
+      final statusCode = e.response?.statusCode;
+      final responseData = e.response?.data;
+      final message = responseData is Map<String, dynamic>
+          ? responseData['message']?.toString() ?? 'Failed to switch organization'
+          : e.message ?? 'Failed to switch organization';
+      
+      print('🚨 [OrganizationRepository] DioException in switchOrganization: $message');
+      
+      // Backend returns 400 with message "already in this organization" when no switch needed
+      if (statusCode == 400 && message.toLowerCase().contains('already in this organization')) {
+        await JwtTokenManager.saveOrgId(organization.orgId);
+        return ApiResponse.success(
+          message: message,
+          data: null,
+          statusCode: statusCode,
+        );
+      }
+      
+      return ApiResponse.error(
+        message: message,
+        statusCode: statusCode ?? 500,
+        errorData: responseData is Map<String, dynamic> ? responseData : null,
+      );
     } catch (e) {
       print('🚨 [OrganizationRepository] Exception in switchOrganization: $e');
-      // Fallback: just update local storage
-      await JwtTokenManager.saveOrgId(orgId);
-      return ApiResponse.success(
-        message: 'Organization switched locally',
-        data: {'orgId': orgId},
-      );
+      return ApiResponse.error(message: 'Unexpected error: $e');
     }
   }
 }

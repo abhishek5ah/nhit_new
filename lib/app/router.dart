@@ -7,7 +7,6 @@ import 'package:ppv_components/features/auth/presentation/pages/register_organiz
 import 'package:ppv_components/features/auth/presentation/pages/register_super_admin_page.dart';
 import 'package:ppv_components/features/auth/presentation/pages/forgot_password_page.dart';
 import 'package:ppv_components/features/auth/presentation/pages/login_page.dart';
-import 'package:ppv_components/features/auth/presentation/pages/signup_page.dart';
 import 'package:ppv_components/features/auth/presentation/pages/verify_email_page.dart';
 import 'package:ppv_components/features/dashboard/presentation/pages/dashboard_page.dart';
 import 'package:ppv_components/features/department/screen/create_department.dart';
@@ -27,7 +26,6 @@ import 'package:ppv_components/features/user/screens/user_main_page.dart';
 import 'package:ppv_components/features/vendor/screen/vendor_main_page.dart';
 import 'package:ppv_components/features/vendor/widgets/add_vendor_form.dart';
 import 'package:ppv_components/core/services/auth_service.dart';
-import 'package:ppv_components/core/services/jwt_token_manager.dart';
 import 'package:ppv_components/core/notifiers/auth_notifier.dart';
 
 // Placeholder widget for pages that don't exist yet
@@ -315,4 +313,12 @@ final GoRouter router = GoRouter(
     ),
   ],
 );
+
+
+
+
+
+
+
+
 
