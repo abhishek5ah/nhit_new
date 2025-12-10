@@ -3,11 +3,18 @@ import 'package:dio/dio.dart';
 import 'package:ppv_components/core/constants/api_constants.dart';
 import 'package:ppv_components/core/services/jwt_token_manager.dart';
 import 'package:ppv_components/core/utils/api_response.dart';
+// Note: File 2 had an import to 'package:ppv_components/core/secure_storage.dart', 
+// but the functionality is handled by JwtTokenManager/AuthInterceptor in File 1.
+// File 2 had an import to 'package:ppv_components/core/models/api_response.dart',
+// which is assumed to be the same as 'package:ppv_components/core/utils/api_response.dart' used in File 1.
 
+/// A robust API Service utilizing Dio for handling HTTP requests, 
+/// microservice routing, and token management via AuthInterceptor.
 class ApiService {
   static final Map<String, Dio> _dioInstances = {};
   static bool _initialized = false;
 
+  /// Initializes Dio instances for all microservices. Must be called once.
   static void initialize() {
     if (_initialized) return;
 
@@ -18,6 +25,7 @@ class ApiService {
     _initializeDioInstance('department', ApiConstants.departmentBaseUrl);
     _initializeDioInstance('designation', ApiConstants.designationBaseUrl);
     _initializeDioInstance('vendor', ApiConstants.vendorBaseUrl);
+    // Add any other microservices here if needed
 
     _initialized = true;
     print('✅ [ApiService] Initialized with microservices architecture');
@@ -47,8 +55,8 @@ class ApiService {
     print('✅ [ApiService] $serviceName service initialized: $baseUrl');
   }
 
+  /// Routes the request to the appropriate Dio instance based on the path.
   static Dio _getDioInstance(String endpoint) {
-    // Route to appropriate microservice based on endpoint
     if (endpoint.startsWith('/auth/') || endpoint.startsWith('/tenants')) {
       return _dioInstances['auth']!;
     } else if (endpoint.startsWith('/users/')) {
@@ -147,7 +155,8 @@ class ApiService {
         if (fromJson != null) {
           parsedData = fromJson(responseData);
         } else {
-          parsedData = responseData as T?;
+          // Attempt to cast or pass raw data if no fromJson is provided
+          parsedData = responseData as T?; 
         }
         
         return ApiResponse.success(
@@ -156,13 +165,14 @@ class ApiService {
         );
       }
     } else {
+      // Non-2xx status codes
       return ApiResponse.error(
         message: 'Request failed with status: ${response.statusCode}',
       );
     }
   }
 
-  // Handle errors
+  // Handle errors (DioException)
   static ApiResponse<T> _handleError<T>(dynamic error) {
     if (error is DioException) {
       switch (error.type) {
@@ -214,12 +224,16 @@ class ApiService {
       }
     }
     
+    // For non-Dio errors (like Dart TimeoutException if not caught by Dio), 
+    // we return a generic error.
     return ApiResponse.error(
       message: 'An unexpected error occurred: $error',
     );
   }
 }
 
+/// Dio Interceptor for handling token authentication, 
+/// automatic token refresh, and attaching tenant headers.
 class AuthInterceptor extends QueuedInterceptor {
   AuthInterceptor();
 
@@ -231,8 +245,8 @@ class AuthInterceptor extends QueuedInterceptor {
     // Skip auth for certain endpoints (no authentication required)
     final skipAuthPaths = [
       ApiConstants.login,
-      ApiConstants.createTenant, // Step 1: No auth required
-      ApiConstants.createOrganization, // Step 2: No auth required
+      ApiConstants.createTenant, 
+      ApiConstants.createOrganization,
       ApiConstants.forgotPassword,
       ApiConstants.resetPassword,
       ApiConstants.sendResetEmail,
@@ -246,7 +260,7 @@ class AuthInterceptor extends QueuedInterceptor {
         await _refreshToken();
       }
 
-      // Add access token to headers (try new format first)
+      // Add access token to headers
       final accessToken = await JwtTokenManager.getAccessToken();
       if (accessToken != null) {
         options.headers['Authorization'] = 'Bearer $accessToken';
@@ -257,7 +271,7 @@ class AuthInterceptor extends QueuedInterceptor {
         final tenantId = await JwtTokenManager.getTenantId();
         if (tenantId != null && tenantId.isNotEmpty) {
           options.headers['tenant_id'] = tenantId;
-          options.headers['tenant-id'] = tenantId;
+          options.headers['tenant-id'] = tenantId; // Include both header styles for compatibility
         }
       }
 
@@ -267,12 +281,12 @@ class AuthInterceptor extends QueuedInterceptor {
   }
 
   bool _shouldAttachTenantHeader(String path) {
-    // Skip tenant headers for endpoints that have CORS issues
+    // Skip tenant headers for endpoints that might have CORS or specific backend requirements
     const skipTenantHeaderPaths = [
       '/permissions',
-      '/departments',   // Backend CORS doesn't allow tenant_id header
-      '/designations',  // Backend CORS doesn't allow tenant_id header
-      '/roles',         // Backend CORS doesn't allow tenant_id header
+      '/departments',
+      '/designations',
+      '/roles',
     ];
 
     final shouldSkip = skipTenantHeaderPaths.any((skipPath) => path.contains(skipPath));
@@ -289,19 +303,27 @@ class AuthInterceptor extends QueuedInterceptor {
         // Retry the original request with new token
         final accessToken = await JwtTokenManager.getAccessToken();
         if (accessToken != null) {
+          // Update the authorization header for the retry
           err.requestOptions.headers['Authorization'] = 'Bearer $accessToken';
           
           try {
+            // Create a new Dio instance to re-send the request outside of the interceptor
             final dio = Dio();
+            // Copy base options from the original request's Dio instance
+            dio.options = err.requestOptions.baseUrl.isNotEmpty 
+                ? BaseOptions(baseUrl: err.requestOptions.baseUrl) 
+                : Dio().options; 
+            
             final response = await dio.fetch(err.requestOptions);
             handler.resolve(response);
             return;
           } catch (e) {
             // If retry fails, continue with original error
+            print('⚠️ [AuthInterceptor] Request retry failed: $e');
           }
         }
       } else {
-        // Refresh failed, clear tokens and let error propagate
+        // Refresh failed, clear tokens and let error propagate (will likely trigger logout)
         await JwtTokenManager.clearTokens();
       }
     }
@@ -319,7 +341,7 @@ class AuthInterceptor extends QueuedInterceptor {
 
       print('🔄 [AuthInterceptor] Attempting token refresh...');
 
-      // Use auth service for token refresh
+      // Use a dedicated Dio instance for token refresh (without the interceptor to avoid recursion)
       final dio = Dio(BaseOptions(
         baseUrl: ApiConstants.authBaseUrl,
         headers: {'Content-Type': 'application/json'},
@@ -336,7 +358,7 @@ class AuthInterceptor extends QueuedInterceptor {
         final data = response.data;
         print('✅ [AuthInterceptor] Token refresh successful');
         
-        // Save new tokens with extended expiry
+        // Save new tokens
         await JwtTokenManager.saveLoginTokens(
           token: data['token'] ?? data['access_token'],
           refreshToken: data['refresh_token'],
@@ -360,6 +382,7 @@ class AuthInterceptor extends QueuedInterceptor {
     } catch (e) {
       print('⚠️ [AuthInterceptor] Token refresh error: $e');
     }
+    await JwtTokenManager.clearTokens(); // Clear tokens on refresh failure
     return false;
   }
 }

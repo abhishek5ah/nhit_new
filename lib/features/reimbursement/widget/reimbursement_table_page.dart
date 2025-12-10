@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:ppv_components/common_widgets/button/primary_button.dart';
-import 'package:ppv_components/common_widgets/button/toggle_button.dart';
+import 'package:ppv_components/common_widgets/button/secondary_button.dart';
+import 'package:ppv_components/common_widgets/custom_pagination.dart';
 import 'package:ppv_components/common_widgets/custom_table.dart';
+import 'package:ppv_components/common_widgets/badge.dart';
 import 'package:ppv_components/features/reimbursement/data/reimbursement_dummydata/reimbursement_note_dummy.dart';
 import 'package:ppv_components/features/reimbursement/models/reimbursement_models/travel_detail_model.dart';
-import 'package:ppv_components/features/reimbursement/widget/reimbursement_grid.dart';
+import 'dart:async';
 
 class ReimbursementTablePage extends StatefulWidget {
   const ReimbursementTablePage({super.key});
@@ -15,71 +18,217 @@ class ReimbursementTablePage extends StatefulWidget {
 
 class _ReimbursementTablePageState extends State<ReimbursementTablePage> {
   late List<ReimbursementNote> allNotes;
+  late List<ReimbursementNote> masterList;
+  late List<ReimbursementNote> filteredNotes;
   List<ReimbursementNote> paginatedNotes = [];
   int rowsPerPage = 10;
   int currentPage = 0;
-  int toggleIndex = 0;
-
-  late TextEditingController projectController;
-  late TextEditingController employeeController;
-  late TextEditingController amountController;
-  late TextEditingController dateController;
-  late TextEditingController approverController;
-  late TextEditingController utrController;
-  late TextEditingController utrDateController;
-  late String statusValue;
-  late GlobalKey<FormState> formKey;
-
-  List<String> get availableStatus {
-    // Extracts unique statuses from current notes
-    return allNotes
-        .map((n) => n.status)
-        .toSet()
-        .toList()
-      ..sort();
-  }
+  
+  final TextEditingController _searchController = TextEditingController();
+  Timer? _debounceTimer;
+  String searchQuery = '';
+  String? statusFilter;
+  bool _isLoading = false;
+  bool _isRefreshing = false;
 
   @override
   void initState() {
     super.initState();
+    _loadData();
+  }
+  
+  void _loadData() {
+    setState(() {
+      _isLoading = true;
+    });
+    
+    // Simulate loading data
     allNotes = List<ReimbursementNote>.from(dummyReimbursementNotes);
-    projectController = TextEditingController();
-    employeeController = TextEditingController();
-    amountController = TextEditingController();
-    dateController = TextEditingController();
-    approverController = TextEditingController();
-    utrController = TextEditingController();
-    utrDateController = TextEditingController();
-    statusValue = availableStatus.isNotEmpty ? availableStatus.first : '';
-    _updatePagination();
+    masterList = List<ReimbursementNote>.from(allNotes);
+    filteredNotes = List<ReimbursementNote>.from(allNotes);
+    
+    setState(() {
+      _isLoading = false;
+      currentPage = 0;
+      _updatePagination();
+    });
+  }
+  
+  
+  void _applyFrontendFilters() {
+    setState(() {
+      filteredNotes = masterList.where((note) {
+        final matchesStatus = statusFilter == null || 
+            note.status.toLowerCase().contains(statusFilter!.toLowerCase());
+        
+        final matchesSearch = searchQuery.isEmpty ||
+            note.projectName.toLowerCase().contains(searchQuery) ||
+            note.employeeName.toLowerCase().contains(searchQuery) ||
+            note.amount.toLowerCase().contains(searchQuery) ||
+            note.status.toLowerCase().contains(searchQuery);
+        
+        return matchesStatus && matchesSearch;
+      }).toList();
+      
+      _updatePagination();
+    });
+  }
+  
+  void _onSearchChanged(String value) {
+    if (!mounted) return;
+    
+    _debounceTimer?.cancel();
+    
+    _debounceTimer = Timer(const Duration(milliseconds: 400), () {
+      if (mounted) {
+        setState(() {
+          searchQuery = value.toLowerCase();
+          currentPage = 0;
+        });
+        _applyFrontendFilters();
+      }
+    });
+  }
+  
+  void _onSearchSubmitted() {
+    _debounceTimer?.cancel();
+    if (mounted) {
+      setState(() {
+        searchQuery = _searchController.text.toLowerCase();
+        currentPage = 0;
+      });
+      _applyFrontendFilters();
+    }
+  }
+  
+  void _refreshData() {
+    if (_isRefreshing) return;
+    setState(() {
+      _isRefreshing = true;
+      statusFilter = null;
+      searchQuery = '';
+      _searchController.clear();
+      currentPage = 0;
+    });
+    
+    Future.delayed(const Duration(milliseconds: 500), () {
+      if (mounted) {
+        _loadData();
+        setState(() {
+          _isRefreshing = false;
+        });
+      }
+    });
+  }
+  
+  void _showFilterDialog() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Filter by Status'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                title: const Text('All'),
+                leading: Radio<String?>(
+                  value: null,
+                  groupValue: statusFilter,
+                  onChanged: (value) {
+                    Navigator.pop(context);
+                    setState(() {
+                      statusFilter = value;
+                      currentPage = 0;
+                      _applyFrontendFilters();
+                    });
+                  },
+                ),
+              ),
+              ListTile(
+                title: const Text('Pending'),
+                leading: Radio<String?>(
+                  value: 'Pending',
+                  groupValue: statusFilter,
+                  onChanged: (value) {
+                    Navigator.pop(context);
+                    setState(() {
+                      statusFilter = value;
+                      currentPage = 0;
+                      _applyFrontendFilters();
+                    });
+                  },
+                ),
+              ),
+              ListTile(
+                title: const Text('Approved'),
+                leading: Radio<String?>(
+                  value: 'Approved',
+                  groupValue: statusFilter,
+                  onChanged: (value) {
+                    Navigator.pop(context);
+                    setState(() {
+                      statusFilter = value;
+                      currentPage = 0;
+                      _applyFrontendFilters();
+                    });
+                  },
+                ),
+              ),
+              ListTile(
+                title: const Text('Rejected'),
+                leading: Radio<String?>(
+                  value: 'Rejected',
+                  groupValue: statusFilter,
+                  onChanged: (value) {
+                    Navigator.pop(context);
+                    setState(() {
+                      statusFilter = value;
+                      currentPage = 0;
+                      _applyFrontendFilters();
+                    });
+                  },
+                ),
+              ),
+              ListTile(
+                title: const Text('Paid'),
+                leading: Radio<String?>(
+                  value: 'Paid',
+                  groupValue: statusFilter,
+                  onChanged: (value) {
+                    Navigator.pop(context);
+                    setState(() {
+                      statusFilter = value;
+                      currentPage = 0;
+                      _applyFrontendFilters();
+                    });
+                  },
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Close'),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   @override
   void dispose() {
-    projectController.dispose();
-    employeeController.dispose();
-    amountController.dispose();
-    dateController.dispose();
-    approverController.dispose();
-    utrController.dispose();
-    utrDateController.dispose();
+    _searchController.dispose();
+    _debounceTimer?.cancel();
     super.dispose();
   }
 
   void _updatePagination() {
     final start = currentPage * rowsPerPage;
-    final end = (start + rowsPerPage).clamp(0, allNotes.length);
-    final totalPages = (allNotes.length / rowsPerPage).ceil();
-    if (currentPage >= totalPages && totalPages > 0) {
-      currentPage = totalPages - 1;
-    }
-    if (mounted) {
-      setState(() {
-        paginatedNotes = allNotes.sublist(start, end);
-      });
-    } else {
-      paginatedNotes = allNotes.sublist(start, end);
-    }
+    final end = (start + rowsPerPage).clamp(0, filteredNotes.length);
+    paginatedNotes = filteredNotes.sublist(start, end);
   }
 
   void changeRowsPerPage(int? value) {
@@ -97,390 +246,18 @@ class _ReimbursementTablePageState extends State<ReimbursementTablePage> {
     });
   }
 
-  DataCell _buildCell(String text) {
-    return DataCell(
-      Text(
-        text,
-        maxLines: 1,
-        overflow: TextOverflow.ellipsis,
-        style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
-      ),
-    );
+
+  void onAddNote() {
+    // Navigate to create reimbursement form page
+    context.go('/reimbursement-note/create');
   }
 
-  Widget _statusBadge(BuildContext context, String status) {
-    final cs = Theme.of(context).colorScheme;
-    return Container(
-      height: 26,
-      padding: const EdgeInsets.symmetric(horizontal: 6),
-      decoration: BoxDecoration(
-        color: cs.primary,
-        border: Border.all(color: cs.primary, width: 0.8),
-        borderRadius: BorderRadius.circular(20),
-      ),
-      alignment: Alignment.center,
-      child: Text(
-        status,
-        textAlign: TextAlign.center,
-        style: TextStyle(color: cs.onPrimary, fontSize: 11, fontWeight: FontWeight.w600),
-        maxLines: 1,
-        overflow: TextOverflow.ellipsis,
-      ),
-    );
+  void onEditNote(ReimbursementNote note) {
+    context.go('/reimbursement-note/edit/${note.id}');
   }
 
-  Widget _buildExtraInfo(ReimbursementNote note) {
-    if (note.status == "Sent for Approval" && note.nextApprover.isNotEmpty) {
-      return Text("Next Approver: ${note.nextApprover}", style: TextStyle(color: Theme.of(context).colorScheme.onSurface));
-    } else if (note.status == "Paid" && note.utrNumber.isNotEmpty) {
-      return Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text("UTR No: ${note.utrNumber}", style: TextStyle(color: Theme.of(context).colorScheme.onSurface)),
-          Text("UTR Date: ${note.utrDate}", style: TextStyle(color: Theme.of(context).colorScheme.onSurface)),
-        ],
-      );
-    }
-    return Text("-", style: TextStyle(color: Theme.of(context).colorScheme.onSurface));
-  }
-
-  Future<void> onAddNote() async {
-    formKey = GlobalKey<FormState>();
-    projectController.text = '';
-    employeeController.text = '';
-    amountController.text = '';
-    dateController.text = '';
-    approverController.text = '';
-    utrController.text = '';
-    utrDateController.text = '';
-    statusValue = availableStatus.isNotEmpty ? availableStatus.first : '';
-
-    final result = await showDialog<bool>(
-      context: context,
-      barrierDismissible: false,
-      builder: (ctx) {
-        final colorScheme = Theme.of(ctx).colorScheme;
-        return Dialog(
-          child: Container(
-            width: MediaQuery.of(ctx).size.width * 0.4,
-            padding: const EdgeInsets.all(24),
-            decoration: BoxDecoration(
-              border: Border.all(color: colorScheme.outline, width: 0.5),
-              borderRadius: BorderRadius.circular(20),
-              color: colorScheme.surface,
-            ),
-            child: StatefulBuilder(
-              builder: (context, setState) => SingleChildScrollView(
-                child: Form(
-                  key: formKey,
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            "Add New Reimbursement",
-                            style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: colorScheme.onSurface),
-                          ),
-                          IconButton(
-                            onPressed: () => Navigator.of(ctx).pop(false),
-                            icon: Icon(Icons.close, color: colorScheme.onSurface),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 20),
-                      _buildInputField(ctx, "Project", projectController),
-                      const SizedBox(height: 16),
-                      _buildInputField(ctx, "Employee", employeeController),
-                      const SizedBox(height: 16),
-                      _buildInputField(ctx, "Amount", amountController),
-                      const SizedBox(height: 16),
-                      _buildInputField(ctx, "Date", dateController),
-                      const SizedBox(height: 16),
-                      DropdownButtonFormField<String>(
-                        value: statusValue,
-                        decoration: InputDecoration(
-                          labelText: "Status",
-                          labelStyle: TextStyle(color: colorScheme.onSurface),
-                          filled: true,
-                          fillColor: colorScheme.surfaceContainer,
-                          enabledBorder: OutlineInputBorder(
-                            borderSide: BorderSide(color: colorScheme.outline),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          focusedBorder: OutlineInputBorder(
-                            borderSide: BorderSide(color: colorScheme.primary),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                        ),
-                        items: availableStatus.map((s) => DropdownMenuItem(value: s, child: Text(s))).toList(),
-                        onChanged: (v) {
-                          if (v != null) setState(() => statusValue = v);
-                        },
-                      ),
-                      const SizedBox(height: 16),
-                      _buildInputField(ctx, "Next Approver", approverController),
-                      const SizedBox(height: 16),
-                      _buildInputField(ctx, "UTR Number", utrController),
-                      const SizedBox(height: 16),
-                      _buildInputField(ctx, "UTR Date", utrDateController),
-                      const SizedBox(height: 30),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.end,
-                        children: [
-                          TextButton(onPressed: () => Navigator.of(ctx).pop(false), child: const Text("Cancel")),
-                          const SizedBox(width: 12),
-                          ElevatedButton(
-                            onPressed: () {
-                              if (formKey.currentState?.validate() ?? false) {
-                                Navigator.of(ctx).pop(true);
-                              }
-                            },
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: colorScheme.primary,
-                              foregroundColor: colorScheme.onPrimary,
-                              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                            ),
-                            child: const Text("Save"),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-          ),
-        );
-      },
-    );
-
-    if (result == true) {
-      setState(() {
-        final newNote = ReimbursementNote(
-          id: DateTime.now().millisecondsSinceEpoch.toString(),
-          sNo: (allNotes.length + 1).toString(),
-          projectName: projectController.text,
-          employeeName: employeeController.text,
-          amount: amountController.text,
-          date: dateController.text,
-          status: statusValue,
-          nextApprover: approverController.text,
-          utrNumber: utrController.text,
-          utrDate: utrDateController.text,
-        );
-        allNotes.insert(0, newNote);
-        statusValue = availableStatus.isNotEmpty ? availableStatus.first : '';
-        currentPage = 0;
-        _updatePagination();
-      });
-    }
-  }
-
-  Future<void> onEditNote(ReimbursementNote note) async {
-    formKey = GlobalKey<FormState>();
-    projectController.text = note.projectName;
-    employeeController.text = note.employeeName;
-    amountController.text = note.amount;
-    dateController.text = note.date;
-    approverController.text = note.nextApprover;
-    utrController.text = note.utrNumber;
-    utrDateController.text = note.utrDate;
-    statusValue = note.status;
-
-    final result = await showDialog<bool>(
-      context: context,
-      barrierDismissible: false,
-      builder: (ctx) {
-        final colorScheme = Theme.of(ctx).colorScheme;
-        return Dialog(
-          child: Container(
-            width: MediaQuery.of(ctx).size.width * 0.4,
-            padding: const EdgeInsets.all(24),
-            decoration: BoxDecoration(
-              border: Border.all(color: colorScheme.outline, width: 0.5),
-              borderRadius: BorderRadius.circular(20),
-              color: colorScheme.surface,
-            ),
-            child: StatefulBuilder(
-              builder: (context, setState) => SingleChildScrollView(
-                child: Form(
-                  key: formKey,
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            "Edit Reimbursement",
-                            style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: colorScheme.onSurface),
-                          ),
-                          IconButton(
-                            onPressed: () => Navigator.of(ctx).pop(false),
-                            icon: Icon(Icons.close, color: colorScheme.onSurface),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 20),
-                      _buildInputField(ctx, "Project", projectController),
-                      const SizedBox(height: 16),
-                      _buildInputField(ctx, "Employee", employeeController),
-                      const SizedBox(height: 16),
-                      _buildInputField(ctx, "Amount", amountController),
-                      const SizedBox(height: 16),
-                      _buildInputField(ctx, "Date", dateController),
-                      const SizedBox(height: 16),
-                      DropdownButtonFormField<String>(
-                        value: statusValue,
-                        decoration: InputDecoration(
-                          labelText: "Status",
-                          labelStyle: TextStyle(color: colorScheme.onSurface),
-                          filled: true,
-                          fillColor: colorScheme.surfaceContainer,
-                          enabledBorder: OutlineInputBorder(
-                            borderSide: BorderSide(color: colorScheme.outline),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          focusedBorder: OutlineInputBorder(
-                            borderSide: BorderSide(color: colorScheme.primary),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                        ),
-                        items: availableStatus.map((s) => DropdownMenuItem(value: s, child: Text(s))).toList(),
-                        onChanged: (v) {
-                          if (v != null) setState(() => statusValue = v);
-                        },
-                      ),
-                      const SizedBox(height: 16),
-                      _buildInputField(ctx, "Next Approver", approverController),
-                      const SizedBox(height: 16),
-                      _buildInputField(ctx, "UTR Number", utrController),
-                      const SizedBox(height: 16),
-                      _buildInputField(ctx, "UTR Date", utrDateController),
-                      const SizedBox(height: 30),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.end,
-                        children: [
-                          TextButton(onPressed: () => Navigator.of(ctx).pop(false), child: const Text("Cancel")),
-                          const SizedBox(width: 12),
-                          ElevatedButton(
-                            onPressed: () {
-                              if (formKey.currentState?.validate() ?? false) {
-                                Navigator.of(ctx).pop(true);
-                              }
-                            },
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: colorScheme.primary,
-                              foregroundColor: colorScheme.onPrimary,
-                              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                            ),
-                            child: const Text("Save"),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-          ),
-        );
-      },
-    );
-
-    if (result == true) {
-      setState(() {
-        final idx = allNotes.indexWhere((n) => n.sNo == note.sNo);
-        if (idx != -1) {
-          final updated = ReimbursementNote(
-            id: note.id,
-            sNo: note.sNo,
-            projectName: projectController.text,
-            employeeName: employeeController.text,
-            amount: amountController.text,
-            date: dateController.text,
-            status: statusValue,
-            nextApprover: approverController.text,
-            utrNumber: utrController.text,
-            utrDate: utrDateController.text,
-          );
-          allNotes[idx] = updated;
-          statusValue = availableStatus.isNotEmpty ? availableStatus.first : '';
-          _updatePagination();
-        }
-      });
-    }
-  }
-
-  Future<void> onViewNote(ReimbursementNote note) async {
-    await showDialog(
-      context: context,
-      builder: (ctx) {
-        final colorScheme = Theme.of(ctx).colorScheme;
-        return Dialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-          backgroundColor: colorScheme.surface,
-          child: Container(
-            width: MediaQuery.of(ctx).size.width * 0.4,
-            padding: const EdgeInsets.all(24),
-            decoration: BoxDecoration(
-              border: Border.all(color: colorScheme.outline, width: 0.5),
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      "Reimbursement Details",
-                      style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: colorScheme.onSurface),
-                    ),
-                    IconButton(
-                      onPressed: () => Navigator.of(ctx).pop(),
-                      icon: Icon(Icons.close, color: colorScheme.onSurface),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 20),
-                _buildDetail(ctx, "S.No", note.sNo),
-                _buildDetail(ctx, "Project", note.projectName),
-                _buildDetail(ctx, "Employee", note.employeeName),
-                _buildDetail(ctx, "Amount", note.amount),
-                _buildDetail(ctx, "Date", note.date),
-                _buildDetail(ctx, "Status", note.status),
-                if (note.nextApprover.isNotEmpty)
-                  _buildDetail(ctx, "Next Approver", note.nextApprover),
-                if (note.utrNumber.isNotEmpty)
-                  _buildDetail(ctx, "UTR Number", note.utrNumber),
-                if (note.utrDate.isNotEmpty)
-                  _buildDetail(ctx, "UTR Date", note.utrDate),
-                const SizedBox(height: 24),
-                Align(
-                  alignment: Alignment.centerRight,
-                  child: ElevatedButton(
-                    onPressed: () => Navigator.of(ctx).pop(),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: colorScheme.primary,
-                      foregroundColor: colorScheme.onPrimary,
-                    ),
-                    child: const Text("Close"),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        );
-      },
-    );
+  void onViewNote(ReimbursementNote note) {
+    context.go('/reimbursement-note/view/${note.id}');
   }
 
   Future<void> onDeleteNote(ReimbursementNote note) async {
@@ -493,6 +270,7 @@ class _ReimbursementTablePageState extends State<ReimbursementTablePage> {
           TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text("Cancel")),
           TextButton(
             onPressed: () => Navigator.pop(ctx, true),
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
             child: const Text("Delete"),
           ),
         ],
@@ -501,224 +279,349 @@ class _ReimbursementTablePageState extends State<ReimbursementTablePage> {
     if (shouldDelete == true) {
       setState(() {
         allNotes.removeWhere((n) => n.sNo == note.sNo);
-        statusValue = availableStatus.isNotEmpty ? availableStatus.first : '';
-        final totalPagesNow = (allNotes.isEmpty ? 1 : (allNotes.length / rowsPerPage).ceil());
+        masterList.removeWhere((n) => n.sNo == note.sNo);
+        filteredNotes.removeWhere((n) => n.sNo == note.sNo);
+        final totalPagesNow = (filteredNotes.isEmpty ? 1 : (filteredNotes.length / rowsPerPage).ceil());
         if (currentPage >= totalPagesNow && currentPage > 0) {
           currentPage = totalPagesNow - 1;
         }
         _updatePagination();
       });
-    }
-  }
-
-  Widget _buildInputField(BuildContext context, String label, TextEditingController controller) {
-    final theme = Theme.of(context);
-    return TextFormField(
-      controller: controller,
-      decoration: InputDecoration(
-        prefixIcon: Icon(Icons.edit, color: theme.colorScheme.onSurfaceVariant),
-        labelText: label,
-        labelStyle: TextStyle(color: theme.colorScheme.onSurface),
-        filled: true,
-        fillColor: theme.colorScheme.surfaceContainer,
-        enabledBorder: OutlineInputBorder(
-          borderSide: BorderSide(color: theme.colorScheme.outline),
-          borderRadius: BorderRadius.circular(12),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderSide: BorderSide(color: theme.colorScheme.primary),
-          borderRadius: BorderRadius.circular(12),
-        ),
-      ),
-      validator: (val) {
-        if (val == null || val.isEmpty) {
-          return 'Please enter $label';
-        }
-        return null;
-      },
-    );
-  }
-
-  Widget _buildDetail(BuildContext context, String label, String value) {
-    final colorScheme = Theme.of(context).colorScheme;
-    return Container(
-      margin: const EdgeInsets.symmetric(vertical: 6),
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      decoration: BoxDecoration(
-        color: colorScheme.surfaceContainer,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: colorScheme.outline, width: 0.5),
-      ),
-      child: Row(
-        children: [
-          SizedBox(
-            width: 120,
-            child: Text(
-              label,
-              style: TextStyle(fontWeight: FontWeight.bold, color: colorScheme.primary),
-            ),
+      
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('${note.projectName} deleted successfully'),
+            backgroundColor: Colors.green,
           ),
-          Expanded(
-            child: Text(value, style: TextStyle(color: colorScheme.onSurface)),
-          )
-        ],
-      ),
-    );
+        );
+      }
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    final totalPages = (allNotes.isEmpty ? 1 : (allNotes.length / rowsPerPage).ceil());
-
-    final columns = [
-      DataColumn(label: Text('S.No', style: TextStyle(color: cs.onSurface))),
-      DataColumn(label: Text('Project', style: TextStyle(color: cs.onSurface))),
-      DataColumn(label: Text('Employee', style: TextStyle(color: cs.onSurface))),
-      DataColumn(label: Text('Amount', style: TextStyle(color: cs.onSurface))),
-      DataColumn(label: Text('Date', style: TextStyle(color: cs.onSurface))),
-      DataColumn(label: Text('Status', style: TextStyle(color: cs.onSurface))),
-      DataColumn(label: Text('Extra Info', style: TextStyle(color: cs.onSurface))),
-      DataColumn(label: Text('Actions', style: TextStyle(color: cs.onSurface))),
-    ];
-
-    final rows = paginatedNotes.map((note) {
-      return DataRow(
-        cells: [
-          _buildCell(note.sNo),
-          _buildCell(note.projectName),
-          _buildCell(note.employeeName),
-          _buildCell("₹${note.amount}"),
-          _buildCell(note.date),
-          DataCell(_statusBadge(context, note.status)),
-          DataCell(_buildExtraInfo(note)),
-          DataCell(
-            Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                OutlinedButton(
-                  onPressed: () => onEditNote(note),
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: cs.onSurface,
-                    side: BorderSide(color: cs.outline),
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                  ),
-                  child: const Text('Edit'),
-                ),
-                const SizedBox(width: 8),
-                OutlinedButton(
-                  onPressed: () => onViewNote(note),
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: cs.primary,
-                    side: BorderSide(color: cs.outline),
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                  ),
-                  child: const Text('View'),
-                ),
-                const SizedBox(width: 8),
-                OutlinedButton(
-                  onPressed: () => onDeleteNote(note),
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: cs.error,
-                    side: BorderSide(color: cs.outline),
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                  ),
-                  child: const Text('Delete'),
-                ),
-              ],
-            ),
-          ),
-        ],
-      );
-    }).toList();
+    final colorScheme = Theme.of(context).colorScheme;
 
     return Scaffold(
-      backgroundColor: cs.surface,
-      body: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Expanded(
-              child: Container(
-                decoration: BoxDecoration(
-                  color: cs.surfaceContainerHigh,
-                  borderRadius: BorderRadius.circular(22),
-                ),
-                padding: const EdgeInsets.all(24),
+      backgroundColor: colorScheme.surface,
+      body: _isLoading && masterList.isEmpty
+          ? const Center(child: CircularProgressIndicator())
+          : SingleChildScrollView(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Reimbursements',
-                              style: TextStyle(
-                                color: cs.onSurface,
-                                fontSize: 26,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              'Manage your reimbursement notes',
-                              style: TextStyle(
-                                color: cs.onSurface.withOpacity(0.6),
-                                fontSize: 16,
-                              ),
-                            ),
-                          ],
-                        ),
-                        Row(
-                          children: [
-                            ToggleBtn(
-                              labels: ['Table', 'Grid'],
-                              selectedIndex: toggleIndex,
-                              onChanged: (i) => setState(() => toggleIndex = i),
-                            ),
-                            const SizedBox(width: 12),
-                            PrimaryButton(
-                              label: "Add New Reimbursement",
-                              icon: Icons.add,
-                              onPressed: onAddNote,
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
+                    _buildHeader(context),
                     const SizedBox(height: 16),
+                    _buildTableSection(context),
+                  ],
+                ),
+              ),
+            ),
+    );
+  }
+
+  Widget _buildHeader(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final theme = Theme.of(context);
+
+    return Container(
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: colorScheme.surfaceContainer,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: colorScheme.outline,
+          width: 0.5,
+        ),
+      ),
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final isSmallScreen = constraints.maxWidth < 600;
+          
+          if (isSmallScreen) {
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: colorScheme.primary.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Icon(
+                        Icons.receipt_long,
+                        size: 28,
+                        color: colorScheme.primary,
+                      ),
+                    ),
+                    const SizedBox(width: 16),
                     Expanded(
-                      child: toggleIndex == 0
-                          ? Column(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Expanded(
-                            child: CustomTable(
-                              minTableWidth: 1200,
-                              columns: columns,
-                              rows: rows,
+                          Text(
+                            'Reimbursement Notes',
+                            style: theme.textTheme.titleLarge?.copyWith(
+                              fontWeight: FontWeight.bold,
+                              color: colorScheme.onSurface,
                             ),
                           ),
-                          _paginationBar(context, totalPages),
+                          const SizedBox(height: 4),
+                          Text(
+                            'Manage employee travel and expense reimbursements',
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: colorScheme.onSurface.withValues(alpha: 0.7),
+                            ),
+                          ),
                         ],
-                      )
-                          : ReimbursementGridView(
-                          noteList: allNotes,
-                          rowsPerPage: rowsPerPage,
-                          currentPage: currentPage,
-                        onPageChanged: (page) =>
-                            setState(() => currentPage = page),
-                        onRowsPerPageChanged: (rows) => setState(() {
-                          rowsPerPage = rows ?? rowsPerPage;
-                          currentPage = 0;
-                        }),
                       ),
                     ),
                   ],
                 ),
+                const SizedBox(height: 16),
+                SizedBox(
+                  width: double.infinity,
+                  child: PrimaryButton(
+                    icon: Icons.add,
+                    label: 'Add Note',
+                    onPressed: onAddNote,
+                  ),
+                ),
+              ],
+            );
+          }
+          
+          return Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: colorScheme.primary.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(
+                  Icons.receipt_long,
+                  size: 28,
+                  color: colorScheme.primary,
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Reimbursement Notes',
+                      style: theme.textTheme.headlineSmall?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: colorScheme.onSurface,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Manage employee travel and expense reimbursements',
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: colorScheme.onSurface.withValues(alpha: 0.7),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 16),
+              PrimaryButton(
+                icon: Icons.add,
+                label: 'Add Note',
+                onPressed: onAddNote,
+              ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+
+
+  Widget _buildTableSection(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final theme = Theme.of(context);
+
+    return Container(
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: colorScheme.surfaceContainerHigh,
+        borderRadius: BorderRadius.circular(22),
+        border: Border.all(
+          color: colorScheme.outline,
+          width: 0.5,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Expanded(
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.grid_view,
+                      color: colorScheme.primary,
+                      size: 20,
+                    ),
+                    const SizedBox(width: 8),
+                    Flexible(
+                      child: Text(
+                        'All Reimbursement Notes',
+                        style: theme.textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.w600,
+                          color: colorScheme.onSurface,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Wrap(
+                spacing: 8,
+                children: [
+                  SecondaryButton(
+                    icon: Icons.filter_list,
+                    label: statusFilter == null ? 'Filter' : 'Filter: ${statusFilter ?? ""}',
+                    onPressed: _showFilterDialog,
+                  ),
+                  SecondaryButton(
+                    icon: Icons.refresh,
+                    label: 'Refresh',
+                    onPressed: _refreshData,
+                  ),
+                ],
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Manage and monitor all reimbursement requests',
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: colorScheme.onSurface.withValues(alpha: 0.6),
+            ),
+          ),
+          const SizedBox(height: 16),
+          // Search bar
+          Container(
+            width: double.infinity,
+            constraints: const BoxConstraints(maxWidth: 400),
+            child: TextField(
+              controller: _searchController,
+              textInputAction: TextInputAction.search,
+              onChanged: (value) {
+                if (mounted) {
+                  _onSearchChanged(value);
+                }
+              },
+              onSubmitted: (_) => _onSearchSubmitted(),
+              decoration: InputDecoration(
+                hintText: 'Search by project, employee, amount...',
+                hintStyle: TextStyle(
+                  color: colorScheme.onSurface.withValues(alpha: 0.5),
+                  fontSize: 14,
+                ),
+                prefixIcon: Icon(
+                  Icons.search,
+                  color: colorScheme.onSurface.withValues(alpha: 0.5),
+                  size: 20,
+                ),
+                suffixIcon: searchQuery.isNotEmpty
+                    ? IconButton(
+                        icon: Icon(
+                          Icons.clear,
+                          color: colorScheme.onSurface.withValues(alpha: 0.5),
+                          size: 20,
+                        ),
+                        onPressed: () {
+                          if (mounted && _searchController.text.isNotEmpty) {
+                            _searchController.clear();
+                            _onSearchChanged('');
+                          }
+                        },
+                      )
+                    : null,
+                filled: true,
+                fillColor: colorScheme.surface,
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 12,
+                ),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10),
+                  borderSide: BorderSide(color: colorScheme.outline),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10),
+                  borderSide: BorderSide(color: colorScheme.outline),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10),
+                  borderSide: BorderSide(color: colorScheme.primary, width: 2),
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 16),
+          _isLoading
+              ? const Center(
+                  child: Padding(
+                    padding: EdgeInsets.all(40.0),
+                    child: CircularProgressIndicator(),
+                  ),
+                )
+              : paginatedNotes.isEmpty
+                  ? _buildEmptyState(context)
+                  : _buildTable(context),
+          if (paginatedNotes.isNotEmpty && !_isLoading)
+            _buildPagination(context),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildEmptyState(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final theme = Theme.of(context);
+
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 60),
+      child: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.receipt_long_outlined,
+              size: 64,
+              color: colorScheme.onSurface.withValues(alpha: 0.3),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              searchQuery.isNotEmpty || statusFilter != null
+                  ? 'No matching reimbursements found'
+                  : 'No reimbursement notes found',
+              style: theme.textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.w600,
+                color: colorScheme.onSurface,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              searchQuery.isNotEmpty || statusFilter != null
+                  ? 'Try adjusting your search or filter criteria'
+                  : 'Showing 0 to 0 of 0 entries',
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: colorScheme.onSurface.withValues(alpha: 0.6),
               ),
             ),
           ],
@@ -727,75 +630,151 @@ class _ReimbursementTablePageState extends State<ReimbursementTablePage> {
     );
   }
 
-  Widget _paginationBar(BuildContext context, int totalPages) {
-    final cs = Theme.of(context).colorScheme;
-    final start = allNotes.isEmpty ? 0 : (currentPage * rowsPerPage);
-    final end = (start + rowsPerPage).clamp(0, allNotes.length);
+  Widget _buildTable(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
 
-    int windowSize = 3;
-    int startWindow = 0;
-    int endWindow = totalPages;
+    final columns = [
+      DataColumn(
+        label: Text('#', style: TextStyle(color: colorScheme.onSurface, fontWeight: FontWeight.w600)),
+      ),
+      DataColumn(
+        label: Text('Project', style: TextStyle(color: colorScheme.onSurface, fontWeight: FontWeight.w600)),
+      ),
+      DataColumn(
+        label: Text('Employee', style: TextStyle(color: colorScheme.onSurface, fontWeight: FontWeight.w600)),
+      ),
+      DataColumn(
+        label: Text('Amount', style: TextStyle(color: colorScheme.onSurface, fontWeight: FontWeight.w600)),
+      ),
+      DataColumn(
+        label: Text('Date', style: TextStyle(color: colorScheme.onSurface, fontWeight: FontWeight.w600)),
+      ),
+      DataColumn(
+        label: Text('Status', style: TextStyle(color: colorScheme.onSurface, fontWeight: FontWeight.w600)),
+      ),
+      DataColumn(
+        label: Text('Actions', style: TextStyle(color: colorScheme.onSurface, fontWeight: FontWeight.w600)),
+      ),
+    ];
 
-    if (totalPages > windowSize) {
-      if (currentPage <= 1) {
-        startWindow = 0;
-        endWindow = windowSize;
-      } else if (currentPage >= totalPages - 2) {
-        startWindow = totalPages - windowSize;
-        endWindow = totalPages;
-      } else {
-        startWindow = currentPage - 1;
-        endWindow = currentPage + 2;
-      }
-    }
+    final rows = paginatedNotes.asMap().entries.map((entry) {
+      final index = entry.key;
+      final note = entry.value;
 
-    return Padding(
-      padding: const EdgeInsets.only(top: 12, bottom: 10),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(
-            "Showing ${allNotes.isEmpty ? 0 : start + 1} to $end of ${allNotes.length} entries",
-            style: Theme.of(context).textTheme.bodySmall,
+      return DataRow(
+        cells: [
+          DataCell(
+            Text(
+              '${index + 1}',
+              style: TextStyle(color: colorScheme.onSurface, fontSize: 13),
+            ),
           ),
-          Row(
-            children: [
-              IconButton(
-                icon: const Icon(Icons.arrow_back),
-                onPressed: currentPage > 0 ? () => gotoPage(currentPage - 1) : null,
-              ),
-              for (int i = startWindow; i < endWindow; i++)
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 2),
-                  child: ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: i == currentPage ? cs.primary : cs.surfaceContainer,
-                      foregroundColor: i == currentPage ? Colors.white : cs.onSurface,
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                      minimumSize: const Size(40, 40),
-                    ),
-                    onPressed: () => gotoPage(i),
-                    child: Text('${i + 1}'),
+          DataCell(
+            Text(
+              note.projectName.isEmpty ? 'N/A' : note.projectName,
+              style: TextStyle(color: Colors.black87, fontSize: 13, fontWeight: FontWeight.w500),
+            ),
+          ),
+          DataCell(
+            Text(
+              note.employeeName.isEmpty ? 'N/A' : note.employeeName,
+              style: TextStyle(color: Colors.black87, fontSize: 13),
+            ),
+          ),
+          DataCell(
+            Text(
+              '₹${note.amount}',
+              style: TextStyle(color: Colors.black87, fontSize: 13),
+            ),
+          ),
+          DataCell(
+            Text(
+              note.date.isEmpty ? 'N/A' : note.date,
+              style: TextStyle(color: Colors.black87, fontSize: 13),
+            ),
+          ),
+          DataCell(
+            BadgeChip(
+              label: note.status,
+              type: ChipType.status,
+              statusKey: note.status,
+              statusColorFunc: _getStatusColor,
+            ),
+          ),
+          DataCell(
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                IconButton(
+                  onPressed: () => onViewNote(note),
+                  icon: const Icon(Icons.visibility_outlined),
+                  color: colorScheme.primary,
+                  iconSize: 20,
+                  tooltip: 'View',
+                  style: IconButton.styleFrom(
+                    backgroundColor: colorScheme.primary.withValues(alpha: 0.1),
                   ),
                 ),
-              IconButton(
-                icon: const Icon(Icons.arrow_forward),
-                onPressed: currentPage < totalPages - 1 ? () => gotoPage(currentPage + 1) : null,
-              ),
-              const SizedBox(width: 20),
-              DropdownButton<int>(
-                value: rowsPerPage,
-                items: [5, 10, 20, 50].map((e) => DropdownMenuItem(value: e, child: Text('$e'))).toList(),
-                onChanged: changeRowsPerPage,
-                style: Theme.of(context).textTheme.bodyMedium,
-                underline: const SizedBox(),
-              ),
-              const SizedBox(width: 8),
-              Text("page", style: Theme.of(context).textTheme.bodySmall),
-            ],
+                const SizedBox(width: 4),
+                IconButton(
+                  onPressed: () => onEditNote(note),
+                  icon: const Icon(Icons.edit_outlined),
+                  color: colorScheme.tertiary,
+                  iconSize: 20,
+                  tooltip: 'Edit',
+                  style: IconButton.styleFrom(
+                    backgroundColor: colorScheme.tertiary.withValues(alpha: 0.1),
+                  ),
+                ),
+                const SizedBox(width: 4),
+                IconButton(
+                  onPressed: () => onDeleteNote(note),
+                  icon: const Icon(Icons.delete_outline),
+                  color: colorScheme.error,
+                  iconSize: 20,
+                  tooltip: 'Delete',
+                  style: IconButton.styleFrom(
+                    backgroundColor: colorScheme.error.withValues(alpha: 0.1),
+                  ),
+                ),
+              ],
+            ),
           ),
         ],
-      ),
+      );
+    }).toList();
+
+    return CustomTable(
+      minTableWidth: 1200,
+      columns: columns,
+      rows: rows,
     );
   }
+
+  Color _getStatusColor(String status) {
+    // Use primary color for all statuses to maintain consistency
+    return Theme.of(context).colorScheme.primary;
+  }
+
+  Widget _buildPagination(BuildContext context) {
+    return CustomPaginationBar(
+      currentPage: currentPage,
+      totalItems: filteredNotes.length,
+      rowsPerPage: rowsPerPage,
+      onPageChanged: (page) {
+        setState(() {
+          currentPage = page;
+          _updatePagination();
+        });
+      },
+      onRowsPerPageChanged: (value) {
+        setState(() {
+          rowsPerPage = value ?? 10;
+          currentPage = 0;
+          _updatePagination();
+        });
+      },
+    );
+  }
+
 }

@@ -39,14 +39,14 @@ class ApiConstants {
   static const String ssoLogoutInitiate = '/auth/sso/logout/initiate';
   static const String ssoLogoutComplete = '/auth/sso/logout/complete';
   
-  // ============ USER SERVICE ENDPOINTS (Port 8052) ============
+  // ============ USER SERVICE ENDPOINTS  ============
   static const String createTenant = '/tenants';  // Register user (first = Super Admin)
   static const String users = '/users';
   static const String userRoles = '/users'; // /users/{id}/roles
   static const String userLoginHistory = '/users/me/login-history';
   static const String activityLogs = '/activity-logs';
   
-  // ============ ORGANIZATION SERVICE ENDPOINTS (Port 8053) ============
+  // ============ ORGANIZATION SERVICE ENDPOINTS  ============
   static const String createOrganization = '/organizations';
   static const String getOrganizations = '/organizations';
   static const String getOrganizationsByTenant = '/tenants'; // GET /tenants/{tenantId}/organizations
@@ -54,15 +54,15 @@ class ApiConstants {
   static const String updateOrganization = '/organizations';
   static const String deleteOrganization = '/organizations';
   
-  // ============ DEPARTMENT SERVICE ENDPOINTS (Port 8054) ============
+  // ============ DEPARTMENT SERVICE ENDPOINTS ============
   static const String departments = '/departments';
   static const String departmentsByOrg = '/departments/organization';
   
-  // ============ DESIGNATION SERVICE ENDPOINTS (Port 8055) ============
+  // ============ DESIGNATION SERVICE ENDPOINTS  ============
   static const String designations = '/designations';
   static const String designationsByDept = '/designations/department';
   
-  // ============ VENDOR SERVICE ENDPOINTS (Port 8056) ============
+  // ============ VENDOR SERVICE ENDPOINTS  ============
   static const String vendors = '/vendors';
   static const String vendorsByOrg = '/vendors/organization';
   

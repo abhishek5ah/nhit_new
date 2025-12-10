@@ -34,12 +34,18 @@ class _SidebarState extends State<Sidebar> with SingleTickerProviderStateMixin {
         _SidebarItem(Icons.dashboard, "Dashboard", "/dashboard", subItems: []),
       ],
     ),
+
+
+
+
+
+    //Expense Management
     _SidebarCategory(
       heading: "EXPENSE MANAGEMENT",
       items: [
         _SidebarItem(Icons.receipt_long, "Expense Approval Notes", "", subItems: [
-          _SubItem("All Notes", "/expense-notes/note", Icons.list_alt),
-          _SubItem("Create Note", "/expense-note/create", Icons.add_box_outlined),
+          _SubItem("Create Note", "/expense/create-note", Icons.add_box_outlined),
+          _SubItem("All Notes", "/expense/all-notes", Icons.list_alt),
         ]),
         _SidebarItem(Icons.money, "Payment Notes", "", subItems: [
           _SubItem("Create Payment Note", "/payment-notes/create", Icons.post_add),
@@ -48,18 +54,23 @@ class _SidebarState extends State<Sidebar> with SingleTickerProviderStateMixin {
         ]),
       ],
     ),
+
+
+
+
+
+
     _SidebarCategory(
       heading: "APPROVAL RULES",
       items: [
         _SidebarItem(Icons.rule, "Approval Rules Management", "", subItems: [
           _SubItem("Rules Dashboard", "/approval-rules", Icons.dashboard_outlined),
-          _SubItem("Expense Note Rules", "/approval-rules/green_note", Icons.receipt_outlined),
-          _SubItem("Create Expense Rules", "/approval-rules/green_note/create", Icons.add_task),
-          _SubItem("Payment Note Rules", "/approval-rules/payment_note", Icons.payment_outlined),
-          _SubItem("Create Payment Rules", "/approval-rules/payment_note/create", Icons.playlist_add_check),
-          _SubItem("Reimbursement Rules", "/approval-rules/reimbursement_note", Icons.card_travel),
-          _SubItem("Create Reimbursement Rules", "/approval-rules/reimbursement_note/create", Icons.luggage),
-          // Removed Bank Letter and Create Bank Letter Rule from here
+          _SubItem("Expense Note Rules", "/approval-rules/expense", Icons.receipt_outlined),
+          _SubItem("Create Expense Rules", "/approval-rules/expense/create", Icons.add_task),
+          _SubItem("Payment Note Rules", "/approval-rules/payment", Icons.payment_outlined),
+          _SubItem("Create Payment Rules", "/approval-rules/payment/create", Icons.playlist_add_check),
+          _SubItem("Reimbursement Rules", "/approval-rules/reimbursement", Icons.card_travel),
+          _SubItem("Create Reimbursement Rules", "/approval-rules/reimbursement/create", Icons.luggage),
         ]),
         _SidebarItem(Icons.account_balance, "Escrow Banking System", "", subItems: [
           _SubItem("Escrow Accounts", "/escrow-accounts", Icons.account_balance_wallet_outlined),
