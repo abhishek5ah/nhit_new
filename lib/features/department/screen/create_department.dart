@@ -5,6 +5,7 @@ import 'package:ppv_components/features/department/model/department_model.dart';
 import 'package:ppv_components/common_widgets/button/primary_button.dart';
 import 'package:ppv_components/common_widgets/button/secondary_button.dart';
 import 'package:ppv_components/features/department/providers/department_provider.dart';
+import 'package:ppv_components/features/department/providers/create_department_form_provider.dart';
 
 class CreateDepartmentScreen extends StatefulWidget {
   const CreateDepartmentScreen({super.key});
@@ -17,12 +18,22 @@ class _CreateDepartmentScreenState extends State<CreateDepartmentScreen> {
   final _formKey = GlobalKey<FormState>();
   late TextEditingController _nameController;
   late TextEditingController _descriptionController;
+  late final Map<String, TextEditingController> _controllerMap;
+  bool _isInitializing = true;
 
   @override
   void initState() {
     super.initState();
     _nameController = TextEditingController();
     _descriptionController = TextEditingController();
+    _controllerMap = {
+      'name': _nameController,
+      'description': _descriptionController,
+    };
+    _registerControllerListeners();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _loadFormState();
+    });
   }
 
   @override
@@ -37,6 +48,28 @@ class _CreateDepartmentScreenState extends State<CreateDepartmentScreen> {
       return '$fieldName is required';
     }
     return null;
+  }
+
+  void _registerControllerListeners() {
+    _controllerMap.forEach((key, controller) {
+      controller.addListener(() {
+        if (_isInitializing) return;
+        context
+            .read<CreateDepartmentFormProvider>()
+            .updateField(key, controller.text);
+      });
+    });
+  }
+
+  Future<void> _loadFormState() async {
+    final formProvider = context.read<CreateDepartmentFormProvider>();
+    await formProvider.loadFormState();
+    if (!mounted) return;
+    setState(() {
+      _nameController.text = formProvider.name;
+      _descriptionController.text = formProvider.description;
+      _isInitializing = false;
+    });
   }
 
   Future<void> _submitForm() async {
@@ -57,6 +90,10 @@ class _CreateDepartmentScreenState extends State<CreateDepartmentScreen> {
               duration: const Duration(seconds: 2),
             ),
           );
+
+          await context
+              .read<CreateDepartmentFormProvider>()
+              .clearFormState();
 
           // Navigate back
           Future.delayed(const Duration(milliseconds: 500), () {

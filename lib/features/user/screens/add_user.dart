@@ -1,11 +1,17 @@
 import 'dart:io';
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
 import 'package:ppv_components/common_widgets/button/primary_button.dart';
 import 'package:ppv_components/common_widgets/button/secondary_button.dart';
 import 'package:ppv_components/core/utils/input_formatters.dart';
+import 'package:ppv_components/features/user/providers/create_user_form_provider.dart';
+import 'package:ppv_components/features/user/services/user_api_service.dart';
+import 'package:ppv_components/features/user/data/models/user_api_models.dart';
+import 'package:ppv_components/core/services/jwt_token_manager.dart';
 
 class CreateUserScreen extends StatefulWidget {
   const CreateUserScreen({super.key});
@@ -32,52 +38,139 @@ class _CreateUserScreenState extends State<CreateUserScreen> {
 
   // Password visibility - Single variable for both fields
   bool _isPasswordVisible = false;
+  bool _isFormInitializing = true;
 
   // Dropdown values
-  String? _selectedDesignation;
-  String? _selectedDepartment;
-  String? _selectedRole;
+  String? _selectedDesignationId;
+  String? _selectedDepartmentId;
+  String? _selectedRoleId;
   String _selectedStatus = 'Active';
 
   // File upload
   File? _signatureFile;
   String? _signatureFileName;
 
-  // Dropdown options
-  final List<String> _designations = [
-    'Software Developer',
-    'Senior Developer',
-    'Team Lead',
-    'Project Manager',
-    'Business Analyst',
-    'Quality Assurance',
-    'DevOps Engineer',
-    'UI/UX Designer',
-    'Product Manager',
-    'Technical Architect',
-  ];
-
-  final List<String> _departments = [
-    'Engineering',
-    'Human Resources',
-    'Finance',
-    'Marketing',
-    'Sales',
-    'Operations',
-    'Customer Support',
-    'Research & Development',
-    'Quality Assurance',
-    'Administration',
-  ];
-
-  final List<String> _roles = [
-    'User',
-    'Admin',
-    'Super Admin',
-    'Manager',
-  ];
+  // Loading state
+  bool _isSubmitting = false;
 
   final List<String> _statusOptions = ['Active', 'Inactive'];
+  late final Map<String, TextEditingController> _controllerMap;
+
+  @override
+  void initState() {
+    super.initState();
+    _controllerMap = {
+      'fullName': _fullNameController,
+      'employeeId': _employeeIdController,
+      'username': _usernameController,
+      'email': _emailController,
+      'contactNumber': _contactNumberController,
+      'password': _passwordController,
+      'accountHolder': _accountHolderController,
+      'bankName': _bankNameController,
+      'accountNumber': _accountNumberController,
+      'ifsc': _ifscController,
+    };
+    _registerControllerListeners();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _loadDropdowns();
+      _initializeFormState();
+    });
+  }
+
+  void _registerControllerListeners() {
+    _controllerMap.forEach((key, controller) {
+      controller.addListener(() {
+        if (_isFormInitializing) return;
+        final provider = context.read<CreateUserFormProvider>();
+        provider.updateField(key, controller.text);
+      });
+    });
+  }
+
+  Future<void> _loadDropdowns() async {
+    final service = context.read<UserApiService>();
+    final orgId = await JwtTokenManager.getOrgId();
+    if (orgId != null && orgId.isNotEmpty) {
+      await service.loadDropdowns(orgId);
+    }
+  }
+
+  Future<void> _initializeFormState() async {
+    final formProvider = context.read<CreateUserFormProvider>();
+    await formProvider.loadFormState();
+    if (!mounted) return;
+    setState(() {
+      _fullNameController.text = formProvider.getField('fullName') ?? '';
+      _employeeIdController.text = formProvider.getField('employeeId') ?? '';
+      _usernameController.text = formProvider.getField('username') ?? '';
+      _emailController.text = formProvider.getField('email') ?? '';
+      _contactNumberController.text =
+          formProvider.getField('contactNumber') ?? '';
+      _passwordController.text = formProvider.getField('password') ?? '';
+      _confirmPasswordController.text = '';
+      _accountHolderController.text =
+          formProvider.getField('accountHolder') ?? '';
+      _bankNameController.text = formProvider.getField('bankName') ?? '';
+      _accountNumberController.text =
+          formProvider.getField('accountNumber') ?? '';
+      _ifscController.text = formProvider.getField('ifsc') ?? '';
+      _selectedStatus = formProvider.status;
+      _selectedDesignationId = formProvider.designationId;
+      _selectedDepartmentId = formProvider.departmentId;
+      _selectedRoleId = formProvider.roleId;
+      _isFormInitializing = false;
+    });
+  }
+
+  void _onStatusChanged(String value) {
+    setState(() {
+      _selectedStatus = value;
+    });
+    if (_isFormInitializing) return;
+    context.read<CreateUserFormProvider>().updateStatus(value);
+  }
+
+  void _onDesignationChanged(String? value) {
+    setState(() {
+      _selectedDesignationId = value;
+    });
+    if (_isFormInitializing) return;
+    context.read<CreateUserFormProvider>().updateDesignation(value);
+  }
+
+  void _onDepartmentChanged(String? value) {
+    setState(() {
+      _selectedDepartmentId = value;
+    });
+    if (_isFormInitializing) return;
+    context.read<CreateUserFormProvider>().updateDepartment(value);
+  }
+
+  void _onRoleChanged(String? value) {
+    setState(() {
+      _selectedRoleId = value;
+    });
+    if (_isFormInitializing) return;
+    context.read<CreateUserFormProvider>().updateRole(value);
+  }
+
+  void _clearLocalFormData() {
+    _isFormInitializing = true;
+    for (final controller in _controllerMap.values) {
+      controller.clear();
+    }
+    _confirmPasswordController.clear();
+    setState(() {
+      _selectedStatus = 'Active';
+      _selectedDesignationId = null;
+      _selectedDepartmentId = null;
+      _selectedRoleId = null;
+      _signatureFile = null;
+      _signatureFileName = null;
+    });
+    _isFormInitializing = false;
+  }
 
   @override
   void dispose() {
@@ -225,10 +318,10 @@ class _CreateUserScreenState extends State<CreateUserScreen> {
   }
 
   // Submit form
-  void _submitForm() {
+  Future<void> _submitForm() async {
     if (_formKey.currentState!.validate()) {
       // Check dropdown validations
-      if (_selectedDesignation == null) {
+      if (_selectedDesignationId == null) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Please select a designation'),
@@ -238,7 +331,7 @@ class _CreateUserScreenState extends State<CreateUserScreen> {
         return;
       }
 
-      if (_selectedDepartment == null) {
+      if (_selectedDepartmentId == null) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Please select a department'),
@@ -248,7 +341,7 @@ class _CreateUserScreenState extends State<CreateUserScreen> {
         return;
       }
 
-      if (_selectedRole == null) {
+      if (_selectedRoleId == null) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Please assign a role'),
@@ -258,29 +351,101 @@ class _CreateUserScreenState extends State<CreateUserScreen> {
         return;
       }
 
-      // All validation passed
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('User created successfully!'),
-          backgroundColor: Colors.green,
-        ),
-      );
+      setState(() {
+        _isSubmitting = true;
+      });
 
-      // TODO: Implement your API call here
-      print('Full Name: ${_fullNameController.text}');
-      print('Employee ID: ${_employeeIdController.text}');
-      print('Username: ${_usernameController.text}');
-      print('Email: ${_emailController.text}');
-      print('Contact: ${_contactNumberController.text}');
-      print('Status: $_selectedStatus');
-      print('Designation: $_selectedDesignation');
-      print('Department: $_selectedDepartment');
-      print('Role: $_selectedRole');
-      print('Account Holder: ${_accountHolderController.text}');
-      print('Bank Name: ${_bankNameController.text}');
-      print('Account Number: ${_accountNumberController.text}');
-      print('IFSC: ${_ifscController.text}');
-      print('Signature File: $_signatureFileName');
+      try {
+        final service = context.read<UserApiService>();
+        final tenantId = await JwtTokenManager.getTenantId();
+        final orgId = await JwtTokenManager.getOrgId();
+        final createdBy = await JwtTokenManager.getUserId();
+
+        if (tenantId == null || orgId == null || createdBy == null) {
+          throw Exception('Missing authentication data');
+        }
+
+        // Create user request
+        final request = CreateUserRequest(
+          tenantId: tenantId,
+          orgId: orgId,
+          email: _emailController.text.trim(),
+          name: _fullNameController.text.trim(),
+          password: _passwordController.text,
+          roleId: _selectedRoleId!,
+          departmentId: _selectedDepartmentId,
+          designationId: _selectedDesignationId,
+          createdBy: createdBy,
+          accountHolderName: _accountHolderController.text.trim().isNotEmpty
+              ? _accountHolderController.text.trim()
+              : null,
+          bankName: _bankNameController.text.trim().isNotEmpty
+              ? _bankNameController.text.trim()
+              : null,
+          bankAccountNumber: _accountNumberController.text.trim().isNotEmpty
+              ? _accountNumberController.text.trim()
+              : null,
+          ifscCode: _ifscController.text.trim().isNotEmpty
+              ? _ifscController.text.trim()
+              : null,
+        );
+
+        // Create user
+        final result = await service.createUser(request);
+
+        if (!mounted) return;
+
+        if (result.success && result.user != null) {
+          // Upload signature if provided
+          if (_signatureFile != null) {
+            final bytes = await _signatureFile!.readAsBytes();
+            final base64Image = base64Encode(bytes);
+
+            final signatureRequest = UploadSignatureRequest(
+              userId: result.user!.userId,
+              filename: _signatureFileName ?? 'signature.png',
+              signatureFile: base64Image,
+            );
+
+            await service.uploadSignature(signatureRequest);
+          }
+
+          await context.read<CreateUserFormProvider>().clearFormState();
+          _clearLocalFormData();
+
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('User created successfully!'),
+              backgroundColor: Colors.green,
+            ),
+          );
+
+          // Navigate back to users list
+          context.go('/users');
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(result.message ?? 'Failed to create user'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Error creating user: $e'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      } finally {
+        if (mounted) {
+          setState(() {
+            _isSubmitting = false;
+          });
+        }
+      }
     }
   }
 
@@ -440,11 +605,8 @@ class _CreateUserScreenState extends State<CreateUserScreen> {
                               value: _selectedStatus,
                               items: _statusOptions,
                               isRequired: true,
-                              onChanged: (value) {
-                                setState(() {
-                                  _selectedStatus = value!;
-                                });
-                              },
+                              onChanged: (value) =>
+                                  _onStatusChanged(value!),
                             ),
                           ),
                         ],
@@ -455,44 +617,42 @@ class _CreateUserScreenState extends State<CreateUserScreen> {
                   const SizedBox(height: 24),
 
                   // Organizational Information Section
-                  _buildSectionCard(
-                    icon: Icons.business_outlined,
-                    title: 'Organizational Information',
-                    children: [
-                      Row(
+                  Consumer<UserApiService>(
+                    builder: (context, userService, _) {
+                      return _buildSectionCard(
+                        icon: Icons.business_outlined,
+                        title: 'Organizational Information',
                         children: [
-                          Expanded(
-                            child: _buildDropdown(
-                              label: 'Designation',
-                              value: _selectedDesignation,
-                              items: _designations,
-                              hintText: 'Select Designation',
-                              isRequired: true,
-                              onChanged: (value) {
-                                setState(() {
-                                  _selectedDesignation = value;
-                                });
-                              },
-                            ),
-                          ),
-                          const SizedBox(width: 16),
-                          Expanded(
-                            child: _buildDropdown(
-                              label: 'Department',
-                              value: _selectedDepartment,
-                              items: _departments,
-                              hintText: 'Select Department',
-                              isRequired: true,
-                              onChanged: (value) {
-                                setState(() {
-                                  _selectedDepartment = value;
-                                });
-                              },
-                            ),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: _buildApiDropdown(
+                                  label: 'Designation',
+                                  value: _selectedDesignationId,
+                                  items: userService.designations,
+                                  hintText: 'Select Designation',
+                                  isRequired: true,
+                                  isLoading: userService.isDropdownsLoading,
+                                  onChanged: _onDesignationChanged,
+                                ),
+                              ),
+                              const SizedBox(width: 16),
+                              Expanded(
+                                child: _buildApiDropdown(
+                                  label: 'Department',
+                                  value: _selectedDepartmentId,
+                                  items: userService.departments,
+                                  hintText: 'Select Department',
+                                  isRequired: true,
+                                  isLoading: userService.isDropdownsLoading,
+                                  onChanged: _onDepartmentChanged,
+                                ),
+                              ),
+                            ],
                           ),
                         ],
-                      ),
-                    ],
+                      );
+                    },
                   ),
 
                   const SizedBox(height: 24),
@@ -546,23 +706,24 @@ class _CreateUserScreenState extends State<CreateUserScreen> {
                   const SizedBox(height: 24),
 
                   // Roles & Permissions Section
-                  _buildSectionCard(
-                    icon: Icons.verified_user_outlined,
-                    title: 'Roles & Permissions',
-                    children: [
-                      _buildDropdown(
-                        label: 'Assign Roles',
-                        value: _selectedRole,
-                        items: _roles,
-                        hintText: 'Select role',
-                        isRequired: true,
-                        onChanged: (value) {
-                          setState(() {
-                            _selectedRole = value;
-                          });
-                        },
-                      ),
-                    ],
+                  Consumer<UserApiService>(
+                    builder: (context, userService, _) {
+                      return _buildSectionCard(
+                        icon: Icons.verified_user_outlined,
+                        title: 'Roles & Permissions',
+                        children: [
+                          _buildApiDropdown(
+                            label: 'Assign Roles',
+                            value: _selectedRoleId,
+                            items: userService.roles,
+                            hintText: 'Select role',
+                            isRequired: true,
+                            isLoading: userService.isDropdownsLoading,
+                            onChanged: _onRoleChanged,
+                          ),
+                        ],
+                      );
+                    },
                   ),
 
                   const SizedBox(height: 24),
@@ -716,8 +877,8 @@ class _CreateUserScreenState extends State<CreateUserScreen> {
                       ),
                       const SizedBox(width: 12),
                       PrimaryButton(
-                        onPressed: _submitForm,
-                        label: 'Create User',
+                        onPressed: _isSubmitting ? null : _submitForm,
+                        label: _isSubmitting ? 'Creating...' : 'Create User',
                       ),
                     ],
                   ),
@@ -928,6 +1089,103 @@ class _CreateUserScreenState extends State<CreateUserScreen> {
             );
           }).toList(),
           onChanged: onChanged,
+        ),
+      ],
+    );
+  }
+
+  Widget _buildApiDropdown({
+    required String label,
+    required String? value,
+    required List<DropdownItem> items,
+    String? hintText,
+    bool isRequired = false,
+    bool isLoading = false,
+    required Function(String?) onChanged,
+  }) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final textTheme = theme.textTheme;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        RichText(
+          text: TextSpan(
+            text: label,
+            style: textTheme.bodyMedium?.copyWith(
+              fontWeight: FontWeight.w500,
+              color: colorScheme.onSurface,
+            ),
+            children: [
+              if (isRequired)
+                const TextSpan(
+                  text: ' *',
+                  style: TextStyle(color: Colors.red, fontSize: 14),
+                ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 8),
+        DropdownButtonFormField<String>(
+          value: value,
+          hint: isLoading
+              ? Row(
+                  children: [
+                    SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: colorScheme.primary,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      'Loading...',
+                      style: TextStyle(
+                        color: colorScheme.onSurface.withValues(alpha: 0.4),
+                      ),
+                    ),
+                  ],
+                )
+              : Text(
+                  hintText ?? 'Select $label',
+                  style: TextStyle(
+                    color: colorScheme.onSurface.withValues(alpha: 0.4),
+                  ),
+                ),
+          decoration: InputDecoration(
+            filled: true,
+            fillColor: colorScheme.surface,
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+              borderSide: BorderSide(
+                color: colorScheme.outline.withValues(alpha: 0.5),
+              ),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+              borderSide: BorderSide(
+                color: colorScheme.outline.withValues(alpha: 0.5),
+              ),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+              borderSide: BorderSide(color: colorScheme.primary),
+            ),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 16,
+              vertical: 12,
+            ),
+          ),
+          items: items.map((DropdownItem item) {
+            return DropdownMenuItem<String>(
+              value: item.id,
+              child: Text(item.name, style: textTheme.bodyMedium),
+            );
+          }).toList(),
+          onChanged: isLoading ? null : onChanged,
         ),
       ],
     );

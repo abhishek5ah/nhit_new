@@ -177,7 +177,7 @@ class _CreateRoleScreenState extends State<CreateRoleScreen> {
               decoration: BoxDecoration(
                 color: colorScheme.surfaceContainer,
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: colorScheme.outline.withOpacity(0.5)),
+                border: Border.all(color: colorScheme.outline.withValues(alpha:0.5)),
               ),
               child: Row(
                 children: [
@@ -209,7 +209,7 @@ class _CreateRoleScreenState extends State<CreateRoleScreen> {
                       Text(
                         'Define a new role and assign permissions',
                         style: textTheme.bodyMedium?.copyWith(
-                          color: colorScheme.onSurface.withOpacity(0.6),
+                          color: colorScheme.onSurface.withValues(alpha:0.6),
                         ),
                       ),
                     ],
@@ -223,7 +223,7 @@ class _CreateRoleScreenState extends State<CreateRoleScreen> {
             // Role Information Section
             Container(
               decoration: BoxDecoration(
-                border: Border.all(color: colorScheme.outline.withOpacity(0.5)),
+                border: Border.all(color: colorScheme.outline.withValues(alpha:0.5)),
                 borderRadius: BorderRadius.circular(8),
               ),
               padding: const EdgeInsets.all(24),
@@ -251,7 +251,7 @@ class _CreateRoleScreenState extends State<CreateRoleScreen> {
                       ),
                       const SizedBox(width: 8),
                       Text(
-                        'Role Information',
+                        'Role Information  ',
                         style: textTheme.titleMedium?.copyWith(
                           fontWeight: FontWeight.w600,
                           color: colorScheme.onSurface,
@@ -273,18 +273,18 @@ class _CreateRoleScreenState extends State<CreateRoleScreen> {
                     decoration: InputDecoration(
                       hintText: 'Enter role name (e.g., "Finance Manager")',
                       hintStyle: TextStyle(
-                        color: colorScheme.onSurface.withOpacity(0.4),
+                        color: colorScheme.onSurface.withValues(alpha:0.4),
                       ),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(8),
                         borderSide: BorderSide(
-                          color: colorScheme.outline.withOpacity(0.5),
+                          color: colorScheme.outline.withValues(alpha:0.5),
                         ),
                       ),
                       enabledBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(8),
                         borderSide: BorderSide(
-                          color: colorScheme.outline.withOpacity(0.5),
+                          color: colorScheme.outline.withValues(alpha:0.5),
                         ),
                       ),
                       focusedBorder: OutlineInputBorder(
@@ -308,109 +308,164 @@ class _CreateRoleScreenState extends State<CreateRoleScreen> {
 
             // Permissions Section
             Container(
-              decoration: BoxDecoration(
-                border: Border.all(color: colorScheme.outline.withOpacity(0.5)),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              padding: const EdgeInsets.all(24),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Row(
-                        children: [
-                          Container(
-                            width: 24,
-                            height: 24,
-                            decoration: BoxDecoration(
-                              color: colorScheme.primary,
-                              shape: BoxShape.circle,
-                            ),
-                            child: Center(
-                              child: Text(
-                                '2',
-                                style: textTheme.labelSmall?.copyWith(
-                                  color: colorScheme.onPrimary,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          Text(
-                            'Permissions',
-                            style: textTheme.titleMedium?.copyWith(
-                              fontWeight: FontWeight.w600,
-                              color: colorScheme.onSurface,
-                            ),
-                          ),
-                        ],
-                      ),
-                      Row(
-                        children: [
-                          TextButton(
-                            onPressed: _selectAllPermissions,
-                            child: const Text('Select All'),
-                          ),
-                          const SizedBox(width: 8),
-                          TextButton(
-                            onPressed: _deselectAllPermissions,
-                            child: const Text('Deselect All'),
-                          ),
-                        ],
-                      ),
-                    ],
+  decoration: BoxDecoration(
+    border: Border.all(color: colorScheme.outline.withValues(alpha: 0.5)),
+    borderRadius: BorderRadius.circular(8),
+  ),
+  padding: const EdgeInsets.all(24),
+  child: Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 24,
+                height: 24,
+                decoration: BoxDecoration(
+                  color: colorScheme.primary,
+                  shape: BoxShape.circle,
+                ),
+                child: Center(
+                  child: Text(
+                    '2',
+                    style: textTheme.labelSmall?.copyWith(
+                      color: colorScheme.onPrimary,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
-                  const SizedBox(height: 24),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Text(
+                'Permissions',
+                style: textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.w600,
+                  color: colorScheme.onSurface,
+                ),
+              ),
+            ],
+          ),
+          Row(
+            children: [
+              TextButton(
+                onPressed: _selectAllPermissions,
+                child: const Text('Select All'),
+              ),
+              const SizedBox(width: 8),
+              TextButton(
+                onPressed: _deselectAllPermissions,
+                child: const Text('Deselect All'),
+              ),
+            ],
+          ),
+        ],
+      ),
+      const SizedBox(height: 24),
 
-                  // Permissions Grid
-                  Consumer<RolesApiService>(
-                    builder: (context, rolesService, child) {
-                      if (rolesService.availablePermissions.isEmpty) {
-                        return Center(
-                          child: Padding(
-                            padding: const EdgeInsets.all(24.0),
-                            child: CircularProgressIndicator(),
-                          ),
-                        );
-                      }
+      // Permissions Grid
+      Consumer<RolesApiService>(
+        builder: (context, rolesService, child) {
+          if (rolesService.availablePermissions.isEmpty) {
+            return const Center(
+              child: Padding(
+                padding: EdgeInsets.all(24.0),
+                child: CircularProgressIndicator(),
+              ),
+            );
+          }
 
-                      // Group permissions by module
-                      final permissionsByModule = rolesService.getPermissionsByModule();
-                      
-                      return ListView.builder(
-                        shrinkWrap: true,
-                        physics: const NeverScrollableScrollPhysics(),
-                        itemCount: permissionsByModule.length,
-                        itemBuilder: (context, index) {
-                          final module = permissionsByModule.keys.elementAt(index);
-                          final permissions = permissionsByModule[module]!;
-                          
-                          return ExpansionTile(
-                            title: Text(
-                              module.toUpperCase(),
-                              style: textTheme.titleSmall?.copyWith(
-                                fontWeight: FontWeight.bold,
-                                color: colorScheme.primary,
-                              ),
-                            ),
-                            subtitle: Text('${permissions.length} permissions'),
-                            children: permissions.map((permission) {
-                              return _buildPermissionCheckbox(
-                                permission.name,
-                                permission.description,
-                              );
-                            }).toList(),
-                          );
-                        },
-                      );
-                    },
+          final permissionsByModule = rolesService.getPermissionsByModule();
+          final modules = permissionsByModule.keys.toList();
+
+       return LayoutBuilder(
+  builder: (context, constraints) {
+    // Desired minimum tile width
+    const minTileWidth = 260.0;
+
+    // Calculate how many tiles can fit, but clamp between 1 and 4
+    final crossAxisCount = (constraints.maxWidth / minTileWidth)
+        .floor()
+        .clamp(1, 4);
+
+    return GridView.builder(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      itemCount: modules.length,
+      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: crossAxisCount,
+        crossAxisSpacing: 16,
+        mainAxisSpacing: 16,
+        childAspectRatio: 4 / 3,
+      ),
+      itemBuilder: (context, index) {
+        final module = modules[index];
+        final permissions = permissionsByModule[module]!;
+
+        return Container(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(8),
+            color: colorScheme.surface,
+            border: Border.all(
+              color: colorScheme.outline.withValues(alpha: 0.5),
+            ),
+          ),
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Expanded(
+                    child: Text(
+                      module.toUpperCase(),
+                      style: textTheme.titleSmall?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: colorScheme.primary,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  Text(
+                    '${permissions.length} permissions',
+                    style: textTheme.bodySmall?.copyWith(
+                      color: colorScheme.onSurface.withOpacity(0.6),
+                    ),
                   ),
                 ],
               ),
-            ),
+              const SizedBox(height: 12),
+              Expanded(
+                child: SingleChildScrollView(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: permissions
+                        .map(
+                          (permission) => _buildPermissionCheckbox(
+                            permission.name,
+                            permission.description,
+                          ),
+                        )
+                        .toList(),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  },
+);
+ },
+      ),
+    ],
+  ),
+),
 
             const SizedBox(height: 24),
 
@@ -480,7 +535,7 @@ class _CreateRoleScreenState extends State<CreateRoleScreen> {
                 Text(
                   permissionName,
                   style: textTheme.bodySmall?.copyWith(
-                    color: colorScheme.onSurface.withOpacity(0.6),
+                    color: colorScheme.onSurface.withValues(alpha:0.6),
                   ),
                   overflow: TextOverflow.ellipsis,
                 ),

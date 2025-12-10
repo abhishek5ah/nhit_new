@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:provider/provider.dart';
 import 'package:ppv_components/features/user/model/user_model.dart';
 import 'package:ppv_components/features/user/widgets/user_header.dart';
 import 'package:ppv_components/features/user/widgets/user_table.dart';
-import 'package:ppv_components/features/user/data/user_mockdb.dart';
+import 'package:ppv_components/features/user/services/user_api_service.dart';
+import 'package:ppv_components/features/user/utils/user_mapper.dart';
 import 'package:ppv_components/core/accessibility/accessibility_constants.dart';
 import 'package:ppv_components/core/accessibility/accessibility_utils.dart';
 
@@ -16,8 +18,8 @@ class UserMainPage extends StatefulWidget {
 
 class _UserMainPageState extends State<UserMainPage> {
   String searchQuery = '';
-  late List<User> filteredUsers;
-  List<User> allUsers = List<User>.from(userData);
+  int _currentPage = 1;
+  int _rowsPerPage = 10;
   final FocusNode _skipToMainFocusNode = FocusNode();
   final FocusNode _searchFocusNode = FocusNode();
   final GlobalKey _mainContentKey = GlobalKey();
@@ -25,7 +27,17 @@ class _UserMainPageState extends State<UserMainPage> {
   @override
   void initState() {
     super.initState();
-    filteredUsers = List<User>.from(allUsers);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _loadUsers();
+    });
+  }
+
+  Future<void> _loadUsers() async {
+    final service = context.read<UserApiService>();
+    await service.loadUsers(
+      page: _currentPage,
+      pageSize: _rowsPerPage,
+    );
   }
 
   @override
@@ -50,40 +62,50 @@ class _UserMainPageState extends State<UserMainPage> {
   void updateSearch(String query) {
     setState(() {
       searchQuery = query.toLowerCase();
-      filteredUsers = allUsers.where((user) {
-        final name = user.name.toLowerCase();
-        final username = user.username.toLowerCase();
-        final email = user.email.toLowerCase();
-        return name.contains(searchQuery) ||
-            username.contains(searchQuery) ||
-            email.contains(searchQuery);
-      }).toList();
     });
     
-    // Announce search results to screen reader
-    final resultCount = filteredUsers.length;
-    final announcement = resultCount == 0
-        ? 'No users found matching "$query"'
-        : 'Found $resultCount ${resultCount == 1 ? "user" : "users"} matching "$query"';
-    AccessibilityUtils.announceToScreenReader(context, announcement);
+    // Announce search to screen reader
+    if (query.isNotEmpty) {
+      AccessibilityUtils.announceToScreenReader(
+        context,
+        'Searching for users matching "$query"',
+      );
+    }
   }
 
-  void onDeleteUser(User user) {
-    setState(() {
-      allUsers.removeWhere((u) => u.id == user.id);
-      // Re-filter after deletion
-      updateSearch(searchQuery);
-    });
+  Future<void> onDeleteUser(User user) async {
+    // TODO: Implement delete user API call
+    // For now, just refresh the list
+    await _loadUsers();
+    if (mounted) {
+      AccessibilityUtils.announceToScreenReader(
+        context,
+        'User ${user.name} deleted',
+      );
+    }
   }
 
   void onEditUser(User user) {
-    final index = allUsers.indexWhere((u) => u.id == user.id);
-    if (index != -1) {
-      setState(() {
-        allUsers[index] = user;
-        updateSearch(searchQuery);
-      });
-    }
+    // Navigation to edit screen is handled by UserTableView
+  }
+
+  void _onPageChanged(int page) {
+    setState(() {
+      _currentPage = page;
+    });
+    _loadUsers();
+  }
+
+  void _onRowsPerPageChanged(int rowsPerPage) {
+    setState(() {
+      _rowsPerPage = rowsPerPage;
+      _currentPage = 1; // Reset to first page
+    });
+    _loadUsers();
+  }
+
+  Future<void> _onRefresh() async {
+    await _loadUsers();
   }
 
   @override
@@ -91,7 +113,19 @@ class _UserMainPageState extends State<UserMainPage> {
     final colorScheme = Theme.of(context).colorScheme;
     final textScaleFactor = MediaQuery.of(context).textScaleFactor;
 
-    return Semantics(
+    return Consumer<UserApiService>(
+      builder: (context, userService, _) {
+        // Map API models to UI models
+        final allUsers = userService.users.map(mapUserApiToUi).toList();
+        
+        // Apply search filter
+        final filteredUsers = searchQuery.isEmpty
+            ? allUsers
+            : userService.searchUsers(searchQuery).map(mapUserApiToUi).toList();
+        
+        final totalItems = userService.pagination?.totalItems ?? filteredUsers.length;
+
+        return Semantics(
       label: 'User Management Page',
       container: true,
       child: Scaffold(
@@ -227,6 +261,8 @@ class _UserMainPageState extends State<UserMainPage> {
           ],
         ),
       ),
+        );
+      },
     );
   }
 }

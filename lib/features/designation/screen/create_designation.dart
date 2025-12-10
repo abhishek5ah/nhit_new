@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:ppv_components/features/designation/model/designation_model.dart';
 import 'package:ppv_components/features/designation/providers/designation_provider.dart';
+import 'package:ppv_components/features/designation/providers/create_designation_form_provider.dart';
 
 class CreateDesignationScreen extends StatefulWidget {
   const CreateDesignationScreen({super.key});
@@ -15,12 +16,22 @@ class _CreateDesignationScreenState extends State<CreateDesignationScreen> {
   final _formKey = GlobalKey<FormState>();
   late TextEditingController _nameController;
   late TextEditingController _descriptionController;
+  late final Map<String, TextEditingController> _controllerMap;
+  bool _isInitializing = true;
 
   @override
   void initState() {
     super.initState();
     _nameController = TextEditingController();
     _descriptionController = TextEditingController();
+    _controllerMap = {
+      'name': _nameController,
+      'description': _descriptionController,
+    };
+    _registerControllerListeners();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _loadFormState();
+    });
   }
 
   @override
@@ -35,6 +46,28 @@ class _CreateDesignationScreenState extends State<CreateDesignationScreen> {
       return '$fieldName is required';
     }
     return null;
+  }
+
+  void _registerControllerListeners() {
+    _controllerMap.forEach((key, controller) {
+      controller.addListener(() {
+        if (_isInitializing) return;
+        context
+            .read<CreateDesignationFormProvider>()
+            .updateField(key, controller.text);
+      });
+    });
+  }
+
+  Future<void> _loadFormState() async {
+    final formProvider = context.read<CreateDesignationFormProvider>();
+    await formProvider.loadFormState();
+    if (!mounted) return;
+    setState(() {
+      _nameController.text = formProvider.name;
+      _descriptionController.text = formProvider.description;
+      _isInitializing = false;
+    });
   }
 
   Future<void> _submitForm() async {
@@ -55,6 +88,10 @@ class _CreateDesignationScreenState extends State<CreateDesignationScreen> {
               duration: const Duration(seconds: 2),
             ),
           );
+
+          await context
+              .read<CreateDesignationFormProvider>()
+              .clearFormState();
 
           Future.delayed(const Duration(milliseconds: 500), () {
             if (mounted) {

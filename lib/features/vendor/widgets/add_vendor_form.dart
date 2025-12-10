@@ -1,14 +1,17 @@
+import 'dart:io';
+
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
-import 'package:file_picker/file_picker.dart';
+import 'package:provider/provider.dart';
 import 'package:ppv_components/common_widgets/button/primary_button.dart';
 import 'package:ppv_components/common_widgets/button/secondary_button.dart';
 import 'package:ppv_components/common_widgets/dropdown.dart';
 import 'package:ppv_components/features/vendor/models/vendor_model.dart';
-import 'dart:io';
-
-
+import 'package:ppv_components/features/vendor/data/models/vendor_api_models.dart';
+import 'package:ppv_components/features/vendor/services/vendor_api_service.dart';
+import 'package:ppv_components/features/vendor/providers/create_vendor_form_provider.dart';
 
 class CreateVendorScreen extends StatefulWidget {
   const CreateVendorScreen({super.key});
@@ -41,6 +44,8 @@ class _CreateVendorScreenState extends State<CreateVendorScreen> {
   late TextEditingController _gstDefaultedController;
   late TextEditingController _commonBankDetailsController;
   late TextEditingController _incomeTaxTypeController;
+  late final Map<String, TextEditingController> _textControllers;
+  bool _isInitializing = true;
 
   // Bank Accounts
   List<BankAccount> bankAccounts = [];
@@ -52,10 +57,18 @@ class _CreateVendorScreenState extends State<CreateVendorScreen> {
   String _status = 'Active';
   String? _msmeClassification;
   String? _activityType;
+  List<String> _projectOptions = [];
+  bool _isProjectLoading = false;
+  String? _projectError;
 
   // Date values
   DateTime? _msmeStartDate;
   DateTime? _msmeEndDate;
+
+  // Vendor code generation
+  bool _isCodeGenerating = false;
+  String? _codeError;
+  String? _lastCodePrefix;
 
   // File
   File? _attachedFile;
@@ -85,40 +98,82 @@ class _CreateVendorScreenState extends State<CreateVendorScreen> {
     _commonBankDetailsController = TextEditingController();
     _incomeTaxTypeController = TextEditingController();
 
+    _textControllers = {
+      'vendorName': _vendorNameController,
+      'vendorCode': _vendorCodeController,
+      'vendorEmail': _vendorEmailController,
+      'vendorMobile': _vendorMobileController,
+      'countryName': _countryNameController,
+      'stateName': _stateNameController,
+      'pinCode': _pinCodeController,
+      'pan': _panController,
+      'gstin': _gstinController,
+      'section206AB': _section206ABController,
+      'remarksAddress': _remarksAddressController,
+      'accountName': _accountNameController,
+      'shortName': _shortNameController,
+      'parent': _parentController,
+      'cityName': _cityNameController,
+      'msmeRegNumber': _msmeRegNumberController,
+      'materialNature': _materialNatureController,
+      'gstDefaulted': _gstDefaultedController,
+      'commonBankDetails': _commonBankDetailsController,
+      'incomeTaxType': _incomeTaxTypeController,
+    };
+    _registerTextFieldListeners();
+
     // Initialize first bank account
     _addBankAccount();
+    _vendorNameController.addListener(_onVendorNameChanged);
+
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      await _restorePersistedForm();
+    });
   }
 
-  void _addBankAccount() {
+  void _addBankAccount({Map<String, dynamic>? initialData}) {
     final newControllers = {
-      'accountNumber': TextEditingController(),
-      'ifscCode': TextEditingController(),
-      'bankName': TextEditingController(),
-      'branchName': TextEditingController(),
-      'beneficiaryName': TextEditingController(),
-      'accountName': TextEditingController(),
+      'accountNumber': TextEditingController(text: initialData?['accountNumber'] ?? ''),
+      'ifscCode': TextEditingController(text: initialData?['ifscCode'] ?? ''),
+      'bankName': TextEditingController(text: initialData?['bankName'] ?? ''),
+      'branchName': TextEditingController(text: initialData?['branchName'] ?? ''),
+      'beneficiaryName': TextEditingController(text: initialData?['beneficiaryName'] ?? ''),
+      'accountName': TextEditingController(text: initialData?['accountName'] ?? ''),
     };
+
+    newControllers.values.forEach(
+      (controller) => controller.addListener(_onBankAccountsChanged),
+    );
+
+    final isPrimary = initialData?['isPrimary'] ?? bankAccounts.isEmpty;
 
     setState(() {
       bankControllers.add(newControllers);
       bankAccounts.add(
         BankAccount(
-          accountNumber: '',
-          ifscCode: '',
-          bankName: '',
-          branchName: '',
-          beneficiaryName: '',
-          accountName: '',
-          isPrimary: bankAccounts.isEmpty,
+          accountNumber: initialData?['accountNumber'] ?? '',
+          ifscCode: initialData?['ifscCode'] ?? '',
+          bankName: initialData?['bankName'] ?? '',
+          branchName: initialData?['branchName'],
+          beneficiaryName: initialData?['beneficiaryName'] ?? '',
+          accountName: initialData?['accountName'],
+          isPrimary: isPrimary,
         ),
       );
+
+      if (!bankAccounts.any((acc) => acc.isPrimary)) {
+        bankAccounts.first.isPrimary = true;
+      }
     });
+
+    _persistBankAccounts();
   }
 
   void _removeBankAccount(int index) {
     if (bankAccounts.length > 1) {
       // Dispose controllers
       for (var controller in bankControllers[index].values) {
+        controller.removeListener(_onBankAccountsChanged);
         controller.dispose();
       }
 
@@ -134,6 +189,8 @@ class _CreateVendorScreenState extends State<CreateVendorScreen> {
           }
         }
       });
+
+      _persistBankAccounts();
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -150,6 +207,7 @@ class _CreateVendorScreenState extends State<CreateVendorScreen> {
         bankAccounts[i].isPrimary = i == index;
       }
     });
+    _persistBankAccounts();
   }
 
   @override
@@ -174,6 +232,7 @@ class _CreateVendorScreenState extends State<CreateVendorScreen> {
     _gstDefaultedController.dispose();
     _commonBankDetailsController.dispose();
     _incomeTaxTypeController.dispose();
+    _vendorNameController.removeListener(_onVendorNameChanged);
 
     for (var controllerMap in bankControllers) {
       for (var controller in controllerMap.values) {
@@ -210,6 +269,153 @@ class _CreateVendorScreenState extends State<CreateVendorScreen> {
       return 'Enter a valid 10-digit mobile number';
     }
     return null;
+  }
+
+  void _registerTextFieldListeners() {
+    _textControllers.forEach((key, controller) {
+      controller.addListener(() {
+        if (_isInitializing) return;
+        context.read<CreateVendorFormProvider>().updateField(key, controller.text);
+      });
+    });
+  }
+
+  Future<void> _restorePersistedForm() async {
+    final formProvider = context.read<CreateVendorFormProvider>();
+    await formProvider.loadFormState();
+
+    final savedBankAccounts = formProvider.bankAccounts;
+
+    setState(() {
+      _isInitializing = true;
+      _textControllers.forEach((key, controller) {
+        controller.text = formProvider.getTextField(key);
+      });
+      _status = formProvider.status;
+      _fromAccountType = formProvider.fromAccountType;
+      _project = formProvider.project;
+      _msmeClassification = formProvider.msmeClassification;
+      _activityType = formProvider.activityType;
+      _msmeStartDate = formProvider.getDate('msmeStartDate');
+      _msmeEndDate = formProvider.getDate('msmeEndDate');
+    });
+
+    _restoreBankAccounts(savedBankAccounts);
+
+    await _loadProjects();
+
+    final savedCode = formProvider.vendorCode;
+    if (savedCode != null && savedCode.isNotEmpty) {
+      _vendorCodeController.text = savedCode;
+    } else if (_vendorCodeController.text.isEmpty) {
+      await _generateVendorCode();
+    }
+
+    setState(() {
+      _isInitializing = false;
+    });
+  }
+
+  void _restoreBankAccounts(List<Map<String, dynamic>> savedAccounts) {
+    for (final controllerMap in bankControllers) {
+      for (final controller in controllerMap.values) {
+        controller.removeListener(_onBankAccountsChanged);
+        controller.dispose();
+      }
+    }
+    bankControllers.clear();
+    bankAccounts.clear();
+
+    if (savedAccounts.isEmpty) {
+      _addBankAccount();
+      return;
+    }
+
+    for (final account in savedAccounts) {
+      _addBankAccount(initialData: account);
+    }
+  }
+
+  void _persistBankAccounts() {
+    if (_isInitializing) return;
+    final provider = context.read<CreateVendorFormProvider>();
+    final accounts = <Map<String, dynamic>>[];
+
+    for (int i = 0; i < bankControllers.length; i++) {
+      final controllers = bankControllers[i];
+      accounts.add({
+        'accountNumber': controllers['accountNumber']!.text,
+        'ifscCode': controllers['ifscCode']!.text,
+        'bankName': controllers['bankName']!.text,
+        'branchName': controllers['branchName']!.text,
+        'beneficiaryName': controllers['beneficiaryName']!.text,
+        'accountName': controllers['accountName']!.text,
+        'isPrimary': bankAccounts[i].isPrimary,
+      });
+    }
+
+    provider.updateBankAccounts(accounts);
+  }
+
+  void _onBankAccountsChanged() {
+    _persistBankAccounts();
+  }
+
+  void _updateStatus(String value) {
+    setState(() {
+      _status = value;
+    });
+    if (_isInitializing) return;
+    context.read<CreateVendorFormProvider>().updateStatus(value);
+  }
+
+  void _updateDropdown(String key, String? value, void Function(String?) setter) {
+    setState(() {
+      setter(value);
+    });
+    if (_isInitializing) return;
+    context.read<CreateVendorFormProvider>().updateDropdown(key, value);
+  }
+
+  void _updateDateField(bool isStartDate, DateTime? value) {
+    if (isStartDate) {
+      setState(() {
+        _msmeStartDate = value;
+      });
+    } else {
+      setState(() {
+        _msmeEndDate = value;
+      });
+    }
+    if (_isInitializing) return;
+    context
+        .read<CreateVendorFormProvider>()
+        .updateDate(isStartDate ? 'msmeStartDate' : 'msmeEndDate', value);
+  }
+
+  void _resetForm() {
+    _isInitializing = true;
+    for (final controller in _textControllers.values) {
+      controller.clear();
+    }
+    _vendorNameController.clear();
+    _vendorCodeController.clear();
+    _vendorEmailController.clear();
+    _vendorMobileController.clear();
+    _attachedFile = null;
+    _attachedFileName = null;
+    _projectError = null;
+    setState(() {
+      _fromAccountType = null;
+      _project = null;
+      _status = 'Active';
+      _msmeClassification = null;
+      _activityType = null;
+      _msmeStartDate = null;
+      _msmeEndDate = null;
+    });
+    _restoreBankAccounts([]);
+    _isInitializing = false;
   }
 
   Future<void> _pickFile() async {
@@ -256,7 +462,7 @@ class _CreateVendorScreenState extends State<CreateVendorScreen> {
     }
   }
 
-  void _submitForm() {
+  Future<void> _submitForm() async {
     if (_formKey.currentState!.validate()) {
       // Validate dropdowns
       if (_fromAccountType == null) {
@@ -269,7 +475,7 @@ class _CreateVendorScreenState extends State<CreateVendorScreen> {
         return;
       }
 
-      if (_project == null) {
+      if (_project == null || _project!.isEmpty) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Please select Project'),
@@ -298,19 +504,109 @@ class _CreateVendorScreenState extends State<CreateVendorScreen> {
         }
       }
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Vendor created successfully!'),
-          backgroundColor: Colors.green,
-          duration: Duration(seconds: 2),
+      // Show loading indicator
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => const Center(
+          child: CircularProgressIndicator(),
         ),
       );
 
-      Future.delayed(const Duration(milliseconds: 500), () {
+      try {
+        // Create VendorApiModel from form data
+        final vendorModel = VendorApiModel(
+          vendorCode: _vendorCodeController.text,
+          name: _vendorNameController.text,
+          contactPerson: _vendorNameController.text, // Using vendor name as contact person
+          email: _vendorEmailController.text,
+          phone: _vendorMobileController.text,
+          address: VendorAddress(
+            street: _remarksAddressController.text,
+            city: _cityNameController.text,
+            state: _stateNameController.text,
+            postalCode: _pinCodeController.text,
+            country: _countryNameController.text,
+          ),
+          gstNumber: _gstinController.text,
+          panNumber: _panController.text,
+          msmeRegistered: _msmeRegNumberController.text.isNotEmpty,
+          msmeNumber: _msmeRegNumberController.text.isNotEmpty 
+              ? _msmeRegNumberController.text 
+              : null,
+          vendorType: 'SUPPLIER', // Default vendor type
+          paymentTerms: _project ?? '', // Using project as payment terms
+          creditLimit: 0.0,
+          status: _status == 'Active' ? 'ACTIVE' : 'INACTIVE',
+          accounts: bankControllers.map((controllers) {
+            return VendorBankAccount(
+              accountHolderName: controllers['beneficiaryName']!.text,
+              bankName: controllers['bankName']!.text,
+              branchName: controllers['branchName']!.text,
+              accountNumber: controllers['accountNumber']!.text,
+              ifscCode: controllers['ifscCode']!.text,
+              accountType: 'CURRENT', // Default account type
+              isPrimary: bankAccounts[bankControllers.indexOf(controllers)].isPrimary,
+              isActive: true,
+            );
+          }).toList(),
+        );
+
+        // Call the API service
+        final vendorService = context.read<VendorApiService>();
+        final result = await vendorService.createVendor(vendorModel);
+
+        // Close loading dialog
         if (mounted) {
-          _handleNavigation();
+          Navigator.of(context).pop();
         }
-      });
+
+        if (result.success) {
+          // Clear form state
+          await context.read<CreateVendorFormProvider>().clearFormState();
+          
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(result.message ?? 'Vendor created successfully!'),
+                backgroundColor: Colors.green,
+                duration: const Duration(seconds: 2),
+              ),
+            );
+
+            Future.delayed(const Duration(milliseconds: 500), () {
+              if (mounted) {
+                _handleNavigation();
+              }
+            });
+          }
+        } else {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(result.message ?? 'Failed to create vendor'),
+                backgroundColor: Colors.red,
+                duration: const Duration(seconds: 3),
+              ),
+            );
+          }
+        }
+      } catch (e) {
+        // Close loading dialog
+        if (mounted) {
+          Navigator.of(context).pop();
+        }
+
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Error creating vendor: $e'),
+              backgroundColor: Colors.red,
+              duration: const Duration(seconds: 3),
+            ),
+          );
+        }
+      }
     }
   }
 
@@ -398,7 +694,7 @@ class _CreateVendorScreenState extends State<CreateVendorScreen> {
                   // Basic Information Section
                   _buildSectionCard(
                     icon: Icons.info_outline,
-                    title: 'Basic Information',
+                    title: 'Account Information',
                     children: [
                       Row(
                         children: [
@@ -420,25 +716,7 @@ class _CreateVendorScreenState extends State<CreateVendorScreen> {
                           ),
                           const SizedBox(width: 16),
                           Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                _buildLabel('Project', true),
-                                const SizedBox(height: 8),
-                                CustomDropdown(
-                                  value: _project,
-                                  items: [
-                                    'Select Project',
-                                    'New Project',
-                                    'Old Project',
-                                    'Pending Project'
-                                  ],
-                                  hint: 'Select Project',
-                                  onChanged: (value) =>
-                                      setState(() => _project = value),
-                                ),
-                              ],
-                            ),
+                            child: _buildProjectSelector(),
                           ),
                         ],
                       ),
@@ -473,7 +751,7 @@ class _CreateVendorScreenState extends State<CreateVendorScreen> {
                             child: _buildTextField(
                               controller: _vendorNameController,
                               label: 'Vendor Name',
-                              hintText: 'Enter vendor name',
+                              hintText: 'Vendor name',
                               isRequired: true,
                               validator: (value) =>
                                   _validateRequired(value, 'Vendor name'),
@@ -481,14 +759,7 @@ class _CreateVendorScreenState extends State<CreateVendorScreen> {
                           ),
                           const SizedBox(width: 16),
                           Expanded(
-                            child: _buildTextField(
-                              controller: _vendorCodeController,
-                              label: 'Vendor Code',
-                              hintText: 'Enter vendor code',
-                              isRequired: true,
-                              validator: (value) =>
-                                  _validateRequired(value, 'Vendor code'),
-                            ),
+                            child: _buildVendorCodeField(),
                           ),
                         ],
                       ),
@@ -499,7 +770,7 @@ class _CreateVendorScreenState extends State<CreateVendorScreen> {
                             child: _buildTextField(
                               controller: _vendorEmailController,
                               label: 'Vendor Email',
-                              hintText: 'Enter vendor email',
+                              hintText: 'Vendor email',
                               isRequired: true,
                               validator: _validateEmail,
                               keyboardType: TextInputType.emailAddress,
@@ -510,7 +781,7 @@ class _CreateVendorScreenState extends State<CreateVendorScreen> {
                             child: _buildTextField(
                               controller: _vendorMobileController,
                               label: 'Vendor Mobile',
-                              hintText: 'Enter mobile number',
+                              hintText: 'Mobile number',
                               isRequired: true,
                               validator: _validateMobile,
                               keyboardType: TextInputType.number,
@@ -521,32 +792,6 @@ class _CreateVendorScreenState extends State<CreateVendorScreen> {
                             ),
                           ),
                         ],
-                      ),
-                      const SizedBox(height: 16),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: _buildTextField(
-                              controller: _accountNameController,
-                              label: 'Account Name',
-                              hintText: 'Enter account name',
-                            ),
-                          ),
-                          const SizedBox(width: 16),
-                          Expanded(
-                            child: _buildTextField(
-                              controller: _shortNameController,
-                              label: 'Short Name',
-                              hintText: 'Enter short name',
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 16),
-                      _buildTextField(
-                        controller: _parentController,
-                        label: 'Parent',
-                        hintText: 'Enter parent',
                       ),
                     ],
                   ),
@@ -564,7 +809,7 @@ class _CreateVendorScreenState extends State<CreateVendorScreen> {
                             child: _buildTextField(
                               controller: _countryNameController,
                               label: 'Country Name',
-                              hintText: 'Enter country name',
+                              hintText: 'Country name',
                             ),
                           ),
                           const SizedBox(width: 16),
@@ -572,7 +817,7 @@ class _CreateVendorScreenState extends State<CreateVendorScreen> {
                             child: _buildTextField(
                               controller: _stateNameController,
                               label: 'State Name',
-                              hintText: 'Enter state name',
+                              hintText: 'State name',
                             ),
                           ),
                         ],
@@ -584,7 +829,7 @@ class _CreateVendorScreenState extends State<CreateVendorScreen> {
                             child: _buildTextField(
                               controller: _cityNameController,
                               label: 'City Name',
-                              hintText: 'Enter city name',
+                              hintText: 'City name',
                             ),
                           ),
                           const SizedBox(width: 16),
@@ -592,7 +837,7 @@ class _CreateVendorScreenState extends State<CreateVendorScreen> {
                             child: _buildTextField(
                               controller: _pinCodeController,
                               label: 'PIN Code',
-                              hintText: 'Enter PIN code',
+                              hintText: 'PIN code',
                               keyboardType: TextInputType.number,
                               inputFormatters: [
                                 FilteringTextInputFormatter.digitsOnly,
@@ -601,13 +846,6 @@ class _CreateVendorScreenState extends State<CreateVendorScreen> {
                             ),
                           ),
                         ],
-                      ),
-                      const SizedBox(height: 16),
-                      _buildTextField(
-                        controller: _remarksAddressController,
-                        label: 'Remarks Address',
-                        hintText: 'Enter remarks address',
-                        maxLines: 3,
                       ),
                     ],
                   ),
@@ -630,7 +868,7 @@ class _CreateVendorScreenState extends State<CreateVendorScreen> {
                             child: _buildTextField(
                               controller: _panController,
                               label: 'PAN',
-                              hintText: 'Enter PAN',
+                              hintText: 'PAN',
                               inputFormatters: [
                                 LengthLimitingTextInputFormatter(10),
                                 UpperCaseTextFormatter(),
@@ -642,7 +880,7 @@ class _CreateVendorScreenState extends State<CreateVendorScreen> {
                             child: _buildTextField(
                               controller: _gstinController,
                               label: 'GSTIN',
-                              hintText: 'Enter GSTIN',
+                              hintText: 'GSTIN',
                               inputFormatters: [
                                 LengthLimitingTextInputFormatter(15),
                                 UpperCaseTextFormatter(),
@@ -650,32 +888,6 @@ class _CreateVendorScreenState extends State<CreateVendorScreen> {
                             ),
                           ),
                         ],
-                      ),
-                      const SizedBox(height: 16),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: _buildTextField(
-                              controller: _gstDefaultedController,
-                              label: 'GST Defaulted',
-                              hintText: 'Enter GST defaulted',
-                            ),
-                          ),
-                          const SizedBox(width: 16),
-                          Expanded(
-                            child: _buildTextField(
-                              controller: _incomeTaxTypeController,
-                              label: 'Income Tax Type',
-                              hintText: 'Enter income tax type',
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 16),
-                      _buildTextField(
-                        controller: _section206ABController,
-                        label: 'Section 206AB Verified',
-                        hintText: 'Enter section 206AB status',
                       ),
                     ],
                   ),
@@ -699,8 +911,9 @@ class _CreateVendorScreenState extends State<CreateVendorScreen> {
                                   value: _msmeClassification,
                                   items: ['Micro', 'Small', 'Medium'],
                                   hint: 'Select Classification',
-                                  onChanged: (value) =>
-                                      setState(() => _msmeClassification = value),
+                                  onChanged: (value) => setState(
+                                    () => _msmeClassification = value,
+                                  ),
                                 ),
                               ],
                             ),
@@ -745,10 +958,25 @@ class _CreateVendorScreenState extends State<CreateVendorScreen> {
                         ],
                       ),
                       const SizedBox(height: 16),
-                      _buildTextField(
-                        controller: _msmeRegNumberController,
-                        label: 'MSME Registration Number',
-                        hintText: 'Enter MSME registration number',
+                      Row(
+                        children: [
+                          Expanded(
+                            child: _buildTextField(
+                              controller: _msmeRegNumberController,
+                              label: 'MSME Registration Number',
+                              hintText: 'MSME registration number',
+                            ),
+                          ),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: _buildTextField(
+                              controller:
+                                  _msmeRegNumberController, // Note: Use different controller if needed
+                              label: 'MSME',
+                              hintText: 'MSME',
+                            ),
+                          ),
+                        ],
                       ),
                     ],
                   ),
@@ -760,15 +988,99 @@ class _CreateVendorScreenState extends State<CreateVendorScreen> {
                     icon: Icons.more_horiz_outlined,
                     title: 'Additional Information',
                     children: [
-                      _buildTextField(
-                        controller: _materialNatureController,
-                        label: 'Material Nature',
-                        hintText: 'Enter material nature',
+                      Row(
+                        children: [
+                          Expanded(
+                            child: _buildTextField(
+                              controller: _section206ABController,
+                              label: 'Section 206AB Verified',
+                              hintText: 'Enter section 206AB status',
+                            ),
+                          ),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: _buildTextField(
+                              controller: _remarksAddressController,
+                              label: 'Remarks Address',
+                              hintText: 'Enter remarks address',
+                            ),
+                          ),
+                        ],
                       ),
+                      const SizedBox(height: 16),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: _buildTextField(
+                              controller: _shortNameController,
+                              label: 'Short Name',
+                              hintText: 'Enter short name',
+                            ),
+                          ),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: _buildTextField(
+                              controller: _parentController,
+                              label: 'Parent',
+                              hintText: 'Enter parent',
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: _buildTextField(
+                              controller: _materialNatureController,
+                              label: 'Material Nature',
+                              hintText: 'Enter material nature',
+                            ),
+                          ),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: _buildTextField(
+                              controller: _gstDefaultedController,
+                              label: 'GST Defaulted',
+                              hintText: 'Enter GST defaulted status',
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: _buildTextField(
+                              controller: _commonBankDetailsController,
+                              label: 'Common Bank Details',
+                              hintText: 'Enter common bank details',
+                            ),
+                          ),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: _buildTextField(
+                              controller: _incomeTaxTypeController,
+                              label: 'Income Tax Type',
+                              hintText: 'Enter income tax type',
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+
+
+                  const SizedBox(height: 24),
+                  _buildSectionCard(
+                    icon: Icons.more_horiz_outlined,
+                    title: 'Documents',
+                    children: [
                       const SizedBox(height: 16),
                       _buildFileUpload(),
                     ],
                   ),
+
 
                   const SizedBox(height: 32),
 
@@ -789,14 +1101,9 @@ class _CreateVendorScreenState extends State<CreateVendorScreen> {
                         label: 'Create Vendor',
                         onPressed: _submitForm,
                         backgroundColor: colorScheme.primary,
-
                       ),
                     ],
-                  )
-
-
-
-
+                  ),
                 ],
               ),
             ),
@@ -804,6 +1111,216 @@ class _CreateVendorScreenState extends State<CreateVendorScreen> {
         ),
       ),
     );
+  }
+
+  Widget _buildProjectSelector() {
+    if (_isProjectLoading) {
+      return SizedBox(
+        height: 56,
+        child: Center(
+          child: CircularProgressIndicator(
+            strokeWidth: 2,
+            color: Theme.of(context).colorScheme.primary,
+          ),
+        ),
+      );
+    }
+
+    if (_projectError != null) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            _projectError!,
+            style: TextStyle(color: Theme.of(context).colorScheme.error),
+          ),
+          const SizedBox(height: 8),
+          OutlinedButton.icon(
+            onPressed: () => _loadProjects(forceRefresh: true),
+            icon: const Icon(Icons.refresh, size: 16),
+            label: const Text('Retry'),
+          ),
+        ],
+      );
+    }
+
+    if (_projectOptions.isEmpty) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'No projects available. Please create a project first.',
+            style: TextStyle(
+              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
+            ),
+          ),
+          const SizedBox(height: 8),
+          OutlinedButton.icon(
+            onPressed: () => _loadProjects(forceRefresh: true),
+            icon: const Icon(Icons.refresh, size: 16),
+            label: const Text('Reload'),
+          ),
+        ],
+      );
+    }
+
+    return Row(
+      children: [
+        Expanded(
+          child: CustomDropdown(
+            value: _project,
+            items: _projectOptions,
+            hint: 'Select Project',
+            onChanged: (value) => setState(() => _project = value),
+          ),
+        ),
+        IconButton(
+          tooltip: 'Refresh projects',
+          icon: const Icon(Icons.refresh),
+          onPressed: () => _loadProjects(forceRefresh: true),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildVendorCodeField() {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _buildLabel('Vendor Code', true),
+        const SizedBox(height: 8),
+        TextFormField(
+          controller: _vendorCodeController,
+          readOnly: true,
+          validator: (value) => _validateRequired(value, 'Vendor code'),
+          decoration: InputDecoration(
+            hintText: 'Vendor Code (Auto-generated)',
+            suffixIcon: _isCodeGenerating
+                ? Padding(
+                    padding: const EdgeInsets.all(12),
+                    child: SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: colorScheme.primary,
+                      ),
+                    ),
+                  )
+                : IconButton(
+                    tooltip: 'Regenerate vendor code',
+                    icon: const Icon(Icons.refresh),
+                    onPressed: () => _generateVendorCode(),
+                  ),
+            filled: true,
+            fillColor: colorScheme.surface,
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+              borderSide: BorderSide(
+                color: colorScheme.outline.withValues(alpha: 0.5),
+              ),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+              borderSide: BorderSide(
+                color: colorScheme.outline.withValues(alpha: 0.5),
+              ),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+              borderSide: BorderSide(color: colorScheme.primary),
+            ),
+          ),
+        ),
+        if (_codeError != null) ...[
+          const SizedBox(height: 6),
+          Text(
+            _codeError!,
+            style: TextStyle(color: colorScheme.error, fontSize: 12),
+          ),
+        ],
+      ],
+    );
+  }
+
+  void _initializeForm() {
+    _loadProjects();
+    _generateVendorCode();
+  }
+
+  Future<void> _loadProjects({bool forceRefresh = false}) async {
+    setState(() {
+      _isProjectLoading = true;
+      _projectError = null;
+    });
+
+    final service = context.read<VendorApiService>();
+    final result =
+        await service.loadProjectDropdowns(forceRefresh: forceRefresh);
+
+    if (!mounted) return;
+
+    setState(() {
+      _isProjectLoading = false;
+      if (result.success) {
+        _projectOptions = result.projects;
+        if (_projectOptions.isNotEmpty &&
+            (_project == null || !_projectOptions.contains(_project))) {
+          _project = _projectOptions.first;
+        }
+      } else {
+        _projectError = result.message ?? 'Failed to load projects';
+      }
+    });
+  }
+
+  Future<void> _generateVendorCode({String? prefix}) async {
+    final vendorName = _vendorNameController.text.trim();
+    if (vendorName.isEmpty) {
+      setState(() {
+        _codeError = 'Enter vendor name before generating code';
+      });
+      return;
+    }
+
+    final derivedPrefix = prefix ?? _derivePrefixFromName() ?? 'V';
+    setState(() {
+      _isCodeGenerating = true;
+      _codeError = null;
+      _lastCodePrefix = derivedPrefix;
+    });
+
+    final service = context.read<VendorApiService>();
+    final result = await service.generateVendorCode(
+      prefix: derivedPrefix,
+      vendorName: vendorName,
+    );
+
+    if (!mounted) return;
+
+    setState(() {
+      _isCodeGenerating = false;
+      if (result.success && result.code != null) {
+        _vendorCodeController.text = result.code!;
+      } else {
+        _codeError = result.message ?? 'Failed to generate vendor code';
+      }
+    });
+  }
+
+  void _onVendorNameChanged() {
+    final prefix = _derivePrefixFromName();
+    if (prefix == null || prefix == _lastCodePrefix) return;
+    _generateVendorCode(prefix: prefix);
+  }
+
+  String? _derivePrefixFromName() {
+    final value = _vendorNameController.text.trim();
+    if (value.isEmpty) return null;
+    return value.substring(0, 1).toUpperCase();
   }
 
   Widget _buildBankDetailsSection() {
@@ -821,10 +1338,7 @@ class _CreateVendorScreenState extends State<CreateVendorScreen> {
           decoration: BoxDecoration(
             color: const Color(0xFFE3F2FD),
             borderRadius: BorderRadius.circular(8),
-            border: Border.all(
-              color: const Color(0xFF90CAF9),
-              width: 1,
-            ),
+            border: Border.all(color: const Color(0xFF90CAF9), width: 1),
           ),
           child: Row(
             children: [
@@ -875,13 +1389,8 @@ class _CreateVendorScreenState extends State<CreateVendorScreen> {
             label: const Text('Add Another Bank Account'),
             style: OutlinedButton.styleFrom(
               foregroundColor: Theme.of(context).colorScheme.primary,
-              side: BorderSide(
-                color: Theme.of(context).colorScheme.primary,
-              ),
-              padding: const EdgeInsets.symmetric(
-                horizontal: 20,
-                vertical: 12,
-              ),
+              side: BorderSide(color: Theme.of(context).colorScheme.primary),
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(8),
               ),
@@ -906,9 +1415,7 @@ class _CreateVendorScreenState extends State<CreateVendorScreen> {
 
     return Container(
       decoration: BoxDecoration(
-        border: Border.all(
-          color: colorScheme.outline.withValues(alpha: 0.5),
-        ),
+        border: Border.all(color: colorScheme.outline.withValues(alpha: 0.5)),
         borderRadius: BorderRadius.circular(8),
       ),
       padding: const EdgeInsets.all(24),
@@ -988,7 +1495,7 @@ class _CreateVendorScreenState extends State<CreateVendorScreen> {
                 child: _buildTextField(
                   controller: controllers['ifscCode']!,
                   label: 'IFSC Code',
-                  hintText: 'Enter IFSC code',
+                  hintText: 'IFSC code',
                   isRequired: true,
                   inputFormatters: [
                     LengthLimitingTextInputFormatter(11),
@@ -1005,7 +1512,7 @@ class _CreateVendorScreenState extends State<CreateVendorScreen> {
                 child: _buildTextField(
                   controller: controllers['bankName']!,
                   label: 'Bank Name',
-                  hintText: 'Enter bank name',
+                  hintText: 'Bank name',
                   isRequired: true,
                 ),
               ),
@@ -1014,7 +1521,7 @@ class _CreateVendorScreenState extends State<CreateVendorScreen> {
                 child: _buildTextField(
                   controller: controllers['branchName']!,
                   label: 'Branch Name',
-                  hintText: 'Enter branch name',
+                  hintText: 'Branch name',
                 ),
               ),
             ],
@@ -1026,7 +1533,7 @@ class _CreateVendorScreenState extends State<CreateVendorScreen> {
                 child: _buildTextField(
                   controller: controllers['beneficiaryName']!,
                   label: 'Beneficiary Name',
-                  hintText: 'Enter beneficiary name',
+                  hintText: 'Beneficiary name',
                   isRequired: true,
                 ),
               ),
@@ -1035,7 +1542,7 @@ class _CreateVendorScreenState extends State<CreateVendorScreen> {
                 child: _buildTextField(
                   controller: controllers['accountName']!,
                   label: 'Account Name (Optional)',
-                  hintText: 'Enter account name',
+                  hintText: 'Account Name(Optional)',
                 ),
               ),
             ],
@@ -1044,10 +1551,7 @@ class _CreateVendorScreenState extends State<CreateVendorScreen> {
           if (!isPrimary)
             Row(
               children: [
-                Checkbox(
-                  value: isPrimary,
-                  onChanged: (_) => onSetPrimary(),
-                ),
+                Checkbox(value: isPrimary, onChanged: (_) => onSetPrimary()),
                 const SizedBox(width: 8),
                 Text(
                   'Set as Primary Account',
@@ -1063,10 +1567,7 @@ class _CreateVendorScreenState extends State<CreateVendorScreen> {
               decoration: BoxDecoration(
                 color: const Color(0xFF2196F3).withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(8),
-                border: Border.all(
-                  color: const Color(0xFF2196F3),
-                  width: 1,
-                ),
+                border: Border.all(color: const Color(0xFF2196F3), width: 1),
               ),
               child: Row(
                 children: [
@@ -1125,9 +1626,7 @@ class _CreateVendorScreenState extends State<CreateVendorScreen> {
 
     return Container(
       decoration: BoxDecoration(
-        border: Border.all(
-          color: colorScheme.outline.withValues(alpha: 0.5),
-        ),
+        border: Border.all(color: colorScheme.outline.withValues(alpha: 0.5)),
         borderRadius: BorderRadius.circular(8),
       ),
       padding: const EdgeInsets.all(24),
@@ -1272,7 +1771,7 @@ class _CreateVendorScreenState extends State<CreateVendorScreen> {
                 Text(
                   selectedDate != null
                       ? '${selectedDate.day}/${selectedDate.month}/${selectedDate.year}'
-                      : 'Select date',
+                      : ' dd-mm-yyyy',
                   style: textTheme.bodyMedium?.copyWith(
                     color: selectedDate != null
                         ? colorScheme.onSurface
@@ -1301,7 +1800,7 @@ class _CreateVendorScreenState extends State<CreateVendorScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Attach File',
+          'Upload Documents',
           style: textTheme.bodyMedium?.copyWith(
             fontWeight: FontWeight.w500,
             color: colorScheme.onSurface,
@@ -1369,9 +1868,9 @@ class _CreateVendorScreenState extends State<CreateVendorScreen> {
 class UpperCaseTextFormatter extends TextInputFormatter {
   @override
   TextEditingValue formatEditUpdate(
-      TextEditingValue oldValue,
-      TextEditingValue newValue,
-      ) {
+    TextEditingValue oldValue,
+    TextEditingValue newValue,
+  ) {
     return TextEditingValue(
       text: newValue.text.toUpperCase(),
       selection: newValue.selection,

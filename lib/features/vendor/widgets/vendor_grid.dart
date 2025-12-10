@@ -8,16 +8,20 @@ class VendorGridView extends StatefulWidget {
   final List<Vendor> vendorList;
   final int rowsPerPage;
   final int currentPage;
+  final int totalItems;
   final ValueChanged<int> onPageChanged;
   final ValueChanged<int?> onRowsPerPageChanged;
+  final bool isLoading;
 
   const VendorGridView({
     super.key,
     required this.vendorList,
     required this.rowsPerPage,
     required this.currentPage,
+    required this.totalItems,
     required this.onPageChanged,
     required this.onRowsPerPageChanged,
+    this.isLoading = false,
   });
 
   @override
@@ -33,11 +37,10 @@ class _VendorGridViewState extends State<VendorGridView> {
     double screenWidth = MediaQuery.of(context).size.width;
     int crossAxisCount = getResponsiveCrossAxisCount(screenWidth);
 
-    int start = widget.currentPage * widget.rowsPerPage;
-    int end = (start + widget.rowsPerPage).clamp(0, widget.vendorList.length);
-    final paginatedVendors = widget.vendorList.sublist(start, end);
+    final paginatedVendors = widget.vendorList;
 
-    int totalPages = (widget.vendorList.length / widget.rowsPerPage).ceil();
+    int totalPages =
+        widget.totalItems == 0 ? 0 : (widget.totalItems / widget.rowsPerPage).ceil();
 
     // Pagination show exactly 3  buttons
     int windowSize = 3;
@@ -62,57 +65,60 @@ class _VendorGridViewState extends State<VendorGridView> {
           child: Container(
             color: colorScheme.surfaceContainerHigh,
             padding: const EdgeInsets.all(12),
-            child: GridView.builder(
-              itemCount: paginatedVendors.length,
-              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: crossAxisCount,
-                crossAxisSpacing: 20,
-                mainAxisSpacing: 20,
-                childAspectRatio: 1.2,
-              ),
-              itemBuilder: (context, index) {
-                final vendor = paginatedVendors[index];
-                final globalIndex = start + index;
-                final isHovered = _hoveredCardIndex == globalIndex;
-
-                final Color roleColor =
-                gridStatusColors[globalIndex % gridStatusColors.length];
-
-                return MouseRegion(
-                  onEnter: (_) => setState(() => _hoveredCardIndex = globalIndex),
-                  onExit: (_) => setState(() => _hoveredCardIndex = null),
-                  child: AnimatedContainer(
-                    duration: const Duration(milliseconds: 150),
-                    decoration: BoxDecoration(
-                      border: isHovered
-                          ? Border(
-                        top: BorderSide(color: roleColor, width: 6),
-                        left: BorderSide(color: roleColor, width: 6),
-                      )
-                          : null,
-                      borderRadius: const BorderRadius.only(
-                        topLeft: Radius.circular(24),
-                        topRight: Radius.circular(22),
-                        bottomLeft: Radius.circular(18),
-                        bottomRight: Radius.circular(18),
-                      ),
-                      color: colorScheme.surface,
+            child: widget.isLoading && paginatedVendors.isEmpty
+                ? const Center(child: CircularProgressIndicator())
+                : GridView.builder(
+                    itemCount: paginatedVendors.length,
+                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: crossAxisCount,
+                      crossAxisSpacing: 20,
+                      mainAxisSpacing: 20,
+                      childAspectRatio: 1.2,
                     ),
-                    child: ProfileCard(
-                      invoiceId: '#Vendor-${vendor.id.toString().padLeft(3, '0')}',
-                      topBarColor: roleColor,
-                      fields: {
-                        'Code': vendor.code,
-                        'Name': vendor.name,
-                        'Email': vendor.email,
-                        'Mobile': vendor.mobile,
-                        'Status': vendor.status,
-                      },
-                    ),
+                    itemBuilder: (context, index) {
+                      final vendor = paginatedVendors[index];
+                      final globalIndex =
+                          (widget.currentPage * widget.rowsPerPage) + index;
+                      final isHovered = _hoveredCardIndex == globalIndex;
+
+                      final Color roleColor =
+                          gridStatusColors[globalIndex % gridStatusColors.length];
+
+                      return MouseRegion(
+                        onEnter: (_) => setState(() => _hoveredCardIndex = globalIndex),
+                        onExit: (_) => setState(() => _hoveredCardIndex = null),
+                        child: AnimatedContainer(
+                          duration: const Duration(milliseconds: 150),
+                          decoration: BoxDecoration(
+                            border: isHovered
+                                ? Border(
+                                    top: BorderSide(color: roleColor, width: 6),
+                                    left: BorderSide(color: roleColor, width: 6),
+                                  )
+                                : null,
+                            borderRadius: const BorderRadius.only(
+                              topLeft: Radius.circular(24),
+                              topRight: Radius.circular(22),
+                              bottomLeft: Radius.circular(18),
+                              bottomRight: Radius.circular(18),
+                            ),
+                            color: colorScheme.surface,
+                          ),
+                          child: ProfileCard(
+                            invoiceId: '#Vendor-${vendor.id.toString().padLeft(3, '0')}',
+                            topBarColor: roleColor,
+                            fields: {
+                              'Code': vendor.code,
+                              'Name': vendor.name,
+                              'Email': vendor.email,
+                              'Mobile': vendor.mobile,
+                              'Status': vendor.status,
+                            },
+                          ),
+                        ),
+                      );
+                    },
                   ),
-                );
-              },
-            ),
           ),
         ),
         Padding(
@@ -121,7 +127,8 @@ class _VendorGridViewState extends State<VendorGridView> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                "Showing ${widget.vendorList.isEmpty ? 0 : start + 1} to $end of ${widget.vendorList.length} entries",
+                "Showing ${widget.totalItems == 0 ? 0 : (widget.currentPage * widget.rowsPerPage) + 1} "
+                "to ${(widget.currentPage * widget.rowsPerPage) + paginatedVendors.length} of ${widget.totalItems} entries",
                 style: Theme.of(context).textTheme.bodySmall,
               ),
               Row(

@@ -425,46 +425,12 @@ class _ViewOrganizationScreenState extends State<ViewOrganizationScreen> {
                   ),
                 ],
               ),
-              OutlineButton(
-                onPressed: () {
-                  // Navigate to manage projects
-                },
-                label: 'Manage',
-                icon: Icons.settings_outlined,
-              ),
+            
             ],
           ),
           const SizedBox(height: 24),
 
-          // Empty state or project grid-style rows
-          if (projects.isEmpty)
-            Center(
-              child: Column(
-                children: [
-                  Icon(
-                    Icons.folder_off_outlined,
-                    size: 64,
-                    color: colorScheme.onSurface.withValues(alpha: 0.3),
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    'No projects configured',
-                    style: textTheme.bodyMedium?.copyWith(
-                      color: colorScheme.onSurface.withValues(alpha: 0.5),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  PrimaryButton(
-                    onPressed: () {
-                      // Add project action
-                    },
-                    label: 'Add Projects',
-                    icon: Icons.add,
-                  ),
-                ],
-              ),
-            )
-          else
+      
             Wrap(
               spacing: 8,
               runSpacing: 8,

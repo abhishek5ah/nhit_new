@@ -10,6 +10,13 @@ import 'package:ppv_components/features/organization/services/organizations_api_
 import 'package:ppv_components/features/roles/services/roles_api_service.dart';
 import 'package:ppv_components/features/department/providers/department_provider.dart';
 import 'package:ppv_components/features/designation/providers/designation_provider.dart';
+import 'package:ppv_components/features/designation/providers/create_designation_form_provider.dart';
+import 'package:ppv_components/features/vendor/services/vendor_api_service.dart';
+import 'package:ppv_components/features/vendor/providers/create_vendor_form_provider.dart';
+import 'package:ppv_components/features/user/providers/create_user_form_provider.dart';
+import 'package:ppv_components/features/user/services/user_api_service.dart';
+import 'package:ppv_components/features/department/providers/create_department_form_provider.dart';
+import 'package:ppv_components/features/organization/providers/create_organization_form_provider.dart';
 import 'app/router.dart';
 import 'package:ppv_components/core/theme/theme.dart';
 
@@ -32,6 +39,13 @@ void main() async {
         ChangeNotifierProvider(create: (_) => RolesApiService()),
         ChangeNotifierProvider(create: (_) => DepartmentProvider()),
         ChangeNotifierProvider(create: (_) => DesignationProvider()),
+        ChangeNotifierProvider(create: (_) => VendorApiService()),
+        ChangeNotifierProvider(create: (_) => CreateDepartmentFormProvider()),
+        ChangeNotifierProvider(create: (_) => CreateDesignationFormProvider()),
+        ChangeNotifierProvider(create: (_) => CreateVendorFormProvider()),
+        ChangeNotifierProvider(create: (_) => CreateOrganizationFormProvider()),
+        ChangeNotifierProvider(create: (_) => CreateUserFormProvider()),
+        ChangeNotifierProvider(create: (_) => UserApiService()),
       ],
       child: const MyApp(),
     ),

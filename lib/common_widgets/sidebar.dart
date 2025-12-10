@@ -23,6 +23,8 @@ class _SidebarState extends State<Sidebar> with SingleTickerProviderStateMixin {
   static const double collapsedWidth = 64;
   late AnimationController _controller;
   late Animation<double> widthAnim;
+  final ScrollController _scrollController = ScrollController();
+  final Map<int, GlobalKey> _itemKeys = {};
 
   // Updated categories list with icons for each sub-item
   final List<_SidebarCategory> categories = [
@@ -149,14 +151,51 @@ class _SidebarState extends State<Sidebar> with SingleTickerProviderStateMixin {
     });
   }
 
-  void toggleMenuExpansion(int index) {
-    if (!isExpanded) return;
-    setState(() {
-      if (expandedMenuIndices.contains(index)) {
-        expandedMenuIndices.remove(index);
+  void toggleMenuExpansion(int index, bool expanded) {
+    _ensureExpanded(() {
+      if (expanded) {
+        expandedMenuIndices = {index};
       } else {
-        expandedMenuIndices.add(index);
+        expandedMenuIndices.remove(index);
       }
+
+      if (expanded) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          _scrollToItem(index);
+        });
+      }
+    });
+  }
+
+  void _ensureExpanded(VoidCallback action) {
+    if (isExpanded) {
+      setState(() {
+        action();
+      });
+      return;
+    }
+
+    setState(() {
+      isExpanded = true;
+      _controller.reverse();
+    });
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      setState(() {
+        action();
+      });
+    });
+  }
+
+  void _handleSubItemTap(int parentIndex, String route) {
+    _ensureExpanded(() {
+      if (!expandedMenuIndices.contains(parentIndex)) {
+        expandedMenuIndices = {parentIndex};
+      }
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _scrollToItem(parentIndex);
+      });
+      _navigate(route);
     });
   }
 
@@ -173,6 +212,7 @@ class _SidebarState extends State<Sidebar> with SingleTickerProviderStateMixin {
   @override
   void dispose() {
     _controller.dispose();
+    _scrollController.dispose();
     super.dispose();
   }
 
@@ -302,6 +342,7 @@ class _SidebarState extends State<Sidebar> with SingleTickerProviderStateMixin {
                   
                   Expanded(
                     child: ListView(
+                      controller: _scrollController,
                       padding: EdgeInsets.zero,
                       shrinkWrap: true,
                       children: [
@@ -422,15 +463,36 @@ class _SidebarState extends State<Sidebar> with SingleTickerProviderStateMixin {
     );
   }
 
+  Future<void> _scrollToItem(int index) async {
+    final key = _itemKeys[index];
+    if (key?.currentContext == null) return;
+
+    await Future.delayed(const Duration(milliseconds: 50));
+    await Scrollable.ensureVisible(
+      key!.currentContext!,
+      duration: const Duration(milliseconds: 300),
+      alignment: 0.1,
+      curve: Curves.easeInOut,
+    );
+  }
+
   Widget _buildSidebarItem(_SidebarItem item, int index, ColorScheme colors) {
     final bool isExpandedItem = expandedMenuIndices.contains(index);
     final bool isActive = selectedSubRoute == item.route || item.subItems.any((si) => si.route == selectedSubRoute);
+    final key = _itemKeys.putIfAbsent(index, () => GlobalKey());
 
     return Container(
+      key: key,
       margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
         color: isActive ? colors.surfaceContainerHighest.withValues(alpha: 0.5) : Colors.transparent,
         borderRadius: BorderRadius.circular(10),
+        border: isExpandedItem && isExpanded
+            ? Border(
+                top: BorderSide(color: colors.primary.withValues(alpha: 0.3), width: 2),
+                bottom: BorderSide(color: colors.primary.withValues(alpha: 0.3), width: 2),
+              )
+            : null,
       ),
       child: item.subItems.isEmpty
           ? ListTile(
@@ -445,10 +507,11 @@ class _SidebarState extends State<Sidebar> with SingleTickerProviderStateMixin {
                       ),
                     )
                   : const SizedBox.shrink(),
-              onTap: () => _navigate(item.route),
+              onTap: () => _ensureExpanded(() => _navigate(item.route)),
             )
           : ExpansionTile(
-              onExpansionChanged: (expanded) => toggleMenuExpansion(index),
+              key: ValueKey('expansion_$index\_${isExpandedItem}'),
+              onExpansionChanged: (expanded) => toggleMenuExpansion(index, expanded),
               trailing: isExpanded && item.subItems.isNotEmpty
                   ? Icon(
                       isExpandedItem ? Icons.expand_less : Icons.expand_more,
@@ -470,33 +533,31 @@ class _SidebarState extends State<Sidebar> with SingleTickerProviderStateMixin {
                       ),
                     )
                   : const SizedBox.shrink(),
-        childrenPadding: const EdgeInsets.only(left: 30, bottom: 8, right: 16),
-        children: isExpanded && item.subItems.isNotEmpty
-            ? item.subItems
-            .map((_SubItem subItem) => ListTile(
-          contentPadding: const EdgeInsets.symmetric(horizontal: 16),
-          horizontalTitleGap: 8,
-          dense: true,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-          tileColor: subItem.route == selectedSubRoute ? colors.primary.withValues(alpha: 0.1) : Colors.transparent,
-          leading: Icon(subItem.icon, // Use the icon from the subItem
-              size: 18,
-              color: subItem.route == selectedSubRoute ? colors.primary : colors.onSurfaceVariant),
-          title: Text(
-            subItem.label,
-            style: TextStyle(
-              color: subItem.route == selectedSubRoute ? colors.primary : colors.onSurface,
-              fontSize: 14,
-              fontWeight: subItem.route == selectedSubRoute ? FontWeight.bold : FontWeight.normal,
+              childrenPadding: const EdgeInsets.only(left: 30, bottom: 8, right: 16),
+              children: isExpanded && item.subItems.isNotEmpty
+                  ? item.subItems
+                      .map((_SubItem subItem) => ListTile(
+                            contentPadding: const EdgeInsets.symmetric(horizontal: 16),
+                            horizontalTitleGap: 8,
+                            dense: true,
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                            tileColor: subItem.route == selectedSubRoute ? colors.primary.withValues(alpha: 0.1) : Colors.transparent,
+                            leading: Icon(subItem.icon,
+                                size: 18,
+                                color: subItem.route == selectedSubRoute ? colors.primary : colors.onSurfaceVariant),
+                            title: Text(
+                              subItem.label,
+                              style: TextStyle(
+                                color: subItem.route == selectedSubRoute ? colors.primary : colors.onSurface,
+                                fontSize: 14,
+                                fontWeight: subItem.route == selectedSubRoute ? FontWeight.bold : FontWeight.normal,
+                              ),
+                            ),
+                            onTap: () => _handleSubItemTap(index, subItem.route),
+                          ))
+                      .toList()
+                  : [],
             ),
-          ),
-          onTap: () {
-            _navigate(subItem.route);
-          },
-        ))
-            .toList()
-            : [],
-      ),
     );
   }
 }

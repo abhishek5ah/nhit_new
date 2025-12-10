@@ -8,6 +8,7 @@ import 'package:provider/provider.dart';
 import 'package:ppv_components/core/services/jwt_token_manager.dart';
 import 'package:ppv_components/features/organization/data/models/organization_api_models.dart';
 import 'package:ppv_components/features/organization/services/organizations_api_service.dart';
+import 'package:ppv_components/features/organization/providers/create_organization_form_provider.dart';
 
 class CreateOrganizationScreen extends StatefulWidget {
   const CreateOrganizationScreen({super.key});
@@ -22,10 +23,12 @@ class _CreateOrganizationScreenState extends State<CreateOrganizationScreen> {
   late TextEditingController _nameController;
   late TextEditingController _codeController;
   late TextEditingController _descriptionController;
+  late final Map<String, TextEditingController> _controllerMap;
 
   final List<TextEditingController> _projectControllers = [];
 
   bool _isLoading = false;
+  bool _isInitializing = true;
 
   Uint8List? _logoBytes;
   String? _logoFileName;
@@ -36,6 +39,16 @@ class _CreateOrganizationScreenState extends State<CreateOrganizationScreen> {
     _nameController = TextEditingController();
     _codeController = TextEditingController();
     _descriptionController = TextEditingController();
+    _controllerMap = {
+      'name': _nameController,
+      'code': _codeController,
+      'description': _descriptionController,
+    };
+    _registerControllerListeners();
+    _setProjectControllers(const ['']);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _restorePersistedForm();
+    });
   }
 
   @override
@@ -54,6 +67,100 @@ class _CreateOrganizationScreenState extends State<CreateOrganizationScreen> {
       return '$fieldName is required';
     }
     return null;
+  }
+
+  void _registerControllerListeners() {
+    _controllerMap.forEach((key, controller) {
+      controller.addListener(() {
+        if (_isInitializing) return;
+        context.read<CreateOrganizationFormProvider>().updateField(
+              key,
+              controller.text,
+            );
+      });
+    });
+  }
+
+  Future<void> _restorePersistedForm() async {
+    final formProvider = context.read<CreateOrganizationFormProvider>();
+    await formProvider.loadFormState();
+    setState(() {
+      _isInitializing = true;
+      _nameController.text = formProvider.name;
+      _codeController.text = formProvider.code;
+      _descriptionController.text = formProvider.description;
+    });
+
+    _setProjectControllers(formProvider.projects);
+
+    setState(() {
+      _logoBytes = formProvider.logoBytes;
+      _logoFileName = formProvider.logoFileName;
+      _isInitializing = false;
+    });
+  }
+
+  void _setProjectControllers(List<String> projects) {
+    for (final controller in _projectControllers) {
+      controller.removeListener(_onProjectFieldsChanged);
+      controller.dispose();
+    }
+    _projectControllers
+      ..clear()
+      ..addAll(
+        (projects.isEmpty ? [''] : projects)
+            .map((value) => _createProjectController(value)),
+      );
+    setState(() {});
+  }
+
+  TextEditingController _createProjectController(String value) {
+    final controller = TextEditingController(text: value);
+    controller.addListener(_onProjectFieldsChanged);
+    return controller;
+  }
+
+  void _onProjectFieldsChanged() {
+    if (_isInitializing) return;
+    _persistProjects();
+  }
+
+  void _persistProjects() {
+    final projects = _projectControllers
+        .map((controller) => controller.text.trim())
+        .where((project) => project.isNotEmpty)
+        .toList();
+    context.read<CreateOrganizationFormProvider>().updateProjects(projects);
+  }
+
+  void _resetLocalForm() {
+    _isInitializing = true;
+    for (final controller in _controllerMap.values) {
+      controller.clear();
+    }
+    _setProjectControllers(const ['']);
+    _updateLogoState(
+      bytes: null,
+      fileName: null,
+      persist: !_isInitializing,
+    );
+    _isInitializing = false;
+  }
+
+  void _updateLogoState({
+    required Uint8List? bytes,
+    required String? fileName,
+    bool persist = true,
+  }) {
+    if (!mounted) return;
+    setState(() {
+      _logoBytes = bytes;
+      _logoFileName = fileName;
+    });
+
+    if (persist) {
+      context.read<CreateOrganizationFormProvider>().updateLogo(bytes, fileName);
+    }
   }
 
   // Updated file picker that saves to permanent location
@@ -95,10 +202,7 @@ class _CreateOrganizationScreenState extends State<CreateOrganizationScreen> {
           return;
         }
 
-        setState(() {
-          _logoBytes = pickedFile.bytes;
-          _logoFileName = pickedFile.name;
-        });
+        _updateLogoState(bytes: pickedFile.bytes, fileName: pickedFile.name);
       }
     } catch (e) {
       if (mounted) {
@@ -112,17 +216,24 @@ class _CreateOrganizationScreenState extends State<CreateOrganizationScreen> {
     }
   }
 
-  void _addProject() {
+  void _addProject({String initialValue = ''}) {
     setState(() {
-      _projectControllers.add(TextEditingController());
+      _projectControllers.add(_createProjectController(initialValue));
     });
+    _persistProjects();
   }
 
   void _removeProject(int index) {
     setState(() {
-      _projectControllers[index].dispose();
+      _projectControllers[index]
+        ..removeListener(_onProjectFieldsChanged)
+        ..dispose();
       _projectControllers.removeAt(index);
+      if (_projectControllers.isEmpty) {
+        _projectControllers.add(_createProjectController(''));
+      }
     });
+    _persistProjects();
   }
 
   void _submitForm() async {

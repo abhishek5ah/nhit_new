@@ -10,14 +10,30 @@ import 'package:ppv_components/features/vendor/widgets/vendor_grid.dart';
 
 class VendorTableView extends StatefulWidget {
   final List<Vendor> vendorData;
+  final int totalItems;
+  final int currentPage; // zero-based
+  final int rowsPerPage;
+  final bool isLoading;
+  final String? errorMessage;
   final void Function(Vendor) onDelete;
   final void Function(Vendor) onEdit;
+  final ValueChanged<int> onPageChanged;
+  final ValueChanged<int?> onRowsPerPageChanged;
+  final VoidCallback onRefresh;
 
   const VendorTableView({
     super.key,
     required this.vendorData,
+    required this.totalItems,
+    required this.currentPage,
+    required this.rowsPerPage,
+    required this.isLoading,
+    this.errorMessage,
     required this.onDelete,
     required this.onEdit,
+    required this.onPageChanged,
+    required this.onRowsPerPageChanged,
+    required this.onRefresh,
   });
 
   @override
@@ -26,49 +42,6 @@ class VendorTableView extends StatefulWidget {
 
 class _VendorTableViewState extends State<VendorTableView> {
   int toggleIndex = 0;
-  int rowsPerPage = 10;
-  int currentPage = 0;
-  late List<Vendor> paginatedVendors;
-
-  @override
-  void initState() {
-    super.initState();
-    _updatePagination();
-  }
-
-  @override
-  void didUpdateWidget(covariant VendorTableView oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (widget.vendorData != oldWidget.vendorData) {
-      currentPage = 0;
-      _updatePagination();
-    }
-  }
-
-  void _updatePagination() {
-    final totalPages = (widget.vendorData.length / rowsPerPage).ceil();
-    if (currentPage >= totalPages && totalPages > 0) {
-      currentPage = totalPages - 1;
-    }
-    final start = currentPage * rowsPerPage;
-    final end = (start + rowsPerPage).clamp(0, widget.vendorData.length);
-    paginatedVendors = widget.vendorData.sublist(start, end);
-  }
-
-  void changeRowsPerPage(int? value) {
-    setState(() {
-      rowsPerPage = value ?? 10;
-      currentPage = 0;
-      _updatePagination();
-    });
-  }
-
-  void gotoPage(int page) {
-    setState(() {
-      currentPage = page;
-      _updatePagination();
-    });
-  }
 
   Future<void> deleteVendor(Vendor vendor) async {
     final shouldDelete = await showDialog<bool>(
@@ -90,7 +63,6 @@ class _VendorTableViewState extends State<VendorTableView> {
     );
     if (shouldDelete == true) {
       widget.onDelete(vendor);
-      _updatePagination();
     }
   }
 
@@ -103,9 +75,7 @@ class _VendorTableViewState extends State<VendorTableView> {
     );
 
     if (result != null) {
-      setState(() {
-        _updatePagination();
-      });
+      widget.onEdit(result);
     }
   }
 
@@ -145,7 +115,7 @@ class _VendorTableViewState extends State<VendorTableView> {
         )
         .toList();
 
-    final rows = paginatedVendors.map((vendor) {
+    final rows = widget.vendorData.map((vendor) {
       final primaryAccount = vendor.bankAccounts.isNotEmpty
           ? vendor.bankAccounts.firstWhere((acc) => acc.isPrimary, orElse: () => vendor.bankAccounts.first)
           : null;
@@ -196,6 +166,77 @@ class _VendorTableViewState extends State<VendorTableView> {
       );
     }).toList();
 
+    Widget buildContent() {
+      if (widget.isLoading && widget.vendorData.isEmpty) {
+        return const Center(child: CircularProgressIndicator());
+      }
+
+      if ((widget.errorMessage ?? '').isNotEmpty && widget.vendorData.isEmpty) {
+        return Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                widget.errorMessage!,
+                style: TextStyle(color: colorScheme.error),
+              ),
+              const SizedBox(height: 12),
+              ElevatedButton.icon(
+                onPressed: widget.onRefresh,
+                icon: const Icon(Icons.refresh),
+                label: const Text('Retry'),
+              ),
+            ],
+          ),
+        );
+      }
+
+      if (widget.vendorData.isEmpty) {
+        return Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(Icons.store_mall_directory_outlined, size: 48),
+              const SizedBox(height: 12),
+              Text(
+                'No vendors found',
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
+            ],
+          ),
+        );
+      }
+
+      return toggleIndex == 0
+          ? Column(
+              children: [
+                Expanded(
+                  child: Semantics(
+                    label: 'Vendor data table view',
+                    container: true,
+                    child: CustomTable(columns: semanticallyLabeledColumns, rows: rows),
+                  ),
+                ),
+                CustomPaginationBar(
+                  totalItems: widget.totalItems,
+                  currentPage: widget.currentPage,
+                  rowsPerPage: widget.rowsPerPage,
+                  onPageChanged: widget.onPageChanged,
+                  onRowsPerPageChanged: widget.onRowsPerPageChanged,
+                ),
+              ],
+            )
+          : VendorGridView(
+              vendorList: widget.vendorData,
+              rowsPerPage: widget.rowsPerPage,
+              currentPage: widget.currentPage,
+              totalItems: widget.totalItems,
+              onPageChanged: widget.onPageChanged,
+              onRowsPerPageChanged: widget.onRowsPerPageChanged,
+              isLoading: widget.isLoading,
+            );
+    }
+
     return Semantics(
       label: 'Vendor management table',
       explicitChildNodes: true,
@@ -235,45 +276,7 @@ class _VendorTableViewState extends State<VendorTableView> {
                         ],
                       ),
                       const SizedBox(height: 16),
-                      Expanded(
-                        child: toggleIndex == 0
-                            ? Column(
-                                children: [
-                                  Expanded(
-                                    child: Semantics(
-                                      label: 'Vendor data table view',
-                                      container: true,
-                                      child: CustomTable(columns: semanticallyLabeledColumns, rows: rows),
-                                    ),
-                                  ),
-                                  CustomPaginationBar(
-                                    totalItems: widget.vendorData.length,
-                                    currentPage: currentPage,
-                                    rowsPerPage: rowsPerPage,
-                                    onPageChanged: gotoPage,
-                                    onRowsPerPageChanged: changeRowsPerPage,
-                                  ),
-                                ],
-                              )
-                            : VendorGridView(
-                                vendorList: widget.vendorData,
-                                rowsPerPage: rowsPerPage,
-                                currentPage: currentPage,
-                                onPageChanged: (page) {
-                                  setState(() {
-                                    currentPage = page;
-                                    _updatePagination();
-                                  });
-                                },
-                                onRowsPerPageChanged: (rows) {
-                                  setState(() {
-                                    rowsPerPage = rows ?? rowsPerPage;
-                                    currentPage = 0;
-                                    _updatePagination();
-                                  });
-                                },
-                              ),
-                      ),
+                      Expanded(child: buildContent()),
                     ],
                   ),
                 ),
